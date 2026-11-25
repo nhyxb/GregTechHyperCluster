@@ -1,0 +1,114 @@
+plugins {
+    id 'idea'
+    id 'eclipse'
+    id 'net.neoforged.moddev.legacyforge' version '2.0.91'
+    id 'com.diffplug.spotless' version '7.0.2'
+}
+
+version = mod_version
+group = maven_group
+base { archivesName = archives_base_name }
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(17)
+}
+
+sourceSets.main.resources.srcDir 'src/generated/resources'
+
+repositories {
+    mavenCentral()
+    maven {
+        name = 'GTCEu'
+        url = 'https://maven.gtceu.com'
+        content { includeGroup 'com.gregtechceu.gtceu' }
+    }
+    maven {
+        name = 'FirstDarkDev'
+        url = 'https://maven.firstdark.dev/snapshots/'
+        content {
+            includeGroup 'com.lowdragmc.ldlib'
+            includeGroup 'dev.toma.configuration'
+        }
+    }
+    maven {
+        name = 'tterrag'
+        url = 'https://maven.tterrag.com/'
+        content { includeGroup 'com.tterrag.registrate' }
+    }
+}
+
+legacyForge {
+    version = "${minecraft_version}-${forge_version}"
+
+    parchment {
+        mappingsVersion = mapping_version
+        minecraftVersion = minecraft_version
+    }
+
+    runs {
+        client {
+            client()
+            gameDirectory = file('run/client')
+        }
+        server {
+            server()
+            gameDirectory = file('run/server')
+            programArguments.add('--nogui')
+        }
+        data {
+            data()
+            gameDirectory = file('run/data')
+            programArguments.addAll(
+                '--mod', mod_id, '--all',
+                '--output', file('src/generated/resources').absolutePath,
+                '--existing', file('src/main/resources').absolutePath,
+                '--existing-mod', 'gtceu'
+            )
+        }
+    }
+
+    mods {
+        "${mod_id}" {
+            sourceSet(sourceSets.main)
+        }
+    }
+}
+
+dependencies {
+    modImplementation("com.gregtechceu.gtceu:gtceu-${minecraft_version}:${gtceu_version}:slim") {
+        transitive = false
+    }
+    modImplementation("com.lowdragmc.ldlib:ldlib-forge-${minecraft_version}:${ldlib_version}") {
+        transitive = false
+    }
+    modImplementation("com.tterrag.registrate:Registrate:${registrate_version}")
+    modImplementation("dev.toma.configuration:configuration-forge-${minecraft_version}:${configuration_version}")
+}
+
+apply from: 'gradle/scripts/spotless.gradle'
+
+tasks.named('processResources', ProcessResources).configure {
+    def metadata = [
+        mod_id: mod_id,
+        mod_name: mod_name,
+        mod_license: mod_license,
+        mod_version: version,
+        minecraft_version: minecraft_version,
+        forge_version: forge_version,
+        gtceu_version: gtceu_version,
+    ]
+    inputs.properties(metadata)
+    filesMatching('META-INF/mods.toml') {
+        expand metadata
+    }
+}
+
+tasks.named('jar', Jar).configure {
+    finalizedBy 'reobfJar'
+    from('LICENSE.MD')
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release.set(17)
+}

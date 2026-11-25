@@ -1,0 +1,30 @@
+modLoader = "javafml"
+loaderVersion = "[47,48)"
+license = "${mod_license}"
+
+[[mods]]
+modId = "${mod_id}"
+version = "${mod_version}"
+displayName = "${mod_name}"
+description = "An industrial computing addon for GregTech CEu Modern."
+
+[[dependencies.${mod_id}]]
+modId = "forge"
+mandatory = true
+versionRange = "[${forge_version},48)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "minecraft"
+mandatory = true
+versionRange = "[${minecraft_version}]"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "gtceu"
+mandatory = true
+versionRange = "[${gtceu_version}]"
+ordering = "AFTER"
+side = "BOTH"
