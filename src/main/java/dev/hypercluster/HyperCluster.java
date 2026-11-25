@@ -5,6 +5,8 @@ import com.gregtechceu.gtceu.api.registry.registrate.GTRegistrate;
 import net.minecraft.world.item.Item;
 import net.minecraftforge.fml.common.Mod;
 
+import dev.hypercluster.common.item.HyperClusterItems;
+
 @Mod(HyperCluster.MOD_ID)
 public final class HyperCluster {
 
@@ -17,6 +19,8 @@ public final class HyperCluster {
                         provider.mcLoc("item/generated")).texture("layer0", provider.mcLoc("item/paper")))
                 .lang("Development Probe")
                 .register();
+        // P01: telemetry chain items (mining telemetry log, blank carrier, mining edge chip).
+        HyperClusterItems.init();
         REGISTRATE.registerRegistrate();
     }
 }

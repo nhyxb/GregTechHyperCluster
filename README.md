@@ -24,8 +24,9 @@ source ./env.sh
 ./gradlew runData
 ./gradlew build
 ./gradlew runClient
+./gradlew runGametest
 ```
 
-资源生成输出在 `src/generated/resources/`，构建产物在 `build/libs/`。首次构建会下载 Gradle 和开发依赖。在启用命令的测试世界里可用 `/give @s hypercluster:development_probe` 验证物品注册和模型。
+资源生成输出在 `src/generated/resources/`，构建产物在 `build/libs/`。首次构建会下载 Gradle 和开发依赖。在启用命令的测试世界里可用 `/give @s hypercluster:development_probe` 验证物品注册和模型。`runGametest` 以头less方式跑 P02 结算探针（Forge GameTestServer，7 个用例），验收材料见 [docs/reports](docs/reports/P01_P02_acceptance_report.md)。
 
 开发客户端、专服和数据生成分别使用 `run/client/`、`run/server/`、`run/data/`，日志写入各自的 `logs/`。运行 `./gradlew runServer` 首次启动时，Minecraft 会生成 `run/server/eula.txt`。确认同意其中链接的 EULA 后，在该文件设 `eula=true` 并再次启动。

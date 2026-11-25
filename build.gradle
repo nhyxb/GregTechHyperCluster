@@ -55,6 +55,16 @@ legacyForge {
             gameDirectory = file('run/server')
             programArguments.add('--nogui')
         }
+        // P02 settlement probe: runs the dedicated GameTest server headlessly
+        // (`forge.gameTestServer=true`), executes every registered gametest, then exits.
+        gametest {
+            server()
+            gameDirectory = file('run/gametest')
+            programArguments.add('--nogui')
+            systemProperty('forge.gameTestServer', 'true')
+            systemProperty('forge.enabledGameTestNamespaces', mod_id)
+            systemProperty('hypercluster.probe', 'true')
+        }
         data {
             data()
             gameDirectory = file('run/data')

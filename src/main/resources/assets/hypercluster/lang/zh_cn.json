@@ -1,3 +1,9 @@
 {
-  "item.hypercluster.development_probe": "开发测试物品"
+  "item.hypercluster.development_probe": "开发测试物品",
+  "item.hypercluster.mining_telemetry_log": "矿处遥测日志",
+  "item.hypercluster.mining_telemetry_log.tooltip": "由矿处机器在受支持配方成功结算时记录，每批一份。",
+  "item.hypercluster.blank_carrier": "空白载体",
+  "item.hypercluster.blank_carrier.tooltip": "用于把遥测日志烧录成边缘芯片的只读空白载体。",
+  "item.hypercluster.mining_edge_chip": "矿处边缘芯片",
+  "item.hypercluster.mining_edge_chip.tooltip": "以遥测日志烧录的边缘推理芯片，用于解锁增强版矿处配方。"
 }

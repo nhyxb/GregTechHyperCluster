@@ -1,0 +1,33 @@
+[HC-PROBE] item=mining_telemetry_log maxStack=64 merged=64 tooltipKey=item.hypercluster.mining_telemetry_log.tooltip enUs=Mining Telemetry Log
+[HC-PROBE] item=blank_carrier maxStack=64 merged=64 tooltipKey=item.hypercluster.blank_carrier.tooltip enUs=Blank Carrier
+[HC-PROBE] item=mining_edge_chip maxStack=64 merged=64 tooltipKey=item.hypercluster.mining_edge_chip.tooltip enUs=Mining Edge Chip
+[HC-PROBE] afterWorking pos=BlockPos{x=98, y=-59, z=2} tick=70 gameTime=1855 recipe=gtceu:ore_washer/wash_copper_crushed_ore_to_purified_ore progress=49 duration=100 consecutive=0 status=WORKING
+[HC-PROBE] interrupted at progress=0/0 probe=1 status=IDLE
+[HC-PROBE] powerOut status=WAITING progress=1 energy=0 reason=true
+[HC-PROBE] afterWorking pos=BlockPos{x=2, y=-59, z=2} tick=112 gameTime=1906 recipe=gtceu:ore_washer/wash_copper_crushed_ore_to_purified_ore progress=100 duration=100 consecutive=0 status=WORKING
+[HC-PROBE] afterWorking pos=BlockPos{x=18, y=-59, z=2} tick=108 gameTime=1906 recipe=gtceu:ore_washer/wash_copper_crushed_ore_to_purified_ore progress=100 duration=100 consecutive=0 status=WORKING
+[HC-PROBE] afterWorking pos=BlockPos{x=50, y=-59, z=2} tick=113 gameTime=1906 recipe=gtceu:ore_washer/wash_copper_crushed_ore_to_purified_ore progress=100 duration=100 consecutive=0 status=WORKING
+[HC-PROBE] afterWorking pos=BlockPos{x=55, y=-59, z=2} tick=105 gameTime=1906 recipe=gtceu:ore_washer/wash_copper_crushed_ore_to_purified_ore progress=100 duration=100 consecutive=0 status=WORKING
+[HC-PROBE] afterWorking pos=BlockPos{x=66, y=-59, z=2} tick=117 gameTime=1906 recipe=gtceu:ore_washer/wash_copper_crushed_ore_to_purified_ore progress=100 duration=100 consecutive=0 status=WORKING
+[HC-PROBE] afterWorking pos=BlockPos{x=103, y=-59, z=2} tick=114 gameTime=1906 recipe=gtceu:ore_washer/wash_copper_crushed_ore_to_purified_ore progress=100 duration=100 consecutive=0 status=WORKING
+[HC-PROBE] afterWorking pos=BlockPos{x=18, y=-59, z=2} tick=208 gameTime=2006 recipe=gtceu:ore_washer/wash_copper_crushed_ore_to_purified_ore progress=100 duration=100 consecutive=1 status=WORKING
+[HC-PROBE] afterWorking pos=BlockPos{x=66, y=-59, z=2} tick=217 gameTime=2006 recipe=gtceu:ore_washer/wash_copper_crushed_ore_to_purified_ore progress=100 duration=100 consecutive=1 status=WORKING
+[HC-PROBE] benchmark origin recipe id=gtceu:ore_washer/wash_copper_crushed_ore_to_purified_ore duration=400 EUt=16 inputs=[1 crushed_copper_ore, 1 programmed_circuit] fluids=[net.minecraftforge.fluids.FluidStack@79617c5c] outputs=[1 purified_copper_ore, 1 cobalt_dust, 1 stone_dust]
+[HC-PROBE] benchmark modified recipe id=gtceu:ore_washer/wash_copper_crushed_ore_to_purified_ore duration=100 EUt=256 outputs=[1 purified_copper_ore, 1 cobalt_dust, 1 stone_dust] tickInputs={com.gregtechceu.gtceu.api.capability.recipe.EURecipeCapability@73a65712=[Content{content=EnergyStack[voltage=256, amperage=1], chance=10000, maxChance=10000, tierChanceBoost=0}]}
+[HC-PROBE] benchmark settled: probeCount=2 purified=2 stoneDust=2 batch3Progress=99/100 status=WORKING
+[HC-PROBE] afterWorking pos=BlockPos{x=18, y=-59, z=2} tick=308 gameTime=2106 recipe=gtceu:ore_washer/wash_copper_crushed_ore_to_purified_ore progress=100 duration=100 consecutive=2 status=WORKING
+[HC-PROBE] afterWorking pos=BlockPos{x=66, y=-59, z=2} tick=317 gameTime=2106 recipe=gtceu:ore_washer/wash_copper_crushed_ore_to_purified_ore progress=100 duration=100 consecutive=2 status=WORKING
+[HC-PROBE] afterWorking pos=BlockPos{x=18, y=-59, z=2} tick=408 gameTime=2206 recipe=gtceu:ore_washer/wash_copper_crushed_ore_to_purified_ore progress=100 duration=100 consecutive=3 status=WORKING
+[HC-PROBE] afterWorking pos=BlockPos{x=18, y=-59, z=2} tick=508 gameTime=2306 recipe=gtceu:ore_washer/wash_copper_crushed_ore_to_purified_ore progress=100 duration=100 consecutive=4 status=WORKING
+[HC-PROBE] afterWorking pos=BlockPos{x=82, y=-59, z=2} tick=518 gameTime=2307 recipe=gtceu:ore_washer/wash_copper_crushed_ore_to_purified_ore progress=100 duration=100 consecutive=0 status=WORKING
+[HC-PROBE] same-tick finish ok: gameTimeA=1906 gameTimeB=1906 offsetDelta=8 posA=BlockPos{x=50, y=-59, z=2} posB=BlockPos{x=55, y=-59, z=2}
+[HC-PROBE] afterWorking pos=BlockPos{x=18, y=-59, z=2} tick=608 gameTime=2406 recipe=gtceu:ore_washer/wash_copper_crushed_ore_to_purified_ore progress=100 duration=100 consecutive=5 status=WORKING
+[HC-PROBE] afterWorking pos=BlockPos{x=18, y=-59, z=2} tick=708 gameTime=2506 recipe=gtceu:ore_washer/wash_copper_crushed_ore_to_purified_ore progress=100 duration=100 consecutive=6 status=WORKING
+[HC-PROBE] afterWorking pos=BlockPos{x=18, y=-59, z=2} tick=808 gameTime=2606 recipe=gtceu:ore_washer/wash_copper_crushed_ore_to_purified_ore progress=100 duration=100 consecutive=7 status=WORKING
+[HC-PROBE] afterWorking pos=BlockPos{x=18, y=-59, z=2} tick=908 gameTime=2706 recipe=gtceu:ore_washer/wash_copper_crushed_ore_to_purified_ore progress=100 duration=100 consecutive=8 status=WORKING
+[HC-PROBE] afterWorking pos=BlockPos{x=18, y=-59, z=2} tick=1008 gameTime=2806 recipe=gtceu:ore_washer/wash_copper_crushed_ore_to_purified_ore progress=100 duration=100 consecutive=9 status=WORKING
+[HC-PROBE] powerRecovered finish at gameTime=2307 machineTick=518 status=IDLE
+[HC-PROBE] ten batches first=1906 last=2806 span=900 (expected ~900)
+[02:01:50] [Server thread/INFO] [minecraft/GameTestServer]: 7 tests are now running!
+[02:01:56] [Server thread/INFO] [minecraft/GameTestServer]: ========= 7 GAME TESTS COMPLETE ======================
+[02:01:56] [Server thread/INFO] [minecraft/GameTestServer]: All 7 required tests passed :)
