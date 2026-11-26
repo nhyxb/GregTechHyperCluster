@@ -62,9 +62,34 @@ public class SurvivalCraftingTests {
         assertRecipeUses(helper, washer, "gtceu:hv_ore_washer",
                 "the washer upgrade must consume the vanilla HV ore washer");
 
+        // 0.2 entries: the EV chemical reactor and the data scrubbing tower must be craftable.
+        CraftingRecipe chemicalReactor = craftingRecipe(helper, "shaped/ev_telemetry_chemical_reactor");
+        helper.assertTrue(
+                chemicalReactor.getResultItem(helper.getLevel().registryAccess())
+                        .is(HyperClusterMachines.EV_TELEMETRY_CHEMICAL_REACTOR.getBlock().asItem()),
+                "ev_telemetry_chemical_reactor recipe output mismatch: " +
+                        chemicalReactor.getResultItem(helper.getLevel().registryAccess()));
+        assertRecipeUses(helper, chemicalReactor, "gtceu:ev_chemical_reactor",
+                "the chemical upgrade must consume the vanilla GT EV chemical reactor");
+        CraftingRecipe tower = craftingRecipe(helper, "shaped/data_scrubbing_tower");
+        helper.assertTrue(
+                tower.getResultItem(helper.getLevel().registryAccess())
+                        .is(HyperClusterMachines.DATA_SCRUBBING_TOWER.getBlock().asItem()),
+                "data_scrubbing_tower recipe output mismatch: " +
+                        tower.getResultItem(helper.getLevel().registryAccess()));
+        assertRecipeUses(helper, tower, "minecraft:glass", "the tower must use glass");
+        // Clean datasets have a purpose: an alternative blank-carrier recipe.
+        CraftingRecipe carrierFromDataset = craftingRecipe(helper, "shaped/blank_carrier_from_clean_dataset");
+        helper.assertTrue(
+                carrierFromDataset.getResultItem(helper.getLevel().registryAccess())
+                        .is(HyperClusterItems.BLANK_CARRIER.get()),
+                "blank_carrier_from_clean_dataset output mismatch: " +
+                        carrierFromDataset.getResultItem(helper.getLevel().registryAccess()));
+
         // The ingredients themselves must exist in the registries (survival-obtainable chain).
         for (String id : new String[] { "gtceu:silicon_wafer", "gtceu:hv_sensor", "gtceu:hv_emitter",
-                "gtceu:hv_machine_hull", "gtceu:advanced_integrated_circuit", "gtceu:hv_ore_washer" }) {
+                "gtceu:hv_machine_hull", "gtceu:advanced_integrated_circuit", "gtceu:hv_ore_washer",
+                "gtceu:ev_sensor", "gtceu:ev_machine_hull", "gtceu:ev_chemical_reactor" }) {
             helper.assertTrue(BuiltInRegistries.ITEM.containsKey(ResourceLocation.tryParse(id)),
                     "ingredient not registered: " + id);
         }
@@ -84,7 +109,9 @@ public class SurvivalCraftingTests {
         // explicitly, otherwise the render-state payload fails to serialize and clients never
         // switch recipe_logic_status (front overlay stuck on overlay_front).
         for (com.gregtechceu.gtceu.api.machine.MachineDefinition machine : new com.gregtechceu.gtceu.api.machine.MachineDefinition[] {
-                HyperClusterMachines.HV_MICRO_BURNER, HyperClusterMachines.HV_TELEMETRY_ORE_WASHER }) {
+                HyperClusterMachines.HV_MICRO_BURNER, HyperClusterMachines.HV_TELEMETRY_ORE_WASHER,
+                HyperClusterMachines.EV_TELEMETRY_CHEMICAL_REACTOR,
+                HyperClusterMachines.DATA_SCRUBBING_TOWER }) {
             int expected = 0;
             int registered = 0;
             for (com.gregtechceu.gtceu.client.model.machine.MachineRenderState state : machine

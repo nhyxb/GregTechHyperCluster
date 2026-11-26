@@ -29,6 +29,23 @@
 - GameTest 模板结构放 `src/main/resources/data/<modid>/structures/<name>.nbt`（gzip NBT，根必须带名字 TAG_Compound，DataVersion 3465）；`@GameTestHolder("hypercluster")` + `template = "<name>"`。
 - `org.jetbrains.annotations` 不在编译类路径，用 `javax.annotation.Nullable`；GTMaterials 路径 `com.gregtechceu.gtceu.common.data.GTMaterials`。
 
+## 0.2 核心闭环已完成（2026-11-26，0.2.0）
+
+- **基类抽取**：`TelemetryMachine`（持久化缓冲 + `TelemetryRecipeLogic` 结算，logItem 可配）；HV 洗矿机与 `TelemetryChemicalReactorMachine`（EV）共同继承。6 新物品（化工日志/清洁数据集/两条高纯数据集/乱码噪点/化工芯片）+ EV 反应釜 `ev_telemetry_chemical_reactor` + 多方块 `data_scrubbing_tower`（3×5×3：EV 钛机壳+玻璃+标准 5 类 hatch）全部落地。
+- **EV 化工基准**：GTCEu 7.4.0 `chemical_reactor/indium_concentrate_separation`（600 EU/t×50t，电路#1，4 铝粉+1000mB 铟浓缩液→小堆铟粉+4 亚硫酸铝粉+铅锌溶液）；芯片版电路#2+不消耗 chip，**辅助铝粉减半 4→2**。清洗塔：日志+蒸馏水→高纯数据集+clean+90% 噪点；噪点×4→硅粉。
+- **runGametest 29/29**（0.1 的 20 + `DataWorkshopTests` 9，新模板 `hc_field` 13×9×13）；Xvfb 客户端冒烟零内容 ERROR；版本号已 bump 0.2.0。
+- **留坑（0.2.1）**：黄金样本、微调刻录舱、红队测试舱；塔输入混配约束余量在 `DATA_SCRUBBING_RECIPES.setMaxIOSize(4,3,2,0)`。
+
+## GTCEu 7.4.0 多方块三坑（长期有效）
+
+- **维护仓 veto 配方**：`IMaintenanceMachine.modifyRecipe` 在 `enableMaintenance` 时对有任何问题的 hatch 返回 null → `WorkableMultiblockMachine.doModifyRecipe` 遍历 parts 一票否决 → 多方块「成型但永远 IDLE」第一嫌疑。**`ALL_PROBLEMS = 0`（bitmask 1=已修复）**，新维护仓初始 6 问题全在，玩家必须先修复 hatch 才能跑配方；测试用 `fixAllMaintenanceProblems()` 模拟。问题排查钩子：手动打印 `machine.fullModifyRecipe(candidate)`，NULL 即查 parts 的 modifyRecipe。
+- **GameTestServer 里 MWSD 异步成型不可靠**（`MultiblockWorldSavedData` 的 250ms executor + 相位门永远不推进，`error=UNINIT`）；测试用「`getPatternLock().lock()` + `checkPatternWithLock()` + `setFlipped(isNeededFlip)` + `onStructureFormed()`」同步复刻 `asyncCheckPattern` 成型段（见 `DataWorkshopTests.ensureTowerFormed`），生产环境不受影响。
+- **配方档位判定**：`RecipeHelper.getRecipeEUtTier(recipe) <= overclockMachine.getMaxOverclockTier()`（机器 tier=能源仓电压下取整档）否则 modifier 返回 NULL。**EV=V[4]=2048 EU/t**；2048 档配方在 2048 机器不超频满速跑。塔 hatch 聚合 IO 记得：import bus/export bus/流体仓/能源仓/维护仓各自 ability predicate 独立 min/max，维护用 `autoAbilities(true,false,false)`。
+
+## GameTest 结构模板 NBT 格式（hc_floor/hc_field 双例可对拍）
+
+- `size` 必须是 **TAG_List[TAG_Int]**（写成 TAG_Int_Array 一律 `Failed to load structure`）；`entities` 空表为 TAG_List[TAG_Compound] + len 0；`blocks` 每项 `{pos: TAG_List[Int], state: TAG_Int}`；palette 为 TAG_List[Compound] `{Name}`；根=headless Compound，gzip，DataVersion 3465。
+
 ## 0.1.0 已发布（P05+P06 完成，2026-11-26）
 
 - 生存合成配方（JEI 可查，id 带 `shaped/` 前缀——GT 的 ShapedRecipeBuilder 行为，GameTest 按此断言）：`blank_carrier`（聚乙烯板+硅晶圆+HV电路→×2）、`hv_micro_burner`、`hv_telemetry_ore_washer`（消费原版 `gtceu:hv_ore_washer`）。
@@ -56,4 +73,4 @@
 - `run/server/eula.txt` 从未置 true（P00 当时 runServer 实际在 EULA 检查处退出）；`run/gametest/eula.txt` 已按 README 流程置 true。
 - 机器有 `DISPLAY=:1` 与 NVIDIA GPU：`runClient` 可启动到主菜单并完整装载 GT 资源（两台机器 overlay 贴图零报错）。
 - **用户使用 fish shell**：环境脚本用仓库内 `env.fish`（与 `env.sh` 语义一致；`return 1` 而非 exit）。系统默认 java 是 OpenJDK 25 —— 必须先 source 环境脚本再跑 `./gradlew`，否则 Gradle 8.10 的 Groovy 在 Java 25 上报 "Unsupported class file major version 69"，且会误用 `~/.gradle` 重新下载 wrapper。
-- 待移交：JEI 配方页真机确认；材料白名单扩充与缓冲满 UI 强化留给 P05。`telemetry_ore_washer` 正式贴图已交付并同步（Public 清单共 7 张贴图）。
+- 移交后待办：`telemetry_ore_washer` 正式贴图与 0.2 全套（17 张：9 物品 + 4 台机器 8 张 overlay）均已交付并接入 `src/main/resources`（`Public/README.md` 是美术清单与分层复用指南）。

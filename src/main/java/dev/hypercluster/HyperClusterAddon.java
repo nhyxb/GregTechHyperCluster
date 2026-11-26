@@ -25,7 +25,8 @@ public final class HyperClusterAddon implements IGTAddon {
         HyperCluster.LOGGER.info("initializing content (recipe types + machines)");
         HyperClusterRecipeTypes.init();
         HyperClusterMachines.init();
-        HyperCluster.LOGGER.info("content ready: micro burner + telemetry ore washer chain");
+        HyperCluster.LOGGER
+                .info("content ready: micro burner + washer/chemical reactor telemetry chains + scrubbing tower");
     }
 
     @Override

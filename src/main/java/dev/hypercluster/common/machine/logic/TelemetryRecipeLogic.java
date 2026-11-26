@@ -1,34 +1,32 @@
 package dev.hypercluster.common.machine.logic;
 
-import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.capability.recipe.EURecipeCapability;
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.capability.recipe.ItemRecipeCapability;
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 
-import net.minecraft.core.BlockPos;
-
 import dev.hypercluster.HyperCluster;
-import dev.hypercluster.common.machine.TelemetryOreWasherMachine;
+import dev.hypercluster.common.machine.TelemetryMachine;
 
 /**
- * P04 settlement logic for the own HV telemetry ore washer on GTCEu 7.4.0.
+ * P04/0.2 settlement logic for the own telemetry demonstration machines on GTCEu 7.4.0.
  *
  * <p>
  * Verbatim copy of {@code RecipeLogic#onRecipeFinish()} from GTCEu 7.4.0 with ONE addition:
  * the previously-ignored result of {@code handleRecipeIO(lastRecipe, IO.OUT)} is captured, and a
  * telemetry log is deposited only when the batch's outputs actually settled into the machine AND
- * the recipe is a whitelisted regular hypercluster washing recipe. This excludes, by construction:
+ * the recipe is a whitelisted regular hypercluster recipe. This excludes, by construction:
  * output jams (IO.OUT fails, products dropped), interrupts (onRecipeFinish never runs), power loss
  * mid-run, idle time and recipes without regular outputs.
  *
  * <p>
- * Counting is per successfully settled batch; see TelemetryMachineTests acceptance coverage.
+ * Counting is per successfully settled batch; see TelemetryMachineTests/DataWorkshopTests
+ * acceptance coverage.
  */
 public class TelemetryRecipeLogic extends RecipeLogic {
 
-    public TelemetryRecipeLogic(TelemetryOreWasherMachine machine) {
+    public TelemetryRecipeLogic(TelemetryMachine machine) {
         super(machine);
     }
 
@@ -45,7 +43,7 @@ public class TelemetryRecipeLogic extends RecipeLogic {
             boolean outputsSettled = handleRecipeIO(lastRecipe, IO.OUT).isSuccess();
             boolean whitelisted = isSupportedTelemetryRecipe(lastRecipe);
             if (outputsSettled && whitelisted) {
-                ((TelemetryOreWasherMachine) machine.self()).depositTelemetryLogs(1);
+                ((TelemetryMachine) machine.self()).depositTelemetryLogs(1);
             }
             // --- end addition ---
 
@@ -102,19 +100,5 @@ public class TelemetryRecipeLogic extends RecipeLogic {
         if (!HyperCluster.MOD_ID.equals(recipe.id.getNamespace())) return false;
         return recipe.getOutputContents(ItemRecipeCapability.CAP).stream()
                 .anyMatch(content -> content.chance >= content.maxChance && content.chance > 0);
-    }
-
-    /** Server-side log line used by the acceptance gametests; keep it cheap. */
-    public void recordSettlement(boolean settled, boolean whitelisted) {
-        BlockPos pos = machine.self().getPos();
-        System.out.printf("[HC-SETTLE] pos=%s gameTime=%d recipe=%s settled=%s whitelisted=%s buffer=%d%n",
-                pos, machine.self().getLevel().getGameTime(),
-                lastRecipe == null ? "null" : String.valueOf(lastRecipe.id),
-                settled, whitelisted,
-                ((TelemetryOreWasherMachine) machine.self()).getTelemetryBufferCount());
-    }
-
-    protected static long voltageOf(int tier) {
-        return GTValues.V[tier];
     }
 }
