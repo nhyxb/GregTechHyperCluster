@@ -228,7 +228,8 @@ public class SurvivalCraftingTests {
                 HyperClusterMachines.EV_TELEMETRY_CHEMICAL_REACTOR, HyperClusterMachines.DATA_SCRUBBING_TOWER,
                 HyperClusterMachines.LORA_ENGRAVING_CHAMBER, HyperClusterMachines.RED_TEAM_SANDBOX,
                 HyperClusterMachines.AIR_COOLED_COMPUTE_RACK, HyperClusterMachines.PRECISION_CRAC,
-                HyperClusterMachines.IV_INFERENCE_HATCH }) {
+                HyperClusterMachines.IV_INFERENCE_HATCH, HyperClusterMachines.API_SATELLITE_STATION,
+                HyperClusterMachines.LOCAL_FALLBACK_GATEWAY }) {
             int expected = 0;
             int registered = 0;
             for (com.gregtechceu.gtceu.client.model.machine.MachineRenderState state : machine
@@ -256,6 +257,101 @@ public class SurvivalCraftingTests {
                         washerItem.is(HyperClusterMachines.HV_TELEMETRY_ORE_WASHER.getBlock().asItem()),
                 "machine item stacks must resolve to their block items");
         helper.assertTrue(!burnerItem.isEmpty() && !washerItem.isEmpty(), "machine items may not be empty");
+        helper.succeed();
+    }
+
+    /**
+     * 0.4 · the closed-source cloud survival chain: the dish frame, panels, feed horn, both
+     * cards, the station controller and the fallback gateway are all craftable from vanilla
+     * GTCEu IV-era materials — zero HPCA, zero research-station, zero computation products —
+     * so the cloud unlocks before any research loop exists.
+     */
+    @GameTest(template = "hc_floor", batch = SURVIVAL_BATCH, timeoutTicks = 100)
+    public static void cloudSurvivalRecipesAndZeroHpcaChain(GameTestHelper helper) {
+        // 1) structure blocks + cards.
+        CraftingRecipe frame = craftingRecipe(helper, "shaped/satellite_dish_frame");
+        helper.assertTrue(frame.getResultItem(helper.getLevel().registryAccess())
+                .is(HyperClusterBlocks.SATELLITE_DISH_FRAME.get().asItem()),
+                "satellite_dish_frame recipe output mismatch");
+        helper.assertTrue(frame.getResultItem(helper.getLevel().registryAccess()).getCount() == 4,
+                "satellite_dish_frame must yield 4 per craft");
+        assertRecipeUses(helper, frame, "gtceu:steel_plate", "the dish frame must use steel plates");
+
+        CraftingRecipe panel = craftingRecipe(helper, "shaped/satellite_dish_panel");
+        helper.assertTrue(panel.getResultItem(helper.getLevel().registryAccess())
+                .is(HyperClusterBlocks.SATELLITE_DISH_PANEL.get().asItem()),
+                "satellite_dish_panel recipe output mismatch");
+        assertRecipeUses(helper, panel, "gtceu:aluminium_plate",
+                "the dish panels must use aluminium plates");
+
+        CraftingRecipe horn = craftingRecipe(helper, "shaped/satellite_feed_horn");
+        helper.assertTrue(horn.getResultItem(helper.getLevel().registryAccess())
+                .is(HyperClusterBlocks.SATELLITE_FEED_HORN.get().asItem()),
+                "satellite_feed_horn recipe output mismatch");
+        assertRecipeUses(helper, horn, "gtceu:iv_sensor", "the feed horn must use an IV sensor");
+
+        CraftingRecipe creditCard = craftingRecipe(helper, "shaped/token_credit_card");
+        helper.assertTrue(creditCard.getResultItem(helper.getLevel().registryAccess())
+                .is(HyperClusterItems.TOKEN_CREDIT_CARD.get()),
+                "token_credit_card recipe output mismatch");
+        CraftingRecipe credentialCard = craftingRecipe(helper, "shaped/api_credential_card");
+        helper.assertTrue(credentialCard.getResultItem(helper.getLevel().registryAccess())
+                .is(HyperClusterItems.API_CREDENTIAL_CARD.get()),
+                "api_credential_card recipe output mismatch");
+        assertRecipeUses(helper, credentialCard, "gtceu:iv_sensor",
+                "the credential card must use an IV sensor");
+
+        // 2) the machines.
+        CraftingRecipe station = craftingRecipe(helper, "shaped/api_satellite_station");
+        helper.assertTrue(station.getResultItem(helper.getLevel().registryAccess())
+                .is(HyperClusterMachines.API_SATELLITE_STATION.getBlock().asItem()),
+                "api_satellite_station recipe output mismatch");
+        assertRecipeUses(helper, station, "hypercluster:satellite_dish_frame",
+                "the station must be built from its own dish frames");
+        assertRecipeUses(helper, station, "hypercluster:satellite_feed_horn",
+                "the station must consume a feed horn");
+        assertRecipeUses(helper, station, "gtceu:iv_machine_hull",
+                "the station must use an IV machine hull");
+
+        CraftingRecipe gateway = craftingRecipe(helper, "shaped/local_fallback_gateway");
+        helper.assertTrue(gateway.getResultItem(helper.getLevel().registryAccess())
+                .is(HyperClusterMachines.LOCAL_FALLBACK_GATEWAY.getBlock().asItem()),
+                "local_fallback_gateway recipe output mismatch");
+        assertRecipeUses(helper, gateway, "gtceu:iv_machine_hull",
+                "the fallback gateway must use an IV machine hull");
+
+        // 3) zero-HPCA / zero-research deadlock check on every 0.4 recipe ingredient.
+        String[] recipes = { "shaped/satellite_dish_frame", "shaped/satellite_dish_panel",
+                "shaped/satellite_feed_horn", "shaped/token_credit_card",
+                "shaped/api_credential_card", "shaped/api_satellite_station",
+                "shaped/local_fallback_gateway" };
+        Set<String> ingredients = new HashSet<>();
+        for (String id : recipes) {
+            CraftingRecipe recipe = craftingRecipe(helper, id);
+            for (var ingredient : recipe.getIngredients()) {
+                for (ItemStack stack : ingredient.getItems()) {
+                    ingredients.add(BuiltInRegistries.ITEM.getKey(stack.getItem()).toString());
+                }
+            }
+        }
+        helper.assertTrue(!ingredients.isEmpty(), "the 0.4 recipes must have ingredients");
+        for (String ingredient : ingredients) {
+            String path = ingredient.replace("gtceu:", "").replace("minecraft:", "")
+                    .replace("hypercluster:", "");
+            helper.assertTrue(!path.startsWith("hpca_"),
+                    "zero-HPCA deadlock violated: " + ingredient + " is an HPCA component");
+            helper.assertTrue(
+                    !path.contains("research_station") && !path.contains("data_bank") &&
+                            !path.contains("network_switch") && !path.contains("object_holder") &&
+                            !path.contains("computation_") && !path.contains("data_access") &&
+                            !path.contains("_data_hatch") && !path.contains("creative_"),
+                    "zero-HPCA deadlock violated: " + ingredient +
+                            " is a research-station / computation-hatch product");
+            helper.assertTrue(BuiltInRegistries.ITEM.containsKey(ResourceLocation.tryParse(ingredient)),
+                    "ingredient not registered: " + ingredient);
+        }
+        System.out.printf("[HC-04] 0.4 cloud survival recipes verified: %d distinct ingredients, all zero-HPCA%n",
+                ingredients.size());
         helper.succeed();
     }
 

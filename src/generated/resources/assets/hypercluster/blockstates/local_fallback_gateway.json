@@ -1,0 +1,28 @@
+{
+  "variants": {
+    "facing=down": {
+      "model": "hypercluster:block/machine/local_fallback_gateway",
+      "x": 90
+    },
+    "facing=east": {
+      "model": "hypercluster:block/machine/local_fallback_gateway",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "hypercluster:block/machine/local_fallback_gateway"
+    },
+    "facing=south": {
+      "model": "hypercluster:block/machine/local_fallback_gateway",
+      "y": 180
+    },
+    "facing=up": {
+      "gtceu:z": 180,
+      "model": "hypercluster:block/machine/local_fallback_gateway",
+      "x": 270
+    },
+    "facing=west": {
+      "model": "hypercluster:block/machine/local_fallback_gateway",
+      "y": 270
+    }
+  }
+}

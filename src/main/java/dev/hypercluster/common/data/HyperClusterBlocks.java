@@ -8,7 +8,7 @@ import com.tterrag.registrate.util.entry.BlockEntry;
 import dev.hypercluster.HyperCluster;
 
 /**
- * GregTech HyperCluster structure blocks (0.3 · IV datacenter).
+ * GregTech HyperCluster structure blocks (0.3 · IV datacenter, 0.4 · satellite ground station).
  *
  * <ul>
  * <li>{@code hypercluster:raised_floor} — the anti-static raised floor tile. Top and bottom use
@@ -20,6 +20,11 @@ import dev.hypercluster.HyperCluster;
  * intake door with the ice-blue cold-aisle stripe).</li>
  * <li>{@code hypercluster:rack_casing_exhaust} — the 42U rack back (hot aisle face, louvered
  * exhaust grille with the orange-red hot-aisle stripe).</li>
+ * <li>{@code hypercluster:satellite_dish_frame} (0.4) — the galvanised truss frame of the API
+ * satellite ground station; hosts the energy and maintenance hatches.</li>
+ * <li>{@code hypercluster:satellite_dish_panel} (0.4) — the mesh reflector panels of the dish.</li>
+ * <li>{@code hypercluster:satellite_feed_horn} (0.4) — the feed horn on top of the dish; the one
+ * block that must see open sky for the uplink to come online.</li>
  * </ul>
  */
 public final class HyperClusterBlocks {
@@ -74,6 +79,54 @@ public final class HyperClusterBlocks {
             .item()
             .model((context, provider) -> provider.withExistingParent(context.getName(),
                     provider.modLoc("block/rack_casing_exhaust")))
+            .build()
+            .register();
+
+    public static final BlockEntry<Block> SATELLITE_DISH_FRAME = HyperCluster.REGISTRATE
+            .block("satellite_dish_frame", Block::new)
+            .properties(properties -> properties.mapColor(MapColor.METAL)
+                    .strength(5.0F, 12.0F)
+                    .requiresCorrectToolForDrops()
+                    .sound(SoundType.METAL))
+            .lang("Satellite Dish Frame")
+            .blockstate((context, provider) -> provider.simpleBlock(context.getEntry(),
+                    provider.models()
+                            .cubeAll(context.getName(), provider.modLoc("block/cloud/satellite_dish_frame"))))
+            .item()
+            .model((context, provider) -> provider.withExistingParent(context.getName(),
+                    provider.modLoc("block/satellite_dish_frame")))
+            .build()
+            .register();
+
+    public static final BlockEntry<Block> SATELLITE_DISH_PANEL = HyperCluster.REGISTRATE
+            .block("satellite_dish_panel", Block::new)
+            .properties(properties -> properties.mapColor(MapColor.COLOR_LIGHT_GRAY)
+                    .strength(5.0F, 12.0F)
+                    .requiresCorrectToolForDrops()
+                    .sound(SoundType.METAL))
+            .lang("Satellite Dish Panel")
+            .blockstate((context, provider) -> provider.simpleBlock(context.getEntry(),
+                    provider.models()
+                            .cubeAll(context.getName(), provider.modLoc("block/cloud/satellite_dish_panel"))))
+            .item()
+            .model((context, provider) -> provider.withExistingParent(context.getName(),
+                    provider.modLoc("block/satellite_dish_panel")))
+            .build()
+            .register();
+
+    public static final BlockEntry<Block> SATELLITE_FEED_HORN = HyperCluster.REGISTRATE
+            .block("satellite_feed_horn", Block::new)
+            .properties(properties -> properties.mapColor(MapColor.COLOR_ORANGE)
+                    .strength(5.0F, 12.0F)
+                    .requiresCorrectToolForDrops()
+                    .sound(SoundType.METAL))
+            .lang("Satellite Feed Horn")
+            .blockstate((context, provider) -> provider.simpleBlock(context.getEntry(),
+                    provider.models()
+                            .cubeAll(context.getName(), provider.modLoc("block/cloud/satellite_feed_horn"))))
+            .item()
+            .model((context, provider) -> provider.withExistingParent(context.getName(),
+                    provider.modLoc("block/satellite_feed_horn")))
             .build()
             .register();
 

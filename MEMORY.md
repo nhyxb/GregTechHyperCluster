@@ -96,3 +96,20 @@
   - 1.20.1 Biome API：`getPrecipitationAt(BlockPos)` + `getModifiedClimateSettings().temperature()`（getBaseTemperature 已移除）。
   - 维护仓 `setMaintenanceProblems((byte)0)` = 6 问题全在（位=已修复）。
 - **0.3 遗留**：断算回退会 interrupt 当前批次（原版语义丢输入/进度）；零食开关是系统属性 -Dhypercluster.snackBonus；科研站跑配方需 32 CWU/t（双机柜/网络交换机聚合留 0.5+）。
+
+## 0.4 IV 闭源云已完成（2026-11-27，0.4.0）
+
+- **交付**：`satellite_dish_frame/panel/feed_horn` 方块、`api_credential_card`（右击站点控制器绑定 UUID）/`token_credit_card`（NBT 整数 Token）物品、`api_satellite_station`（3×3×3 固定多方块：钢架+反射面板+顶面中心馈源，LV/MV 能源仓即可驱动，馈源露天直视天空否则拒联机；数据变现=高纯数据集自动出售 50k/份、晶卡整额存取）与 `local_fallback_gateway`（IV 被动部件，429/缺额/型号下线 → 本地 ×4 降速零计费兜底）。Token 账本 `CloudTokenLedger`（SavedData 挂 overworld `hypercluster_cloud_ledger`，跨站跨维度共享）：UUID 账户 long 余额、一次性 5,000,000 体验金（标志持久化唯一）、订单三态 hold/settle/release（订单 ID 去重不双扣、HELD 精确退款不吞单、≤512 条有界）、Tier 1–5 并发（累计消费 50 万/200 万/500 万/2000 万 → 1–5 会话，429 超限暂停不计费，会话运行态重启清零）。计费纯函数 `CloudPricing`：基准 25,000/100t；缓存键 (playerUuid, machinePos, recipeId, modelId, tier) 连续第 2 轮起 ×0.1；Batch ×0.5 账单 ×2 耗时**乘法叠加**（缓存+批处理=5%）；档位 Medium ×1 / ExtraHigh ×2 单价 ×0.5 耗时 120 EU/t；雨 ×1.5 雷 ×2.0 耗时；Y>120 ×0.95 账单 ×0.9 耗时。模型 `CloudModels`：omni_flash 永不下线 + legacy_llama 游戏日生命周期（-Dhypercluster.legacyRetireDay=3/leavingSoonDays=1，LEAVING_SOON 仍可用显倒计时、RETIRED 拦截不计费）。runGametest **56/56**（新增 hypercluster_04_cloud 11 例单例批次 + 生存批 1 例）；Xvfb 冒烟零内容 ERROR（仅历史 narrator 报错）；0.4 正式贴图（Public/ 9 张 + 7 Aseprite 源，`block/cloud/` 路径）已交付并直接接入，无占位。报告 `docs/reports/0.4_acceptance_report.md`。
+
+## GameTest 环境三坑（长期有效，0.4 实测踩坑）
+
+- **`run/gametest/server.properties` 必须 `level-type=minecraft\flat`**：gametest 场地在 y=-60，`normal` 世界上方是天然深板岩（y≈-31..-20），任何露天/天空判定会随机被地形挡（0.4 馈源露天校验因此批量假失败）。已改 flat 并删除旧 `run/gametest/world`（含历史残留结构）。**gametest 世界跨多次 runGametest 持久化**（同一 run/gametest 目录），依赖世界级全局状态（SavedData）的测试必须每测试随机 UUID/订单 ID。
+- **vanilla 批内测试并行、单例批次之间也可能交错**：跨测试共享世界状态会互相污染（欢迎金/会话/余额）。0.4 云批次按单例批次（`hypercluster_04_cloud_NN_*`）+ 每测试随机 UUID 隔离后稳定全绿。
+- 测试 `System.out` 诊断打印走 **gradle 控制台 stdout**，不进 `latest.log`；排查时抓 gradle 输出（`./gradlew runGametest 2>&1 | grep ...`）。
+
+## GTCEu 7.4.0 多方块四坑补充（长期有效）
+
+- **`Predicates.abilities(...).setExactLimit(1)` = 必需件（min=max=1）**；可选部件要用 `.setMinGlobalLimited(0).setMaxGlobalLimited(1)`（0.3 塔的推理仓模式）。0.4 兜底网关用 exact 曾导致所有无网关站点 "Minimum: 1" 拒绝成型。
+- **`CompoundTag.putUUID` 存的是 int 数组**，读回必须 `hasUUID/getUUID`——`getString` 返回空串，UUID.fromString 直接抛异常（0.4 账本订单簿往返曾因此静默丢单）。
+- **`GameTestHelper.setBlock/getBlockEntity` 收 ARENA 相对坐标**；机器 `getPos()/hornPos()` 等是世界绝对坐标，转换用 `pos.subtract(helper.absolutePos(BlockPos.ZERO))`。
+- 测试内多步时序：**机器每 tick 会立刻消费槽位并启动新轮次**（取消退还会被下一 tick 的缓存命中轮次立即再扣走），改账前后必须在同一 tick 回调内完成断言或清槽防重启。

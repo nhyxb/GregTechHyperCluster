@@ -24,6 +24,8 @@ import net.minecraft.world.level.block.Blocks;
 import dev.hypercluster.HyperCluster;
 import dev.hypercluster.common.machine.TelemetryChemicalReactorMachine;
 import dev.hypercluster.common.machine.TelemetryOreWasherMachine;
+import dev.hypercluster.common.machine.cloud.ApiSatelliteStationMachine;
+import dev.hypercluster.common.machine.cloud.LocalFallbackGatewayMachine;
 import dev.hypercluster.common.machine.datacenter.AirCooledComputeRackMachine;
 import dev.hypercluster.common.machine.datacenter.IvInferenceHatchMachine;
 import dev.hypercluster.common.machine.datacenter.PrecisionCracMachine;
@@ -64,6 +66,8 @@ public final class HyperClusterMachines {
     public static MultiblockMachineDefinition AIR_COOLED_COMPUTE_RACK;
     public static MultiblockMachineDefinition PRECISION_CRAC;
     public static MachineDefinition IV_INFERENCE_HATCH;
+    public static MultiblockMachineDefinition API_SATELLITE_STATION;
+    public static MachineDefinition LOCAL_FALLBACK_GATEWAY;
 
     private HyperClusterMachines() {}
 
@@ -146,6 +150,82 @@ public final class HyperClusterMachines {
                 "Cooling");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.precision_crac.power",
                 "Blower draw: %s");
+
+        // 0.4 — the API satellite ground station: the closed-source cloud.
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.tooltip",
+                "IV closed-source cloud ground station: opens Token accounts, buys high-purity datasets and runs billable cloud service rounds (LV/MV power, feed horn must see open sky).");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.credential_slot",
+                "API credential card: binds the account this station operates on (first open anywhere grants the welcome Tokens).");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.sell_slot",
+                "Upload slot: high-purity datasets auto-sell for Tokens while a credential card is present.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.card_slot",
+                "Token credit card slot: deposit / withdraw Tokens between the card and the bound account.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.deposit",
+                "Deposit");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.deposit.tooltip",
+                "Deposit: move the card's whole Token value into the bound account.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.withdraw",
+                "Withdraw");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.withdraw.tooltip",
+                "Withdraw: move the account's whole balance onto the card.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.input_slot",
+                "Service input: one clean dataset per cloud round.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.output_slot",
+                "Service output: the high-purity mining datasets the cloud rounds produce.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.batch.tooltip",
+                "Batch mode: duration x2, Token bill x0.5 (stacks with the prompt-cache discount).");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.tier.tooltip",
+                "Inference tier: Medium (x1 price, x1 speed) or Extra High (x2 price, x0.5 duration).");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.model.tooltip",
+                "Cloud model: cycles the catalog. Retired models refuse cloud rounds.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.tier.medium", "Medium");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.tier.extra_high",
+                "Extra High");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.working",
+                "Cloud round running");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.card_bound",
+                "API credential card bound to %s.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.balance",
+                "Balance: %s Tokens | account Tier %s (%s concurrent)");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.model_line",
+                "Model: %s");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.model_line.leaving_soon",
+                "Model: %s — Leaving Soon, %s game day(s) left");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.model_line.retired",
+                "Model: %s — RETIRED (offline)");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.round.cloud",
+                "Cloud round: %s Tokens | %s / %s ticks (%s left)");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.round.fallback",
+                "Local fallback round: no billing | %s / %s ticks (%s left)");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.status.none", "");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.status.no_credential",
+                "Insert an API credential card to open the account.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.status.no_input",
+                "Insert a clean dataset to start a cloud round.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.status.sky_blocked",
+                "Uplink refused: the feed horn must see open sky.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.status.model_offline",
+                "Model offline (past its Leaving Soon countdown) — cloud rounds blocked.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.status.rate_limited_429",
+                "429: over the account's concurrent-round ceiling — new rounds paused.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.status.insufficient_funds",
+                "Insufficient Token balance: the round was not started.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.status.low_power",
+                "Low power: the active round is paused.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.status.paused",
+                "Paused (soft mallet).");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.cloud.model.omni_flash", "OmniFlash-72B");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.cloud.model.legacy_llama", "LegacyLlama-8B");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.local_fallback_gateway.tooltip",
+                "IV local fallback gateway: attached to a satellite station it takes over rounds blocked by 429 limits, empty Token balances or retired models, running them locally at degraded speed with no billing.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.local_fallback_gateway.title",
+                "Local Fallback Gateway");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.local_fallback_gateway.standby",
+                "Standing by: rounds blocked by 429 / funds / retired models run here locally.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.local_fallback_gateway.idle",
+                "Idle: attach me to a satellite station's frame.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.local_fallback_gateway.rounds",
+                "Fallback rounds completed: %s");
 
         // P03 — HV Micro Burner: logging chain (telemetry log + blank carrier -> edge chip).
         HV_MICRO_BURNER = HyperCluster.REGISTRATE
@@ -348,6 +428,52 @@ public final class HyperClusterMachines {
                 .workableTieredHullModel(HyperCluster.id("block/machines/inference_hatch"))
                 .tooltips(Component.translatable("hypercluster.machine.iv_inference_hatch.tooltip"))
                 .register();
+
+        // 0.4 — the API satellite ground station: a fixed 3×3×3 IV multiblock running the local
+        // closed-source cloud simulation. LV or MV energy suffices (light-asset uplink); the
+        // feed horn on top must see open sky. At most one local fallback gateway part attaches
+        // to the frame as the degraded-speed escape hatch.
+        API_SATELLITE_STATION = HyperCluster.REGISTRATE
+                .multiblock("api_satellite_station", ApiSatelliteStationMachine::new)
+                .langValue("API Satellite Station")
+                .rotationState(RotationState.NON_Y_AXIS)
+                .recipeType(GTRecipeTypes.DUMMY_RECIPES)
+                .appearanceBlock(HyperClusterBlocks.SATELLITE_DISH_FRAME)
+                .pattern(definition -> FactoryBlockPattern.start(RIGHT, UP, BACK)
+                        .aisle("FSF", "FPF", "F#F")
+                        .aisle("FPF", "PPP", "FHF")
+                        .aisle("FFF", "FPF", "FFF")
+                        .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                        .where('F', Predicates.blocks(HyperClusterBlocks.SATELLITE_DISH_FRAME.get())
+                                .or(Predicates.abilities(PartAbility.INPUT_ENERGY)
+                                        .setMinGlobalLimited(1).setMaxGlobalLimited(2))
+                                .or(Predicates.abilities(
+                                        HyperClusterPartAbilities.LOCAL_FALLBACK_GATEWAY)
+                                        .setMinGlobalLimited(0).setMaxGlobalLimited(1))
+                                .or(Predicates.autoAbilities(true, false, false)))
+                        .where('P', Predicates.blocks(HyperClusterBlocks.SATELLITE_DISH_PANEL.get()))
+                        .where('H', Predicates.blocks(HyperClusterBlocks.SATELLITE_FEED_HORN.get()))
+                        .where('#', Predicates.air())
+                        .build())
+                .allowExtendedFacing(false)
+                .workableCasingModel(HyperCluster.id("block/cloud/satellite_dish_frame"),
+                        HyperCluster.id("block/machines/api_satellite_station"))
+                .tooltips(Component.translatable("hypercluster.machine.api_satellite_station.tooltip"))
+                .register();
+
+        // 0.4 — the IV local fallback gateway: a passive part of the satellite station that
+        // carries blocked cloud rounds locally (x4 duration, EU instead of Tokens).
+        LOCAL_FALLBACK_GATEWAY = HyperCluster.REGISTRATE
+                .machine("local_fallback_gateway", holder -> new LocalFallbackGatewayMachine(holder))
+                .tier(GTValues.IV)
+                .langValue("Local Fallback Gateway")
+                .rotationState(RotationState.ALL)
+                .abilities(HyperClusterPartAbilities.LOCAL_FALLBACK_GATEWAY)
+                .modelProperty(GTMachineModelProperties.IS_FORMED, false)
+                .modelProperty(GTMachineModelProperties.RECIPE_LOGIC_STATUS, RecipeLogic.Status.IDLE)
+                .workableTieredHullModel(HyperCluster.id("block/machines/local_fallback_gateway"))
+                .tooltips(Component.translatable("hypercluster.machine.local_fallback_gateway.tooltip"))
+                .register();
     }
 
     /**
@@ -389,7 +515,8 @@ public final class HyperClusterMachines {
         // (every machine added to this addon MUST be listed here — asserted by SurvivalCraftingTests).
         for (MachineDefinition machine : new MachineDefinition[] { HV_MICRO_BURNER, HV_TELEMETRY_ORE_WASHER,
                 EV_TELEMETRY_CHEMICAL_REACTOR, DATA_SCRUBBING_TOWER, LORA_ENGRAVING_CHAMBER,
-                RED_TEAM_SANDBOX, AIR_COOLED_COMPUTE_RACK, PRECISION_CRAC, IV_INFERENCE_HATCH }) {
+                RED_TEAM_SANDBOX, AIR_COOLED_COMPUTE_RACK, PRECISION_CRAC, IV_INFERENCE_HATCH,
+                API_SATELLITE_STATION, LOCAL_FALLBACK_GATEWAY }) {
             for (com.gregtechceu.gtceu.client.model.machine.MachineRenderState renderState : machine
                     .getStateDefinition().getPossibleStates()) {
                 MachineDefinition.RENDER_STATE_REGISTRY.add(renderState);

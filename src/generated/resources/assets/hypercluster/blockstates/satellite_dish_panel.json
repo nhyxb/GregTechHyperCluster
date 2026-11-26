@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "hypercluster:block/satellite_dish_panel"
+    }
+  }
+}

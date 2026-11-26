@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "hypercluster:block/cloud/satellite_feed_horn"
+  }
+}

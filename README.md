@@ -39,7 +39,9 @@ source env.fish
 ./gradlew runGametest
 ```
 
-资源生成输出在 `src/generated/resources/`，构建产物在 `build/libs/`。首次构建会下载 Gradle 和开发依赖。在启用命令的测试世界里可用 `/give @s hypercluster:mining_telemetry_log` 验证物品注册和模型。`runGametest` 以 headless 方式跑全部回归（Forge GameTestServer，目前 44 个用例：物品/配方、P02 结算探针、P03/P04 闭环与边界、P05/P06 生存配方存在性、0.2 EV 数据工坊全链、0.2.1 微调与红队对齐链、0.3 IV 智算机房全链）。
+资源生成输出在 `src/generated/resources/`，构建产物在 `build/libs/`。首次构建会下载 Gradle 和开发依赖。在启用命令的测试世界里可用 `/give @s hypercluster:mining_telemetry_log` 验证物品注册和模型。`runGametest` 以 headless 方式跑全部回归（Forge GameTestServer，目前 56 个用例：物品/配方、P02 结算探针、P03/P04 闭环与边界、P05/P06 生存配方存在性、0.2 EV 数据工坊全链、0.2.1 微调与红队对齐链、0.3 IV 智算机房全链、0.4 IV 闭源云全链）。
+
+> **`runGametest` 环境要求（0.4 起）**：`run/gametest/server.properties` 须为 `level-type=minecraft\:flat`（gametest 场地固定在 y=-60，`normal` 世界会在其上方生成天然岩层，遮挡 0.4 卫星站的馈源露天校验）；且 gametest 世界在多次运行之间持久化，重跑前建议删除 `run/gametest/world` 以清掉历史残留结构与账本状态。
 
 开发客户端、专服和数据生成分别使用 `run/client/`、`run/server/`、`run/data/`，日志写入各自的 `logs/`。运行 `./gradlew runServer` 首次启动时，Minecraft 会生成 `run/server/eula.txt`。确认同意其中链接的 EULA 后，在该文件设 `eula=true` 并再次启动。
 
@@ -86,6 +88,21 @@ source env.fish
 - **推理协处理器仓 `iv_inference_hatch`**：可挂载在数据清洗塔上的 IV 级多方块仓室（GT 原生算力接收链路 + 推理芯片槽）。对白名单（`hc_inference_boost` 标签）配方：普通边缘芯片 2 CWU/t → EU/t -25%，已对齐芯片 8 CWU/t → EU/t -50%；CWU/t 逐 tick 真实计费，断算/拔芯片自动回退原规则（不白嫖、不卡死）。
 - **零 HPCA 死锁**：全部 0.3 生存配方只用 GTCEu 7.4.0 原版 IV 可直接获取材料（钢/橡胶/铜/不锈钢/铝/硅晶圆/铂导线/IV 电路/IV 传感器/IV 机身 + 原版纸/糖/染料），由 GameTest 断言不含任何 HPCA 组件或科研站/数据仓/算力传输仓产物。
 - **验收**：`runData` / `build`（`gregtech-hypercluster-0.3.0.jar`）/ `runGametest`（44/44，含 8 个 0.3 机房用例：刀片线性、预算竞争、降额归零、光学链路喂科研站、HPCA 共存、存档重载、PUE Tier 升降、推理仓真实消耗与断算回退）全绿，Xvfb 客户端冒烟零内容报错；报告见 [docs/reports/0.3_acceptance_report.md](docs/reports/0.3_acceptance_report.md)。
+
+## 0.4 内容（IV 闭源云：API 卫星地面站 + Token 账本 + 计费契约 + 兜底网关）
+
+- **新增结构方块**：`satellite_dish_frame` 卫星站钢架、`satellite_dish_panel` 抛物面反射面板、`satellite_feed_horn` 高频馈源接收头。
+- **新增物品**：`api_credential_card` API 凭证卡（对地面站控制器右击绑定玩家 UUID，插入凭据槽开立/操作账户）、`token_credit_card` Token 充值晶卡（NBT 整数余额，站内整额存取）。
+- **服务端 Token 账本 `CloudTokenLedger`**（SavedData，主世界存储、跨站跨维度共享）：按世界存档内玩家 UUID 独立 `long` 账户；首次在任意卫星站开户自动发放**一次性 5,000,000 体验 Token**（跨站/跨维度/跨重启严格一次）；付费调用以**唯一订单 ID** 三态结算（预扣 HELD → 完成 SETTLED / 取消精确退还 REFUNDED），余额不足拒绝启动、失败/取消不吞单不双扣。
+- **API 卫星地面站 `api_satellite_station`**：固定 3×3×3 多方块，**LV/MV 能源仓即可驱动**；馈源须**露天直视天空**（遮挡拒联机，雨 ×1.5 / 雷暴 ×2.0 信号衰减，`Y>120` 小幅延迟/费率优化）；高纯数据集自动出售换整数 Token（50,000/份）。本地模拟闭源服务（1 清洁数据集 → 1 高纯矿处数据集）完整计费：
+  - **Prompt Caching**：键 `(playerUuid, machinePos, recipeId, modelId, tier)`，连续第 2 轮起 Token 费率 **10%**，任一维度变化立即失效重算；
+  - **Batch**：耗时 ×2、账单 ×0.5，与缓存**乘法叠加**（缓存 + 批处理 = **5%**）；
+  - **档位** Medium（×1 单价 ×1 耗时 30 EU/t）/ Extra High（×2 单价 ×0.5 耗时 120 EU/t）；
+  - **429 并发限流**：累计消费定账户 Tier 1–5 → 1–5 并发，超限暂停且不计费；
+  - **Leaving Soon 生命周期**：模型按游戏日倒计时（`-Dhypercluster.legacyRetireDay`），倒计时内仍可用，**到期拦截不计费**。
+- **本地 Fallback 兜底网关 `local_fallback_gateway`**：IV 级被动部件；429 / Token 缺额 / 型号下线时自动切换**本地降速兜底**（耗时 ×4、Token 零计费）继续完成任务，产线不硬卡死。
+- **零 HPCA 死锁**：0.4 生存配方 15 种成分全部为 GTCEu 7.4.0 原版 IV 可直接获取（GameTest 断言）。
+- **验收**：`runData` / `build`（`gregtech-hypercluster-0.4.0.jar`）/ `runGametest`（56/56，含 11 个 0.4 云用例 + 生存扩展）全绿，Xvfb 客户端冒烟零内容报错；0.4 正式贴图（`Public/` 9 张 + Aseprite 源）已直接接入；报告见 [docs/reports/0.4_acceptance_report.md](docs/reports/0.4_acceptance_report.md)。
 
 ## 运行锁定组合（P06 实测）
 

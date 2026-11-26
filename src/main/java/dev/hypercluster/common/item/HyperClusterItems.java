@@ -60,6 +60,19 @@ public final class HyperClusterItems {
     public static final ItemEntry<TooltipItem> GREEN_SNACK_PACK = register("green_snack_pack",
             "Green Snack Pack", "Machine-room mascot snack. Keep one in the compute rack slot for tidy efficiency.");
 
+    // 0.4 — IV closed-source cloud: identity and Tokens.
+    public static final ItemEntry<CredentialCardItem> API_CREDENTIAL_CARD = registerCard(
+            "api_credential_card", CredentialCardItem::new, "API Credential Card",
+            "item.hypercluster.api_credential_card.tooltip",
+            "Bind it against a satellite station controller, then keep it in the station's credential slot to operate your cloud account.",
+            "item.hypercluster.api_credential_card.bound", "Bound account: %s",
+            "item.hypercluster.api_credential_card.unbound", "Unbound — use it on a satellite station controller.");
+    public static final ItemEntry<TokenCreditCardItem> TOKEN_CREDIT_CARD = registerCard(
+            "token_credit_card", TokenCreditCardItem::new, "Token Credit Card",
+            "item.hypercluster.token_credit_card.tooltip",
+            "Carries Tokens between your pocket and a satellite station's card slot.",
+            "item.hypercluster.token_credit_card.value", "Stored Tokens: %s");
+
     private HyperClusterItems() {}
 
     public static void init() {}
@@ -70,6 +83,23 @@ public final class HyperClusterItems {
         assert lang != null;
         return HyperCluster.REGISTRATE
                 .item(name, TooltipItem::new)
+                .model((context, provider) -> provider.withExistingParent(context.getName(),
+                        provider.mcLoc("item/generated"))
+                        .texture("layer0", provider.modLoc("item/" + context.getName())))
+                .lang(englishName)
+                .register();
+    }
+
+    /** Cards with their own NBT item classes: same model/lang treatment, tooltip keys passed raw. */
+    private static <T extends net.minecraft.world.item.Item> ItemEntry<T> registerCard(String name,
+                                                                                       com.tterrag.registrate.util.nullness.NonNullFunction<net.minecraft.world.item.Item.Properties, T> factory,
+                                                                                       String englishName,
+                                                                                       String... langKeyValuePairs) {
+        for (int i = 0; i + 1 < langKeyValuePairs.length; i += 2) {
+            HyperCluster.REGISTRATE.addRawLang(langKeyValuePairs[i], langKeyValuePairs[i + 1]);
+        }
+        return HyperCluster.REGISTRATE
+                .item(name, factory)
                 .model((context, provider) -> provider.withExistingParent(context.getName(),
                         provider.mcLoc("item/generated"))
                         .texture("layer0", provider.modLoc("item/" + context.getName())))

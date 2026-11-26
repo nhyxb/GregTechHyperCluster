@@ -38,6 +38,7 @@ public final class HyperClusterRecipes {
         registerSurvivalRecipes(provider);
         registerInferenceScrubbingRecipes(provider);
         registerDatacenterSurvivalRecipes(provider);
+        registerCloudSurvivalRecipes(provider);
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -514,6 +515,96 @@ public final class HyperClusterRecipes {
         VanillaRecipeHelper.addShapedRecipe(provider, true,
                 HyperCluster.id("precision_crac"),
                 HyperClusterMachines.PRECISION_CRAC.asStack(1),
+                "PAP",
+                "CMC",
+                "PAP",
+                'P', ChemicalHelper.get(TagPrefix.plate, GTMaterials.StainlessSteel),
+                'A', ChemicalHelper.get(TagPrefix.plate, GTMaterials.Aluminium),
+                'C', GTCraftingComponents.CIRCUIT.get(IV),
+                'M', GTCraftingComponents.HULL.get(IV));
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // 0.4 — IV closed-source cloud: satellite station survival crafting //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * Every 0.4 crafting recipe only uses materials a vanilla GTCEu 7.4.0 IV player can obtain
+     * directly (steel, aluminium, stainless steel, glass, polyethylene, IV circuits/sensors and
+     * machine hulls) — the closed-source cloud stays zero-HPCA and zero-research-station, so an
+     * IV player builds the ground station before any HPCA or research loop exists. No
+     * computation hatch, no network switch, no data bank appears anywhere in the ingredient
+     * graph — asserted by {@code SurvivalCraftingTests}.
+     */
+    private static void registerCloudSurvivalRecipes(java.util.function.Consumer<FinishedRecipe> provider) {
+        // Galvanised dish frame: perforated steel around an IV circuit, 4 per craft.
+        VanillaRecipeHelper.addShapedRecipe(provider, true,
+                HyperCluster.id("satellite_dish_frame"),
+                new ItemStack(HyperClusterBlocks.SATELLITE_DISH_FRAME.get(), 4),
+                "PGP",
+                "PCP",
+                "PGP",
+                'P', ChemicalHelper.get(TagPrefix.plate, GTMaterials.Steel),
+                'G', Items.GLASS,
+                'C', GTCraftingComponents.CIRCUIT.get(IV));
+
+        // Mesh reflector panel: aluminium sheet over fine silver wiring, 4 per craft.
+        VanillaRecipeHelper.addShapedRecipe(provider, true,
+                HyperCluster.id("satellite_dish_panel"),
+                new ItemStack(HyperClusterBlocks.SATELLITE_DISH_PANEL.get(), 4),
+                "AWA",
+                "WCW",
+                "AWA",
+                'A', ChemicalHelper.get(TagPrefix.plate, GTMaterials.Aluminium),
+                'W', ChemicalHelper.get(TagPrefix.wireFine, GTMaterials.Silver),
+                'C', GTCraftingComponents.CIRCUIT.get(IV));
+
+        // Feed horn: an IV sensor waveguide in an aluminium collar.
+        VanillaRecipeHelper.addShapedRecipe(provider, true,
+                HyperCluster.id("satellite_feed_horn"),
+                new ItemStack(HyperClusterBlocks.SATELLITE_FEED_HORN.get(), 1),
+                " A ",
+                "GSG",
+                " A ",
+                'A', ChemicalHelper.get(TagPrefix.plate, GTMaterials.Aluminium),
+                'G', Items.GLASS,
+                'S', GTCraftingComponents.SENSOR.get(IV));
+
+        // Token credit card: polyethylene shell around an IV circuit.
+        VanillaRecipeHelper.addShapedRecipe(provider, true,
+                HyperCluster.id("token_credit_card"),
+                new ItemStack(HyperClusterItems.TOKEN_CREDIT_CARD.get(), 1),
+                "PPP",
+                "PCP",
+                'P', ChemicalHelper.get(TagPrefix.plate, GTMaterials.Polyethylene),
+                'C', GTCraftingComponents.CIRCUIT.get(IV));
+
+        // API credential card: polyethylene shell around an IV identity sensor.
+        VanillaRecipeHelper.addShapedRecipe(provider, true,
+                HyperCluster.id("api_credential_card"),
+                new ItemStack(HyperClusterItems.API_CREDENTIAL_CARD.get(), 1),
+                "PPP",
+                "PSP",
+                'P', ChemicalHelper.get(TagPrefix.plate, GTMaterials.Polyethylene),
+                'S', GTCraftingComponents.SENSOR.get(IV));
+
+        // The station controller: frame, panels and one feed horn around an IV hull.
+        VanillaRecipeHelper.addShapedRecipe(provider, true,
+                HyperCluster.id("api_satellite_station"),
+                HyperClusterMachines.API_SATELLITE_STATION.asStack(1),
+                "PHP",
+                "FMF",
+                "FCF",
+                'P', HyperClusterBlocks.SATELLITE_DISH_PANEL.get(),
+                'H', HyperClusterBlocks.SATELLITE_FEED_HORN.get(),
+                'F', HyperClusterBlocks.SATELLITE_DISH_FRAME.get(),
+                'M', GTCraftingComponents.HULL.get(IV),
+                'C', GTCraftingComponents.CIRCUIT.get(IV));
+
+        // Local fallback gateway: stainless ducts over aluminium fins around an IV hull.
+        VanillaRecipeHelper.addShapedRecipe(provider, true,
+                HyperCluster.id("local_fallback_gateway"),
+                HyperClusterMachines.LOCAL_FALLBACK_GATEWAY.asStack(1),
                 "PAP",
                 "CMC",
                 "PAP",
