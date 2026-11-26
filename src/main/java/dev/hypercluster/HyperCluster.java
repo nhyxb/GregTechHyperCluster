@@ -5,6 +5,7 @@ import com.gregtechceu.gtceu.api.registry.registrate.GTRegistrate;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.fml.common.Mod;
 
+import dev.hypercluster.common.data.HyperClusterBlocks;
 import dev.hypercluster.common.item.HyperClusterItems;
 
 @Mod(HyperCluster.MOD_ID)
@@ -22,6 +23,8 @@ public final class HyperCluster {
     public HyperCluster() {
         // P01: telemetry chain items (mining telemetry log, blank carrier, mining edge chip).
         HyperClusterItems.init();
+        // 0.3: IV datacenter structure blocks (raised floor, 42U rack casings).
+        HyperClusterBlocks.init();
         REGISTRATE.registerRegistrate();
     }
 }

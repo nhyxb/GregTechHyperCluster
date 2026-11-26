@@ -13,8 +13,12 @@ import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 
 import dev.hypercluster.HyperCluster;
+import dev.hypercluster.common.data.HyperClusterBlocks;
 import dev.hypercluster.common.data.HyperClusterMachines;
 import dev.hypercluster.common.item.HyperClusterItems;
+
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * P05/P06 survival crafting regression: the three 0.1 craftable entries must exist as vanilla
@@ -121,6 +125,98 @@ public class SurvivalCraftingTests {
         helper.succeed();
     }
 
+    /**
+     * 0.3 · IV datacenter survival recipes: the whole chain is craftable without /give, and the
+     * zero-HPCA deadlock check holds — no ingredient may be an HPCA component or a research
+     * station / data bank / network switch / computation-hatch product, so an IV player can
+     * build the machine room before any HPCA or research loop exists.
+     */
+    @GameTest(template = "hc_floor", batch = SURVIVAL_BATCH, timeoutTicks = 100)
+    public static void datacenterSurvivalRecipesAndZeroHpcaChain(GameTestHelper helper) {
+        // 1) structure blocks + items.
+        CraftingRecipe floor = craftingRecipe(helper, "shaped/raised_floor");
+        helper.assertTrue(floor.getResultItem(helper.getLevel().registryAccess())
+                .is(HyperClusterBlocks.RAISED_FLOOR.get().asItem()), "raised_floor recipe output mismatch");
+        helper.assertTrue(floor.getResultItem(helper.getLevel().registryAccess()).getCount() == 8,
+                "raised_floor must yield 8 per craft");
+        assertRecipeUses(helper, floor, "gtceu:steel_plate", "raised_floor must use steel plates");
+
+        CraftingRecipe intake = craftingRecipe(helper, "shaped/rack_casing_intake");
+        helper.assertTrue(intake.getResultItem(helper.getLevel().registryAccess())
+                .is(HyperClusterBlocks.RACK_CASING_INTAKE.get().asItem()),
+                "rack_casing_intake recipe output mismatch");
+        helper.assertTrue(intake.getResultItem(helper.getLevel().registryAccess()).getCount() == 4,
+                "rack_casing_intake must yield 4 per craft");
+        CraftingRecipe exhaust = craftingRecipe(helper, "shaped/rack_casing_exhaust");
+        helper.assertTrue(exhaust.getResultItem(helper.getLevel().registryAccess())
+                .is(HyperClusterBlocks.RACK_CASING_EXHAUST.get().asItem()),
+                "rack_casing_exhaust recipe output mismatch");
+
+        CraftingRecipe blade = craftingRecipe(helper, "shaped/iv_compute_blade");
+        helper.assertTrue(blade.getResultItem(helper.getLevel().registryAccess())
+                .is(HyperClusterItems.IV_COMPUTE_BLADE.get()), "iv_compute_blade recipe output mismatch");
+        assertRecipeUses(helper, blade, "gtceu:silicon_wafer", "the blade must use silicon wafers");
+
+        CraftingRecipe snack = craftingRecipe(helper, "shaped/green_snack_pack");
+        helper.assertTrue(snack.getResultItem(helper.getLevel().registryAccess())
+                .is(HyperClusterItems.GREEN_SNACK_PACK.get()), "green_snack_pack recipe output mismatch");
+        helper.assertTrue(snack.getResultItem(helper.getLevel().registryAccess()).getCount() == 2,
+                "green_snack_pack must yield 2 per craft");
+
+        // 2) machine controllers and the inference hatch.
+        CraftingRecipe rack = craftingRecipe(helper, "shaped/air_cooled_compute_rack");
+        helper.assertTrue(rack.getResultItem(helper.getLevel().registryAccess())
+                .is(HyperClusterMachines.AIR_COOLED_COMPUTE_RACK.getBlock().asItem()),
+                "air_cooled_compute_rack recipe output mismatch");
+        assertRecipeUses(helper, rack, "hypercluster:rack_casing_intake",
+                "the rack must be built from its own intake casings");
+        assertRecipeUses(helper, rack, "hypercluster:rack_casing_exhaust",
+                "the rack must be built from its own exhaust casings");
+
+        CraftingRecipe hatch = craftingRecipe(helper, "shaped/iv_inference_hatch");
+        helper.assertTrue(hatch.getResultItem(helper.getLevel().registryAccess())
+                .is(HyperClusterMachines.IV_INFERENCE_HATCH.getBlock().asItem()),
+                "iv_inference_hatch recipe output mismatch");
+        assertRecipeUses(helper, hatch, "gtceu:iv_sensor", "the inference hatch must use an IV sensor");
+
+        CraftingRecipe crac = craftingRecipe(helper, "shaped/precision_crac");
+        helper.assertTrue(crac.getResultItem(helper.getLevel().registryAccess())
+                .is(HyperClusterMachines.PRECISION_CRAC.getBlock().asItem()),
+                "precision_crac recipe output mismatch");
+
+        // 3) zero-HPCA / zero-research deadlock check on every 0.3 recipe ingredient.
+        String[] recipes = { "shaped/raised_floor", "shaped/rack_casing_intake", "shaped/rack_casing_exhaust",
+                "shaped/iv_compute_blade", "shaped/green_snack_pack", "shaped/air_cooled_compute_rack",
+                "shaped/iv_inference_hatch", "shaped/precision_crac" };
+        Set<String> ingredients = new HashSet<>();
+        for (String id : recipes) {
+            CraftingRecipe recipe = craftingRecipe(helper, id);
+            for (var ingredient : recipe.getIngredients()) {
+                for (ItemStack stack : ingredient.getItems()) {
+                    ingredients.add(BuiltInRegistries.ITEM.getKey(stack.getItem()).toString());
+                }
+            }
+        }
+        helper.assertTrue(!ingredients.isEmpty(), "the 0.3 recipes must have ingredients");
+        for (String ingredient : ingredients) {
+            String path = ingredient.replace("gtceu:", "").replace("minecraft:", "").replace("hypercluster:", "");
+            helper.assertTrue(!path.startsWith("hpca_"),
+                    "zero-HPCA deadlock violated: " + ingredient + " is an HPCA component");
+            helper.assertTrue(
+                    !path.contains("research_station") && !path.contains("data_bank") &&
+                            !path.contains("network_switch") && !path.contains("object_holder") &&
+                            !path.contains("computation_") && !path.contains("data_access") &&
+                            !path.contains("_data_hatch") && !path.contains("creative_"),
+                    "zero-HPCA deadlock violated: " + ingredient +
+                            " is a research-station / computation-hatch product");
+            helper.assertTrue(BuiltInRegistries.ITEM.containsKey(ResourceLocation.tryParse(ingredient)),
+                    "ingredient not registered: " + ingredient);
+        }
+        System.out.printf("[HC-03] 0.3 survival recipes verified: %d distinct ingredients, all zero-HPCA%n",
+                ingredients.size());
+        helper.succeed();
+    }
+
     @GameTest(template = "hc_floor", batch = SURVIVAL_BATCH, timeoutTicks = 100)
     public static void renderStatesRegisteredForSync(GameTestHelper helper) {
         // Regression for the working-overlay bug: addon machines register after GTMachines.init(),
@@ -130,7 +226,9 @@ public class SurvivalCraftingTests {
         for (com.gregtechceu.gtceu.api.machine.MachineDefinition machine : new com.gregtechceu.gtceu.api.machine.MachineDefinition[] {
                 HyperClusterMachines.HV_MICRO_BURNER, HyperClusterMachines.HV_TELEMETRY_ORE_WASHER,
                 HyperClusterMachines.EV_TELEMETRY_CHEMICAL_REACTOR, HyperClusterMachines.DATA_SCRUBBING_TOWER,
-                HyperClusterMachines.LORA_ENGRAVING_CHAMBER, HyperClusterMachines.RED_TEAM_SANDBOX }) {
+                HyperClusterMachines.LORA_ENGRAVING_CHAMBER, HyperClusterMachines.RED_TEAM_SANDBOX,
+                HyperClusterMachines.AIR_COOLED_COMPUTE_RACK, HyperClusterMachines.PRECISION_CRAC,
+                HyperClusterMachines.IV_INFERENCE_HATCH }) {
             int expected = 0;
             int registered = 0;
             for (com.gregtechceu.gtceu.client.model.machine.MachineRenderState state : machine

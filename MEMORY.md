@@ -82,3 +82,17 @@
 - 机器有 `DISPLAY=:1` 与 NVIDIA GPU：`runClient` 可启动到主菜单并完整装载 GT 资源（两台机器 overlay 贴图零报错）。
 - **用户使用 fish shell**：环境脚本用仓库内 `env.fish`（与 `env.sh` 语义一致；`return 1` 而非 exit）。系统默认 java 是 OpenJDK 25 —— 必须先 source 环境脚本再跑 `./gradlew`，否则 Gradle 8.10 的 Groovy 在 Java 25 上报 "Unsupported class file major version 69"，且会误用 `~/.gradle` 重新下载 wrapper。
 - 移交后待办：`telemetry_ore_washer` 正式贴图与 0.2 全套（17 张：9 物品 + 4 台机器 8 张 overlay）均已交付并接入 `src/main/resources`（`Public/README.md` 是美术清单与分层复用指南）。
+
+## 0.3 IV 自建算力已完成（2026-11-27，0.3.0）
+
+- **交付**：`raised_floor`/`rack_casing_intake`/`rack_casing_exhaust` 方块、`iv_compute_blade`/`green_snack_pack` 物品、`air_cooled_compute_rack`（3×5×2 多方块，4 刀片 0→24 CWU/t 线性，实现 IOpticalComputationProvider，同 tick 预算 + 降额原因枚举）、`precision_crac`（3×3×1，PUE Tier I 1.80→II 1.45，环境冷源 ×0.6/×2.0，零食 -5%）、`iv_inference_hatch`（挂塔部件：芯片 2/8 CWU/t → EU/t -25%/-50%，白名单 hc_inference_boost 标签，逐 tick 计费 + 断算看门狗回退）。全部 9 机器渲染态注册 + runGametest **44/44**（新增 hypercluster_03_datacenter 8 例 + 生存配方零 HPCA 检查）；Xvfb 冒烟零内容 ERROR（仅 vanilla text2speech narrator 报错，历史版本同样存在）。报告 `docs/reports/0.3_acceptance_report.md`。
+- **配方**：机柜/空调/推理仓/刀片/地板全部 IV 原版材料可合成；科研站 32 CWU/t 配方只能由机柜"供算"不能驱动跑完（原生 totalCWU 门限 available>=sum），留 0.5+ 聚合。
+- **多方块三坑补充（长期有效）**：
+  - `FactoryBlockPattern.start()` 默认是 **(LEFT, UP, FRONT)**：aisle 走 FRONT(z)、string 走 UP(y)、char 走 LEFT(x 西向镜像)；GT 原版 research_station/HPCA 全用默认。我方 rack/CRAC 用显式 `start(RIGHT, UP, BACK)`（char→东、string→上、aisle→南）。摆结构前先确认这三个参数。
+  - **光学管道 max 2 连接且不自动连接先放的方块**：GameTest 里必须显式 `pipe.setConnection(side, true, false)`（side=管→方块方向）；接收仓 getOpticalNetProvider 要求管道 isConnected(朝接收仓面)，且 walker 只有在 handler facing == 指向源仓方向时才跳过"把自己当 provider"的环路。
+  - **GameTest 框架雷**：在 runAtTickTime 回调内部再调 helper.runAtTickTime 会损坏 GameTestInfo 的 Object2LongOpenHashMap → NPE 崩掉整个 GameTestServer（wrapped is null）。所有调度必须在测试方法体（tick 0）注册。
+  - 电路隔离：`circuitMeta` 配方与同输入无电路配方**不互斥**（lookup 谁先谁赢）；推理增强改用配方 data 标签 + 部件 modifyRecipe 白名单，不再用电路号变体。
+  - CWU 计费原生路径：receiver 仓的 NotifiableComputationContainer.handleRecipeInner 每 tick handleTickRecipeIO 计费；配方带 cwu tickInput 即自动逐 tick 扣。部件 modifyRecipe 可以给配方**加上** cwu tickInput + 折扣 EUt（配 matchContents 只查原配方，加法安全）。
+  - 1.20.1 Biome API：`getPrecipitationAt(BlockPos)` + `getModifiedClimateSettings().temperature()`（getBaseTemperature 已移除）。
+  - 维护仓 `setMaintenanceProblems((byte)0)` = 6 问题全在（位=已修复）。
+- **0.3 遗留**：断算回退会 interrupt 当前批次（原版语义丢输入/进度）；零食开关是系统属性 -Dhypercluster.snackBonus；科研站跑配方需 32 CWU/t（双机柜/网络交换机聚合留 0.5+）。

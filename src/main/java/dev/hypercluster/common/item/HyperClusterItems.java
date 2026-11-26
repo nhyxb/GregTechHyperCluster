@@ -54,6 +54,12 @@ public final class HyperClusterItems {
             "Aligned Chemical Edge Chip",
             "Passed red-team adversarial validation. Stable circuit #4 chemical recipes at 25% less energy.");
 
+    // 0.3 — IV self-built compute: air-cooled datacenter chain.
+    public static final ItemEntry<TooltipItem> IV_COMPUTE_BLADE = register("iv_compute_blade",
+            "IV Compute Blade", "Hot-swappable IV air-cooled compute blade. Each grants 6 CWU/t in a compute rack.");
+    public static final ItemEntry<TooltipItem> GREEN_SNACK_PACK = register("green_snack_pack",
+            "Green Snack Pack", "Machine-room mascot snack. Keep one in the compute rack slot for tidy efficiency.");
+
     private HyperClusterItems() {}
 
     public static void init() {}

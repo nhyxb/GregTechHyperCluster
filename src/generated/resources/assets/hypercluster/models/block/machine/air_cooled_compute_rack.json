@@ -1,0 +1,82 @@
+{
+  "parent": "minecraft:block/block",
+  "loader": "gtceu:machine",
+  "machine": "hypercluster:air_cooled_compute_rack",
+  "texture_overrides": {
+    "all": "hypercluster:block/datacenter/rack_casing_front_intake"
+  },
+  "variants": {
+    "is_formed=false,recipe_logic_status=idle": {
+      "model": {
+        "parent": "gtceu:block/machine/template/cube_all/sided",
+        "textures": {
+          "all": "hypercluster:block/datacenter/rack_casing_front_intake",
+          "overlay_front": "hypercluster:block/machines/air_cooled_compute_rack/overlay_front"
+        }
+      }
+    },
+    "is_formed=false,recipe_logic_status=suspend": {
+      "model": {
+        "parent": "gtceu:block/machine/template/cube_all/sided",
+        "textures": {
+          "all": "hypercluster:block/datacenter/rack_casing_front_intake",
+          "overlay_front": "hypercluster:block/machines/air_cooled_compute_rack/overlay_front"
+        }
+      }
+    },
+    "is_formed=false,recipe_logic_status=waiting": {
+      "model": {
+        "parent": "gtceu:block/machine/template/cube_all/sided",
+        "textures": {
+          "all": "hypercluster:block/datacenter/rack_casing_front_intake",
+          "overlay_front": "hypercluster:block/machines/air_cooled_compute_rack/overlay_front_active"
+        }
+      }
+    },
+    "is_formed=false,recipe_logic_status=working": {
+      "model": {
+        "parent": "gtceu:block/machine/template/cube_all/sided",
+        "textures": {
+          "all": "hypercluster:block/datacenter/rack_casing_front_intake",
+          "overlay_front": "hypercluster:block/machines/air_cooled_compute_rack/overlay_front_active"
+        }
+      }
+    },
+    "is_formed=true,recipe_logic_status=idle": {
+      "model": {
+        "parent": "gtceu:block/machine/template/cube_all/sided",
+        "textures": {
+          "all": "hypercluster:block/datacenter/rack_casing_front_intake",
+          "overlay_front": "hypercluster:block/machines/air_cooled_compute_rack/overlay_front"
+        }
+      }
+    },
+    "is_formed=true,recipe_logic_status=suspend": {
+      "model": {
+        "parent": "gtceu:block/machine/template/cube_all/sided",
+        "textures": {
+          "all": "hypercluster:block/datacenter/rack_casing_front_intake",
+          "overlay_front": "hypercluster:block/machines/air_cooled_compute_rack/overlay_front"
+        }
+      }
+    },
+    "is_formed=true,recipe_logic_status=waiting": {
+      "model": {
+        "parent": "gtceu:block/machine/template/cube_all/sided",
+        "textures": {
+          "all": "hypercluster:block/datacenter/rack_casing_front_intake",
+          "overlay_front": "hypercluster:block/machines/air_cooled_compute_rack/overlay_front_active"
+        }
+      }
+    },
+    "is_formed=true,recipe_logic_status=working": {
+      "model": {
+        "parent": "gtceu:block/machine/template/cube_all/sided",
+        "textures": {
+          "all": "hypercluster:block/datacenter/rack_casing_front_intake",
+          "overlay_front": "hypercluster:block/machines/air_cooled_compute_rack/overlay_front_active"
+        }
+      }
+    }
+  }
+}

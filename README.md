@@ -39,7 +39,7 @@ source env.fish
 ./gradlew runGametest
 ```
 
-资源生成输出在 `src/generated/resources/`，构建产物在 `build/libs/`。首次构建会下载 Gradle 和开发依赖。在启用命令的测试世界里可用 `/give @s hypercluster:mining_telemetry_log` 验证物品注册和模型。`runGametest` 以 headless 方式跑全部回归（Forge GameTestServer，目前 35 个用例：物品/配方、P02 结算探针、P03/P04 闭环与边界、P05 生存配方存在性、0.2 EV 数据工坊全链、0.2.1 微调与红队对齐链）。
+资源生成输出在 `src/generated/resources/`，构建产物在 `build/libs/`。首次构建会下载 Gradle 和开发依赖。在启用命令的测试世界里可用 `/give @s hypercluster:mining_telemetry_log` 验证物品注册和模型。`runGametest` 以 headless 方式跑全部回归（Forge GameTestServer，目前 44 个用例：物品/配方、P02 结算探针、P03/P04 闭环与边界、P05/P06 生存配方存在性、0.2 EV 数据工坊全链、0.2.1 微调与红队对齐链、0.3 IV 智算机房全链）。
 
 开发客户端、专服和数据生成分别使用 `run/client/`、`run/server/`、`run/data/`，日志写入各自的 `logs/`。运行 `./gradlew runServer` 首次启动时，Minecraft 会生成 `run/server/eula.txt`。确认同意其中链接的 EULA 后，在该文件设 `eula=true` 并再次启动。
 
@@ -76,6 +76,16 @@ source env.fish
 - **电路 `#4` 已对齐芯片收益**（受控、无恶性幻觉炉渣）：不消耗已对齐芯片，化反 600→**450 EU/t**、洗矿 16→**12 EU/t**（均降 **25%**），产物与基准一致，界面工具提示标明已通过红队对抗校验。
 - **0.2 三处修正**：清洁数据集载体配方产量 2→**4**；中文文案统一「化学反应釜」并说明烧录台双样本输入；芯片省料配方亚硫酸铝输出 4→**2**（铝守恒）。
 - **验收**：`runData` / `build`（`gregtech-hypercluster-0.2.1.jar`）/ `runGametest`（35/35）全绿，Xvfb 客户端冒烟零内容报错；报告见 [docs/reports/0.2.1_acceptance_report.md](docs/reports/0.2.1_acceptance_report.md)。
+
+## 0.3 内容（IV 自建算力：风冷智算机房 Tier I–II）
+
+- **新增结构方块**：`raised_floor` 防静电架空地板（顶/底 `raised_floor_top`、四侧 `raised_floor_side`）、`rack_casing_intake` 42U 进风面外壳、`rack_casing_exhaust` 42U 出风面外壳。
+- **新增物品**：`iv_compute_blade` IV 风冷计算刀片（每枚 6 CWU/t）、`green_snack_pack` 绿色零食包彩蛋（机柜零食槽 -5% 总耗电，`-Dhypercluster.snackBonus=false` 可关）。
+- **Tier I 风冷算力机柜 `air_cooled_compute_rack`**：固定结构 3×5×2 多方块（进风面外墙 + 出风面外墙 + 标准能源仓/维护仓 + **GTCEu 原生算力传输仓**，无需 PCB 冷却液）。最多插 4 枚刀片（0→24 CWU/t 线性），实现 `IOpticalComputationProvider` 直连 GT 光学管道：同 tick 严格算力预算（`simulate=true` 只查询不扣减、多消费者共享预算、断缆/低电/未维护/无刀片归零并记录降额原因）。
+- **Tier II 精密空调 `precision_crac`**：3×3×1 多方块，运行中机组（8 格内）+ 架空地板下铺 + 进/出风通道未堵 → 机柜机房升级 Tier II：PUE 1.80 → **1.45**（`总耗电 = IT 耗电 + 基础制冷耗电 × 环境系数 × 气流系数`；冰原/雪山/深海或 Y<20 制冷 -40%，下界/热沙漠 ×2）。机房重算由结构变化/邻近更新事件触发 + 40 tick 有界校验，禁止每 tick 全图扫描。
+- **推理协处理器仓 `iv_inference_hatch`**：可挂载在数据清洗塔上的 IV 级多方块仓室（GT 原生算力接收链路 + 推理芯片槽）。对白名单（`hc_inference_boost` 标签）配方：普通边缘芯片 2 CWU/t → EU/t -25%，已对齐芯片 8 CWU/t → EU/t -50%；CWU/t 逐 tick 真实计费，断算/拔芯片自动回退原规则（不白嫖、不卡死）。
+- **零 HPCA 死锁**：全部 0.3 生存配方只用 GTCEu 7.4.0 原版 IV 可直接获取材料（钢/橡胶/铜/不锈钢/铝/硅晶圆/铂导线/IV 电路/IV 传感器/IV 机身 + 原版纸/糖/染料），由 GameTest 断言不含任何 HPCA 组件或科研站/数据仓/算力传输仓产物。
+- **验收**：`runData` / `build`（`gregtech-hypercluster-0.3.0.jar`）/ `runGametest`（44/44，含 8 个 0.3 机房用例：刀片线性、预算竞争、降额归零、光学链路喂科研站、HPCA 共存、存档重载、PUE Tier 升降、推理仓真实消耗与断算回退）全绿，Xvfb 客户端冒烟零内容报错；报告见 [docs/reports/0.3_acceptance_report.md](docs/reports/0.3_acceptance_report.md)。
 
 ## 运行锁定组合（P06 实测）
 

@@ -15,9 +15,11 @@ import net.minecraft.world.item.Items;
 
 import dev.hypercluster.HyperCluster;
 import dev.hypercluster.common.item.HyperClusterItems;
+import dev.hypercluster.common.machine.datacenter.IvInferenceHatchMachine;
 
 import static com.gregtechceu.gtceu.api.GTValues.EV;
 import static com.gregtechceu.gtceu.api.GTValues.HV;
+import static com.gregtechceu.gtceu.api.GTValues.IV;
 
 /**
  * GregTech HyperCluster recipes, injected through {@code IGTAddon#addRecipes}. All recipe ids live
@@ -34,6 +36,8 @@ public final class HyperClusterRecipes {
         registerDataScrubbingRecipes(provider);
         registerFineTuningRecipes(provider);
         registerSurvivalRecipes(provider);
+        registerInferenceScrubbingRecipes(provider);
+        registerDatacenterSurvivalRecipes(provider);
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -201,28 +205,8 @@ public final class HyperClusterRecipes {
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     private static void registerDataScrubbingRecipes(java.util.function.Consumer<FinishedRecipe> provider) {
-        // Scrub raw mining telemetry: log + distilled water -> high-purity mining dataset
-        // + clean dataset + 90% corrupted noise + 10% golden labelled samples (0.2.1).
-        HyperClusterRecipeTypes.DATA_SCRUBBING_RECIPES
-                .recipeBuilder(HyperCluster.id("scrub_mining_telemetry_log"))
-                .inputItems(new ItemStack(HyperClusterItems.MINING_TELEMETRY_LOG.get()))
-                .inputFluids(GTMaterials.DistilledWater.getFluid(1000))
-                .outputItems(new ItemStack(HyperClusterItems.HIGH_PURITY_MINING_DATASET.get()))
-                .outputItems(new ItemStack(HyperClusterItems.CLEAN_DATASET.get()))
-                .chancedOutput(new ItemStack(HyperClusterItems.CORRUPTED_NOISE.get()), "9/10", 0)
-                .chancedOutput(new ItemStack(HyperClusterItems.GOLDEN_DATASET.get()), "1/10", 0)
-                .save(provider);
-
-        // Scrub raw chemical telemetry: same contract in the chemical domain.
-        HyperClusterRecipeTypes.DATA_SCRUBBING_RECIPES
-                .recipeBuilder(HyperCluster.id("scrub_chemical_telemetry_log"))
-                .inputItems(new ItemStack(HyperClusterItems.CHEMICAL_TELEMETRY_LOG.get()))
-                .inputFluids(GTMaterials.DistilledWater.getFluid(1000))
-                .outputItems(new ItemStack(HyperClusterItems.HIGH_PURITY_CHEMICAL_DATASET.get()))
-                .outputItems(new ItemStack(HyperClusterItems.CLEAN_DATASET.get()))
-                .chancedOutput(new ItemStack(HyperClusterItems.CORRUPTED_NOISE.get()), "9/10", 0)
-                .chancedOutput(new ItemStack(HyperClusterItems.GOLDEN_DATASET.get()), "1/10", 0)
-                .save(provider);
+        // (0.3) the two base scrub recipes moved to registerInferenceScrubbingRecipes: they now
+        // carry the hc_inference_boost whitelist tag for the IV inference hatch.
 
         // Every output is processable: formatted corrupted noise recovers raw silicon powder.
         HyperClusterRecipeTypes.DATA_SCRUBBING_RECIPES
@@ -394,5 +378,148 @@ public final class HyperClusterRecipes {
     /** Simple cross-mod item lookup for recipe ingredients (existence is asserted in GameTests). */
     private static ItemStack gtItem(String path) {
         return new ItemStack(BuiltInRegistries.ITEM.get(new ResourceLocation("gtceu", path)));
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // 0.3 — inference-assisted data scrubbing: recipes that really consume CWU/t //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // 0.3 — inference-assisted data scrubbing: recipes that really consume CWU/t //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * Both base scrubbing recipes are tagged {@code hc_inference_boost}: the IV inference hatch
+     * attached to the tower boosts a tagged recipe when its chip can serve the demand (ordinary
+     * edge chip: 2 CWU/t for a 25% EU/t cut; aligned chip: 8 CWU/t for 50%) and the optical link
+     * delivers — the CWU/t is then billed every tick through the hatch's computation container,
+     * so the discount exists exactly while computation is really consumed. Without CWU/t (or a
+     * chip) the recipe runs under its original rules (2048 EU/t, nothing billed).
+     */
+    private static void registerInferenceScrubbingRecipes(java.util.function.Consumer<FinishedRecipe> provider) {
+        HyperClusterRecipeTypes.DATA_SCRUBBING_RECIPES
+                .recipeBuilder(HyperCluster.id("scrub_mining_telemetry_log"))
+                .inputItems(new ItemStack(HyperClusterItems.MINING_TELEMETRY_LOG.get()))
+                .inputFluids(GTMaterials.DistilledWater.getFluid(1000))
+                .outputItems(new ItemStack(HyperClusterItems.HIGH_PURITY_MINING_DATASET.get()))
+                .outputItems(new ItemStack(HyperClusterItems.CLEAN_DATASET.get()))
+                .chancedOutput(new ItemStack(HyperClusterItems.CORRUPTED_NOISE.get()), "9/10", 0)
+                .chancedOutput(new ItemStack(HyperClusterItems.GOLDEN_DATASET.get()), "1/10", 0)
+                .addData(IvInferenceHatchMachine.INFERENCE_BOOST_TAG, 1)
+                .save(provider);
+
+        HyperClusterRecipeTypes.DATA_SCRUBBING_RECIPES
+                .recipeBuilder(HyperCluster.id("scrub_chemical_telemetry_log"))
+                .inputItems(new ItemStack(HyperClusterItems.CHEMICAL_TELEMETRY_LOG.get()))
+                .inputFluids(GTMaterials.DistilledWater.getFluid(1000))
+                .outputItems(new ItemStack(HyperClusterItems.HIGH_PURITY_CHEMICAL_DATASET.get()))
+                .outputItems(new ItemStack(HyperClusterItems.CLEAN_DATASET.get()))
+                .chancedOutput(new ItemStack(HyperClusterItems.CORRUPTED_NOISE.get()), "9/10", 0)
+                .chancedOutput(new ItemStack(HyperClusterItems.GOLDEN_DATASET.get()), "1/10", 0)
+                .addData(IvInferenceHatchMachine.INFERENCE_BOOST_TAG, 1)
+                .save(provider);
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // 0.3 — IV survival crafting: zero HPCA / research-station prerequisites //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * Every 0.3 crafting recipe only uses materials a vanilla GTCEu 7.4.0 IV player can obtain
+     * directly (steel, rubber, glass, copper, stainless steel, aluminium, silicon wafers, platinum
+     * wiring, IV circuits/sensors/hulls, vanilla paper/sugar/dye). No HPCA component, no research
+     * station / data bank / network switch product, no computation or data hatch is ever
+     * required — asserted by {@code SurvivalCraftingTests}.
+     */
+    private static void registerDatacenterSurvivalRecipes(java.util.function.Consumer<FinishedRecipe> provider) {
+        // Anti-static raised floor: a steel grating on rubber dampers, 8 tiles per craft.
+        VanillaRecipeHelper.addShapedRecipe(provider, true,
+                HyperCluster.id("raised_floor"),
+                new ItemStack(HyperClusterBlocks.RAISED_FLOOR.get(), 8),
+                "SSS",
+                "RRR",
+                "SSS",
+                'S', ChemicalHelper.get(TagPrefix.plate, GTMaterials.Steel),
+                'R', ChemicalHelper.get(TagPrefix.plate, GTMaterials.Rubber));
+
+        // 42U intake casing: perforated steel/glass cold-aisle door around an IV circuit, 4 per craft.
+        VanillaRecipeHelper.addShapedRecipe(provider, true,
+                HyperCluster.id("rack_casing_intake"),
+                new ItemStack(HyperClusterBlocks.RACK_CASING_INTAKE.get(), 4),
+                "PGP",
+                "PCP",
+                "PGP",
+                'P', ChemicalHelper.get(TagPrefix.plate, GTMaterials.Steel),
+                'G', Items.GLASS,
+                'C', GTCraftingComponents.CIRCUIT.get(IV));
+
+        // 42U exhaust casing: steel louvers over copper heat sinks around an IV circuit, 4 per craft.
+        VanillaRecipeHelper.addShapedRecipe(provider, true,
+                HyperCluster.id("rack_casing_exhaust"),
+                new ItemStack(HyperClusterBlocks.RACK_CASING_EXHAUST.get(), 4),
+                "PMP",
+                "PCP",
+                "PMP",
+                'P', ChemicalHelper.get(TagPrefix.plate, GTMaterials.Steel),
+                'M', ChemicalHelper.get(TagPrefix.plate, GTMaterials.Copper),
+                'C', GTCraftingComponents.CIRCUIT.get(IV));
+
+        // IV compute blade: platinum-wired IV circuit on silicon wafers.
+        VanillaRecipeHelper.addShapedRecipe(provider, true,
+                HyperCluster.id("iv_compute_blade"),
+                new ItemStack(HyperClusterItems.IV_COMPUTE_BLADE.get()),
+                "WSW",
+                "SCS",
+                "WSW",
+                'W', ChemicalHelper.get(TagPrefix.wireGtSingle, GTMaterials.Platinum),
+                'S', gtItem("silicon_wafer"),
+                'C', GTCraftingComponents.CIRCUIT.get(IV));
+
+        // Green snack pack (easter egg): green dye, sugar and paper.
+        VanillaRecipeHelper.addShapedRecipe(provider, true,
+                HyperCluster.id("green_snack_pack"),
+                new ItemStack(HyperClusterItems.GREEN_SNACK_PACK.get(), 2),
+                " D ",
+                "DSD",
+                " P ",
+                'D', Items.GREEN_DYE,
+                'S', Items.SUGAR,
+                'P', Items.PAPER);
+
+        // Air-cooled compute rack controller: intake and exhaust casings around an IV hull.
+        VanillaRecipeHelper.addShapedRecipe(provider, true,
+                HyperCluster.id("air_cooled_compute_rack"),
+                HyperClusterMachines.AIR_COOLED_COMPUTE_RACK.asStack(1),
+                "ICI",
+                "EME",
+                "ICI",
+                'I', HyperClusterBlocks.RACK_CASING_INTAKE.get(),
+                'E', HyperClusterBlocks.RACK_CASING_EXHAUST.get(),
+                'C', GTCraftingComponents.CIRCUIT.get(IV),
+                'M', GTCraftingComponents.HULL.get(IV));
+
+        // IV inference hatch: silicon wafers and fine silver wiring around an IV sensor.
+        VanillaRecipeHelper.addShapedRecipe(provider, true,
+                HyperCluster.id("iv_inference_hatch"),
+                HyperClusterMachines.IV_INFERENCE_HATCH.asStack(1),
+                "WCW",
+                "FSF",
+                "WCW",
+                'W', gtItem("silicon_wafer"),
+                'C', GTCraftingComponents.CIRCUIT.get(IV),
+                'F', ChemicalHelper.get(TagPrefix.wireFine, GTMaterials.Silver),
+                'S', GTCraftingComponents.SENSOR.get(IV));
+
+        // Precision CRAC: stainless steel airflow ducts over aluminium fins around an IV hull.
+        VanillaRecipeHelper.addShapedRecipe(provider, true,
+                HyperCluster.id("precision_crac"),
+                HyperClusterMachines.PRECISION_CRAC.asStack(1),
+                "PAP",
+                "CMC",
+                "PAP",
+                'P', ChemicalHelper.get(TagPrefix.plate, GTMaterials.StainlessSteel),
+                'A', ChemicalHelper.get(TagPrefix.plate, GTMaterials.Aluminium),
+                'C', GTCraftingComponents.CIRCUIT.get(IV),
+                'M', GTCraftingComponents.HULL.get(IV));
     }
 }

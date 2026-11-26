@@ -5,12 +5,16 @@ import com.gregtechceu.gtceu.api.data.RotationState;
 import com.gregtechceu.gtceu.api.machine.MachineDefinition;
 import com.gregtechceu.gtceu.api.machine.MultiblockMachineDefinition;
 import com.gregtechceu.gtceu.api.machine.SimpleTieredMachine;
+import com.gregtechceu.gtceu.api.machine.multiblock.PartAbility;
 import com.gregtechceu.gtceu.api.machine.multiblock.WorkableElectricMultiblockMachine;
+import com.gregtechceu.gtceu.api.machine.property.GTMachineModelProperties;
+import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
 import com.gregtechceu.gtceu.api.pattern.FactoryBlockPattern;
 import com.gregtechceu.gtceu.api.pattern.Predicates;
 import com.gregtechceu.gtceu.common.data.GTBlocks;
 import com.gregtechceu.gtceu.common.data.GTMachines;
 import com.gregtechceu.gtceu.common.data.GTRecipeModifiers;
+import com.gregtechceu.gtceu.common.data.GTRecipeTypes;
 import com.gregtechceu.gtceu.common.data.machines.GTMachineUtils;
 
 import net.minecraft.network.chat.Component;
@@ -20,6 +24,9 @@ import net.minecraft.world.level.block.Blocks;
 import dev.hypercluster.HyperCluster;
 import dev.hypercluster.common.machine.TelemetryChemicalReactorMachine;
 import dev.hypercluster.common.machine.TelemetryOreWasherMachine;
+import dev.hypercluster.common.machine.datacenter.AirCooledComputeRackMachine;
+import dev.hypercluster.common.machine.datacenter.IvInferenceHatchMachine;
+import dev.hypercluster.common.machine.datacenter.PrecisionCracMachine;
 
 import static com.gregtechceu.gtceu.api.pattern.util.RelativeDirection.BACK;
 import static com.gregtechceu.gtceu.api.pattern.util.RelativeDirection.RIGHT;
@@ -54,6 +61,9 @@ public final class HyperClusterMachines {
     public static MultiblockMachineDefinition DATA_SCRUBBING_TOWER;
     public static MultiblockMachineDefinition LORA_ENGRAVING_CHAMBER;
     public static MultiblockMachineDefinition RED_TEAM_SANDBOX;
+    public static MultiblockMachineDefinition AIR_COOLED_COMPUTE_RACK;
+    public static MultiblockMachineDefinition PRECISION_CRAC;
+    public static MachineDefinition IV_INFERENCE_HATCH;
 
     private HyperClusterMachines() {}
 
@@ -96,6 +106,46 @@ public final class HyperClusterMachines {
                 "Telemetry log buffer: %s / %s. One log per settled batch.");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.telemetry_buffer.full",
                 "Buffer full: further settled batches drop their logs.");
+
+        // 0.3 — IV datacenter machines, slots and settlement lines.
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.air_cooled_compute_rack.tooltip",
+                "Tier I air-cooled compute rack: 4 IV compute blades give up to 24 CWU/t through optical pipes.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.air_cooled_compute_rack.blade_slot",
+                "IV compute blade slot: 6 CWU/t per blade.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.air_cooled_compute_rack.snack_slot",
+                "Green snack pack: keep the machine room tidy (-5% total EU/t, config-gated).");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.air_cooled_compute_rack.providing",
+                "Providing computation");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.air_cooled_compute_rack.computation",
+                "Computation: %s / %s CWU/t");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.air_cooled_compute_rack.room",
+                "Room rating: Tier %s (environment %s)");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.air_cooled_compute_rack.pue",
+                "PUE: %s (IT %s EU/t + cooling %s EU/t)");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.air_cooled_compute_rack.standby",
+                "Standby: %s");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.air_cooled_compute_rack.snack_bonus",
+                "Snack pack bonus active: -5% total EU/t.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.air_cooled_compute_rack.derate.none",
+                "Providing computation.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.air_cooled_compute_rack.derate.paused",
+                "Derated to 0 CWU/t: rack paused (soft mallet).");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.air_cooled_compute_rack.derate.maintenance",
+                "Derated to 0 CWU/t: maintenance problems unfixed.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.air_cooled_compute_rack.derate.no_blades",
+                "Derated to 0 CWU/t: no compute blades inserted.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.air_cooled_compute_rack.derate.low_power",
+                "Derated to 0 CWU/t: not enough energy.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.iv_inference_hatch.tooltip",
+                "IV inference coprocessor hatch: pulls real CWU/t through optical pipes to run boosted tower recipes (25%/50% less EU/t).");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.iv_inference_hatch.chip_slot",
+                "Inference chip: ordinary domain edge chips serve 2 CWU/t recipes, aligned chips up to 8 CWU/t.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.precision_crac.tooltip",
+                "Precision CRAC: a running unit within 8 blocks upgrades a compute rack room to Tier II (PUE 1.45).");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.precision_crac.running",
+                "Cooling");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.precision_crac.power",
+                "Blower draw: %s");
 
         // P03 — HV Micro Burner: logging chain (telemetry log + blank carrier -> edge chip).
         HV_MICRO_BURNER = HyperCluster.REGISTRATE
@@ -185,6 +235,9 @@ public final class HyperClusterMachines {
                                 .or(Predicates.abilities(
                                         com.gregtechceu.gtceu.api.machine.multiblock.PartAbility.INPUT_ENERGY)
                                         .setMinGlobalLimited(1).setMaxGlobalLimited(2))
+                                .or(Predicates.abilities(
+                                        HyperClusterPartAbilities.INFERENCE_COMPUTATION)
+                                        .setMinGlobalLimited(0).setMaxGlobalLimited(1))
                                 .or(Predicates.autoAbilities(true, false, false)))
                         .where('G', Predicates.blocks(Blocks.GLASS))
                         .where('#', Predicates.air())
@@ -229,6 +282,72 @@ public final class HyperClusterMachines {
                         HyperCluster.id("block/machines/red_team_sandbox"))
                 .tooltips(Component.translatable("hypercluster.machine.red_team_sandbox.tooltip"))
                 .register();
+
+        // 0.3 — Tier I air-cooled compute rack: a fixed 3×5×2 IV multiblock (intake wall in
+        // front, exhaust wall behind) offering up to 24 CWU/t through GTCEu's native computation
+        // transmission hatch. No PCB coolant required.
+        AIR_COOLED_COMPUTE_RACK = HyperCluster.REGISTRATE
+                .multiblock("air_cooled_compute_rack", AirCooledComputeRackMachine::new)
+                .langValue("Air-Cooled Compute Rack")
+                .rotationState(RotationState.NON_Y_AXIS)
+                .recipeType(GTRecipeTypes.DUMMY_RECIPES)
+                .appearanceBlock(HyperClusterBlocks.RACK_CASING_INTAKE)
+                .pattern(definition -> FactoryBlockPattern.start(RIGHT, UP, BACK)
+                        .aisle("III", "III", "ISI", "III", "III")
+                        .aisle("EEE", "XXX", "EEE", "EEE", "EEE")
+                        .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                        .where('I', Predicates.blocks(HyperClusterBlocks.RACK_CASING_INTAKE.get()))
+                        .where('E', Predicates.blocks(HyperClusterBlocks.RACK_CASING_EXHAUST.get()))
+                        // The hatch row of the exhaust wall: plain casing, the energy hatch(es),
+                        // GTCEu's native computation transmission hatch and the maintenance hatch.
+                        .where('X', Predicates.blocks(HyperClusterBlocks.RACK_CASING_EXHAUST.get())
+                                .or(Predicates.abilities(PartAbility.INPUT_ENERGY)
+                                        .setMinGlobalLimited(1).setMaxGlobalLimited(2))
+                                .or(Predicates.abilities(PartAbility.COMPUTATION_DATA_TRANSMISSION)
+                                        .setExactLimit(1))
+                                .or(Predicates.autoAbilities(true, false, false)))
+                        .build())
+                .allowExtendedFacing(false)
+                .workableCasingModel(HyperCluster.id("block/datacenter/rack_casing_front_intake"),
+                        HyperCluster.id("block/machines/air_cooled_compute_rack"))
+                .tooltips(Component.translatable("hypercluster.machine.air_cooled_compute_rack.tooltip"))
+                .register();
+
+        // 0.3 — Tier II precision CRAC: a compact 3×3×1 IV blower unit whose running presence
+        // upgrades nearby compute rack rooms to Tier II.
+        PRECISION_CRAC = HyperCluster.REGISTRATE
+                .multiblock("precision_crac", PrecisionCracMachine::new)
+                .langValue("Precision CRAC")
+                .rotationState(RotationState.NON_Y_AXIS)
+                .recipeType(GTRecipeTypes.DUMMY_RECIPES)
+                .appearanceBlock(GTBlocks.MACHINE_CASING_IV)
+                .pattern(definition -> FactoryBlockPattern.start(RIGHT, UP, BACK)
+                        .aisle("CCC", "CSC", "CCC")
+                        .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                        .where('C', Predicates.blocks(GTBlocks.MACHINE_CASING_IV.get())
+                                .or(Predicates.abilities(PartAbility.INPUT_ENERGY)
+                                        .setMinGlobalLimited(1).setMaxGlobalLimited(2))
+                                .or(Predicates.autoAbilities(true, false, false)))
+                        .build())
+                .allowExtendedFacing(false)
+                .workableCasingModel(new ResourceLocation("gtceu", "block/casings/voltage/iv/side"),
+                        HyperCluster.id("block/machines/precision_crac"))
+                .tooltips(Component.translatable("hypercluster.machine.precision_crac.tooltip"))
+                .register();
+
+        // 0.3 — IV inference coprocessor hatch: an optical computation receiver part with an
+        // inference chip slot, attachable to the data scrubbing tower.
+        IV_INFERENCE_HATCH = HyperCluster.REGISTRATE
+                .machine("iv_inference_hatch", holder -> new IvInferenceHatchMachine(holder))
+                .tier(GTValues.IV)
+                .langValue("IV Inference Hatch")
+                .rotationState(RotationState.ALL)
+                .abilities(HyperClusterPartAbilities.INFERENCE_COMPUTATION)
+                .modelProperty(GTMachineModelProperties.IS_FORMED, false)
+                .modelProperty(GTMachineModelProperties.RECIPE_LOGIC_STATUS, RecipeLogic.Status.IDLE)
+                .workableTieredHullModel(HyperCluster.id("block/machines/inference_hatch"))
+                .tooltips(Component.translatable("hypercluster.machine.iv_inference_hatch.tooltip"))
+                .register();
     }
 
     /**
@@ -270,7 +389,7 @@ public final class HyperClusterMachines {
         // (every machine added to this addon MUST be listed here — asserted by SurvivalCraftingTests).
         for (MachineDefinition machine : new MachineDefinition[] { HV_MICRO_BURNER, HV_TELEMETRY_ORE_WASHER,
                 EV_TELEMETRY_CHEMICAL_REACTOR, DATA_SCRUBBING_TOWER, LORA_ENGRAVING_CHAMBER,
-                RED_TEAM_SANDBOX }) {
+                RED_TEAM_SANDBOX, AIR_COOLED_COMPUTE_RACK, PRECISION_CRAC, IV_INFERENCE_HATCH }) {
             for (com.gregtechceu.gtceu.client.model.machine.MachineRenderState renderState : machine
                     .getStateDefinition().getPossibleStates()) {
                 MachineDefinition.RENDER_STATE_REGISTRY.add(renderState);

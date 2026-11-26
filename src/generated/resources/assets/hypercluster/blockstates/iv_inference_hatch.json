@@ -1,0 +1,28 @@
+{
+  "variants": {
+    "facing=down": {
+      "model": "hypercluster:block/machine/iv_inference_hatch",
+      "x": 90
+    },
+    "facing=east": {
+      "model": "hypercluster:block/machine/iv_inference_hatch",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "hypercluster:block/machine/iv_inference_hatch"
+    },
+    "facing=south": {
+      "model": "hypercluster:block/machine/iv_inference_hatch",
+      "y": 180
+    },
+    "facing=up": {
+      "gtceu:z": 180,
+      "model": "hypercluster:block/machine/iv_inference_hatch",
+      "x": 270
+    },
+    "facing=west": {
+      "model": "hypercluster:block/machine/iv_inference_hatch",
+      "y": 270
+    }
+  }
+}
