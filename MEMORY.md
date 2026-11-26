@@ -36,6 +36,14 @@
 - **runGametest 29/29**（0.1 的 20 + `DataWorkshopTests` 9，新模板 `hc_field` 13×9×13）；Xvfb 客户端冒烟零内容 ERROR；版本号已 bump 0.2.0。
 - **留坑（0.2.1）**：黄金样本、微调刻录舱、红队测试舱；塔输入混配约束余量在 `DATA_SCRUBBING_RECIPES.setMaxIOSize(4,3,2,0)`。
 
+## 0.2.1 微调与红队对齐已完成（2026-11-26，0.2.1）
+
+- **0.2 三修正**：clean-dataset 载体 2→4；zh_cn 统一「化学反应釜」+烧录台双样本说明；芯片配方亚硫酸铝 4→2（铝守恒 2→2）。
+- **5 新物品**（golden_dataset / mining·chemical_lora_card / aligned_mining·chemical_edge_chip）+ **两座 3×3×3 舱**：`lora_engraving_chamber`（数据集+载体+黄金样本+500mB 蒸馏水→LoRA 卡）、`red_team_sandbox`（噪点×2+芯片→已对齐芯片）；共用 `chamberPattern`（aisle 底层 `"XSX","XXX","XXX"` + 中层 `"XGX","X#X","XGX"` + 顶层实心，控制器在底层 (1,0,0)）。
+- **电路 #3**（LoRA，卡不消耗）：洗矿钴 2/3；化反铟 ×2 且铝守恒。**电路 #4**（已对齐芯片，不消耗）：化反 450 EU/t、洗矿 12 EU/t（=75% 基准）。黄金样本 = 清洗配方追加 1/10 chanced。
+- **runGametest 35/35**；Xvfb 冒烟零内容 ERROR；0.2.1 jar 交付。**0.2.1 贴图为占位**（物品沿用同族现稿拷贝），美术已先交 0.3 机房套件（Public untracked：air_cooled_compute_rack / inference_hatch / precision_crac / datacenter×4 / IV 刀片 / 零食包），留待 0.3 入库。
+- GT 配方 fraction 任意 a/b 均可（"2/3" 直接可用）；Content.content 对物品是 **vanilla `net.minecraft.world.item.crafting.Ingredient`**（用 `getItems()` 匹配），chance/maxChance 内部缩放但比值不变（1/10 精确、2/3≈0.6667 用区间断言）。
+
 ## GTCEu 7.4.0 多方块三坑（长期有效）
 
 - **维护仓 veto 配方**：`IMaintenanceMachine.modifyRecipe` 在 `enableMaintenance` 时对有任何问题的 hatch 返回 null → `WorkableMultiblockMachine.doModifyRecipe` 遍历 parts 一票否决 → 多方块「成型但永远 IDLE」第一嫌疑。**`ALL_PROBLEMS = 0`（bitmask 1=已修复）**，新维护仓初始 6 问题全在，玩家必须先修复 hatch 才能跑配方；测试用 `fixAllMaintenanceProblems()` 模拟。问题排查钩子：手动打印 `machine.fullModifyRecipe(candidate)`，NULL 即查 parts 的 modifyRecipe。

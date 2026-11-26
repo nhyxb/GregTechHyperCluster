@@ -39,7 +39,7 @@ source env.fish
 ./gradlew runGametest
 ```
 
-资源生成输出在 `src/generated/resources/`，构建产物在 `build/libs/`。首次构建会下载 Gradle 和开发依赖。在启用命令的测试世界里可用 `/give @s hypercluster:mining_telemetry_log` 验证物品注册和模型。`runGametest` 以 headless 方式跑全部回归（Forge GameTestServer，目前 29 个用例：物品/配方、P02 结算探针、P03/P04 闭环与边界、P05 生存配方存在性、0.2 EV 数据工坊全链）。
+资源生成输出在 `src/generated/resources/`，构建产物在 `build/libs/`。首次构建会下载 Gradle 和开发依赖。在启用命令的测试世界里可用 `/give @s hypercluster:mining_telemetry_log` 验证物品注册和模型。`runGametest` 以 headless 方式跑全部回归（Forge GameTestServer，目前 35 个用例：物品/配方、P02 结算探针、P03/P04 闭环与边界、P05 生存配方存在性、0.2 EV 数据工坊全链、0.2.1 微调与红队对齐链）。
 
 开发客户端、专服和数据生成分别使用 `run/client/`、`run/server/`、`run/data/`，日志写入各自的 `logs/`。运行 `./gradlew runServer` 首次启动时，Minecraft 会生成 `run/server/eula.txt`。确认同意其中链接的 EULA 后，在该文件设 `eula=true` 并再次启动。
 
@@ -64,6 +64,18 @@ source env.fish
   - 微型烧录台扩展：高纯化工数据集 + 空白载体 → 化工边缘芯片；高纯矿处数据集 + 空白载体 → 矿处边缘芯片（128 EU/t × 64t，比原始日志版**能耗 1/4、耗时 1/2**）；
   - 生存合成：清洁数据集可替代日志位置合成空白载体 ×2；EV 化工反冲炉（消费原版 gtceu:ev_chemical_reactor）；数据清洗塔主控（EV 机壳 + EV 电路 ×2 + 玻璃 + 钛板）。
 - **验收**：`./gradlew runData`、`build`、`runGametest`（29/29）全绿；渲染态同步注册覆盖全部 4 台机器并由回归断言（防 0.1 贴图不同步复发）；详细报告见 [docs/reports/0.2_core_acceptance_report.md](docs/reports/0.2_core_acceptance_report.md)。
+
+## 0.2.1 内容（微调与红队对齐）
+
+- **新增物品**（均堆叠 64 + 中英工具提示）：`golden_dataset` 黄金标注样本、`mining_lora_card` / `chemical_lora_card` 领域 LoRA 卡、`aligned_mining_edge_chip` / `aligned_chemical_edge_chip` 已对齐边缘芯片（贴图为占位，待美术正式稿）。
+- **清洗塔副产扩展**：两条清洗配方在 9/10 乱码噪点之外，以 **1/10** 追加副产黄金标注样本。
+- **新增机器**（EV 固定多方块，共用 3×3×3 舱室结构：EV 钛机壳 + 玻璃 + 标准 5 类仓室）：
+  - `lora_engraving_chamber` 神经微调刻录舱（配方类型 `lora_engraving`）：高纯领域数据集 + 空白载体 + 黄金样本 + 500mB 蒸馏水 + EV 电力 → 对应领域 LoRA 卡；
+  - `red_team_sandbox` 沙盒红队测试舱（配方类型 `red_team_testing`）：2× 乱码噪点（对抗样本）+ 普通边缘芯片 → **已对齐边缘芯片**。
+- **电路 `#3` LoRA 专精配方**（不消耗 LoRA 卡，与 `#1/#2` 严格隔离）：洗矿机稀有副产钴粉概率 **1/3 → 2/3**；化反在同量 2 铝粉下**小堆铟粉翻倍**（铝守恒 2→2）。
+- **电路 `#4` 已对齐芯片收益**（受控、无恶性幻觉炉渣）：不消耗已对齐芯片，化反 600→**450 EU/t**、洗矿 16→**12 EU/t**（均降 **25%**），产物与基准一致，界面工具提示标明已通过红队对抗校验。
+- **0.2 三处修正**：清洁数据集载体配方产量 2→**4**；中文文案统一「化学反应釜」并说明烧录台双样本输入；芯片省料配方亚硫酸铝输出 4→**2**（铝守恒）。
+- **验收**：`runData` / `build`（`gregtech-hypercluster-0.2.1.jar`）/ `runGametest`（35/35）全绿，Xvfb 客户端冒烟零内容报错；报告见 [docs/reports/0.2.1_acceptance_report.md](docs/reports/0.2.1_acceptance_report.md)。
 
 ## 运行锁定组合（P06 实测）
 

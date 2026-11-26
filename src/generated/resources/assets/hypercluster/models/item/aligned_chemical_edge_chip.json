@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "hypercluster:item/aligned_chemical_edge_chip"
+  }
+}

@@ -38,6 +38,22 @@ public final class HyperClusterItems {
     public static final ItemEntry<TooltipItem> CHEMICAL_EDGE_CHIP = register("chemical_edge_chip",
             "Chemical Edge Chip", "Edge-inference chip for the chemical domain. Unlocks reagent-saving recipes.");
 
+    // 0.2.1 — fine-tuning (LoRA) + red-team alignment chain.
+    public static final ItemEntry<TooltipItem> GOLDEN_DATASET = register("golden_dataset",
+            "Golden Dataset", "Golden-labelled samples exhaled by the scrubbing tower. Perfect engraving grade.");
+    public static final ItemEntry<TooltipItem> MINING_LORA_CARD = register("mining_lora_card",
+            "Mining LoRA Card", "Domain fine-tune card engraved from high-purity mining data. Circuit #3 recipes.");
+    public static final ItemEntry<TooltipItem> CHEMICAL_LORA_CARD = register("chemical_lora_card",
+            "Chemical LoRA Card",
+            "Domain fine-tune card engraved from high-purity chemical data. Circuit #3 recipes.");
+    public static final ItemEntry<TooltipItem> ALIGNED_MINING_EDGE_CHIP = register("aligned_mining_edge_chip",
+            "Aligned Mining Edge Chip",
+            "Passed red-team adversarial validation. Stable circuit #4 mining recipes at 25% less energy.");
+    public static final ItemEntry<TooltipItem> ALIGNED_CHEMICAL_EDGE_CHIP = register(
+            "aligned_chemical_edge_chip",
+            "Aligned Chemical Edge Chip",
+            "Passed red-team adversarial validation. Stable circuit #4 chemical recipes at 25% less energy.");
+
     private HyperClusterItems() {}
 
     public static void init() {}

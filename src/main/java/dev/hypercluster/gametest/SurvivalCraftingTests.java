@@ -78,6 +78,21 @@ public class SurvivalCraftingTests {
                 "data_scrubbing_tower recipe output mismatch: " +
                         tower.getResultItem(helper.getLevel().registryAccess()));
         assertRecipeUses(helper, tower, "minecraft:glass", "the tower must use glass");
+        // 0.2.1 entries: the LoRA chamber and the red-team sandbox are craftable.
+        CraftingRecipe chamber = craftingRecipe(helper, "shaped/lora_engraving_chamber");
+        helper.assertTrue(
+                chamber.getResultItem(helper.getLevel().registryAccess())
+                        .is(HyperClusterMachines.LORA_ENGRAVING_CHAMBER.getBlock().asItem()),
+                "lora_engraving_chamber recipe output mismatch: " +
+                        chamber.getResultItem(helper.getLevel().registryAccess()));
+        assertRecipeUses(helper, chamber, "gtceu:ev_sensor", "the LoRA chamber must use an EV sensor");
+        CraftingRecipe sandbox = craftingRecipe(helper, "shaped/red_team_sandbox");
+        helper.assertTrue(
+                sandbox.getResultItem(helper.getLevel().registryAccess())
+                        .is(HyperClusterMachines.RED_TEAM_SANDBOX.getBlock().asItem()),
+                "red_team_sandbox recipe output mismatch: " +
+                        sandbox.getResultItem(helper.getLevel().registryAccess()));
+        assertRecipeUses(helper, sandbox, "gtceu:ev_emitter", "the red-team sandbox must use an EV emitter");
         // Clean datasets have a purpose: an alternative blank-carrier recipe.
         CraftingRecipe carrierFromDataset = craftingRecipe(helper, "shaped/blank_carrier_from_clean_dataset");
         helper.assertTrue(
@@ -85,11 +100,15 @@ public class SurvivalCraftingTests {
                         .is(HyperClusterItems.BLANK_CARRIER.get()),
                 "blank_carrier_from_clean_dataset output mismatch: " +
                         carrierFromDataset.getResultItem(helper.getLevel().registryAccess()));
+        helper.assertTrue(carrierFromDataset.getResultItem(helper.getLevel().registryAccess()).getCount() == 4,
+                "clean-dataset carriers must yield 4 per craft, got " +
+                        carrierFromDataset.getResultItem(helper.getLevel().registryAccess()).getCount());
 
         // The ingredients themselves must exist in the registries (survival-obtainable chain).
         for (String id : new String[] { "gtceu:silicon_wafer", "gtceu:hv_sensor", "gtceu:hv_emitter",
                 "gtceu:hv_machine_hull", "gtceu:advanced_integrated_circuit", "gtceu:hv_ore_washer",
-                "gtceu:ev_sensor", "gtceu:ev_machine_hull", "gtceu:ev_chemical_reactor" }) {
+                "gtceu:ev_sensor", "gtceu:ev_machine_hull", "gtceu:ev_chemical_reactor",
+                "gtceu:ev_emitter" }) {
             helper.assertTrue(BuiltInRegistries.ITEM.containsKey(ResourceLocation.tryParse(id)),
                     "ingredient not registered: " + id);
         }
@@ -110,8 +129,8 @@ public class SurvivalCraftingTests {
         // switch recipe_logic_status (front overlay stuck on overlay_front).
         for (com.gregtechceu.gtceu.api.machine.MachineDefinition machine : new com.gregtechceu.gtceu.api.machine.MachineDefinition[] {
                 HyperClusterMachines.HV_MICRO_BURNER, HyperClusterMachines.HV_TELEMETRY_ORE_WASHER,
-                HyperClusterMachines.EV_TELEMETRY_CHEMICAL_REACTOR,
-                HyperClusterMachines.DATA_SCRUBBING_TOWER }) {
+                HyperClusterMachines.EV_TELEMETRY_CHEMICAL_REACTOR, HyperClusterMachines.DATA_SCRUBBING_TOWER,
+                HyperClusterMachines.LORA_ENGRAVING_CHAMBER, HyperClusterMachines.RED_TEAM_SANDBOX }) {
             int expected = 0;
             int registered = 0;
             for (com.gregtechceu.gtceu.client.model.machine.MachineRenderState state : machine

@@ -153,8 +153,9 @@ public class DataWorkshopTests {
             int indium = countItem(reactor, ChemicalHelper.get(TagPrefix.dustSmall, GTMaterials.Indium).getItem());
             int sulfite = countItem(reactor, ChemicalHelper.get(TagPrefix.dust, GTMaterials.AluminiumSulfite)
                     .getItem());
-            helper.assertTrue(indium == 1 && sulfite == 4,
-                    "chip recipe must keep the products identical, got indium=" + indium + " sulfite=" + sulfite);
+            helper.assertTrue(indium == 1 && sulfite == 2,
+                    "chip recipe must conserve aluminium (2 in -> 2 sulfite out), got indium=" + indium +
+                            " sulfite=" + sulfite);
             // Aluminium dust: the chip recipe consumes 2 (base would need 4), so 2 of 4 remain.
             helper.assertTrue(reactor.importItems.getStackInSlot(0).getCount() == 2,
                     "chip recipe must consume only 2 aluminium dust (4 -> 2 remain), remaining=" +
@@ -163,7 +164,7 @@ public class DataWorkshopTests {
             helper.assertTrue(
                     chipAfter.is(HyperClusterItems.CHEMICAL_EDGE_CHIP.get()) && chipAfter.getCount() == 1,
                     "chemical edge chip must stay retrievable, got " + chipAfter);
-            System.out.printf("[HC-02] chip recipe: log=1 indium=1 sulfite=4 aluminiumLeft=%d chip=%s%n",
+            System.out.printf("[HC-02] chip recipe: log=1 indium=1 sulfite=2 aluminiumLeft=%d chip=%s%n",
                     reactor.importItems.getStackInSlot(0).getCount(), chipAfter);
             helper.succeed();
         });
@@ -518,7 +519,7 @@ public class DataWorkshopTests {
      * check + onStructureFormed). The async MWSD executor is unreliable inside the gametest
      * server; in production the same sequence runs from the executor every ~250ms.
      */
-    private static void ensureTowerFormed(WorkableElectricMultiblockMachine controller) {
+    static void ensureTowerFormed(WorkableElectricMultiblockMachine controller) {
         java.util.concurrent.locks.Lock lock = controller.getPatternLock();
         lock.lock();
         try {

@@ -41,6 +41,8 @@ public final class HyperClusterRecipeTypes {
     public static GTRecipeType TELEMETRY_ORE_WASHING_RECIPES;
     public static GTRecipeType TELEMETRY_CHEMICAL_PROCESSING_RECIPES;
     public static GTRecipeType DATA_SCRUBBING_RECIPES;
+    public static GTRecipeType LORA_ENGRAVING_RECIPES;
+    public static GTRecipeType RED_TEAM_TESTING_RECIPES;
 
     private HyperClusterRecipeTypes() {}
 
@@ -87,6 +89,27 @@ public final class HyperClusterRecipeTypes {
                 .setSlotOverlay(true, false, GuiTextures.PATTERN_OVERLAY)
                 .setProgressBar(GuiTextures.PROGRESS_BAR_BATH, LEFT_TO_RIGHT)
                 .setSound(com.gregtechceu.gtceu.common.data.GTSoundEntries.BATH);
+
+        // 0.2.1 — LoRA engraving chamber: high-purity dataset + carrier + golden sample + water -> LoRA card.
+        LORA_ENGRAVING_RECIPES = register("lora_engraving", "multiblock")
+                .setMaxIOSize(4, 2, 1, 0)
+                .setEUIO(IO.IN)
+                .prepareBuilder(builder -> builder.EUt(GTValues.V[GTValues.EV]).duration(300))
+                .setSlotOverlay(false, false, GuiTextures.PATTERN_OVERLAY)
+                .setSlotOverlay(true, false, GuiTextures.PATTERN_OVERLAY)
+                .setProgressBar(GuiTextures.PROGRESS_BAR_ARROW, LEFT_TO_RIGHT)
+                .setSound(com.gregtechceu.gtceu.common.data.GTSoundEntries.CHEMICAL);
+
+        // 0.2.1 — red-team sandbox: corrupted noise as adversarial samples validates ordinary
+        // edge chips into aligned ones.
+        RED_TEAM_TESTING_RECIPES = register("red_team_testing", "multiblock")
+                .setMaxIOSize(3, 2, 0, 0)
+                .setEUIO(IO.IN)
+                .prepareBuilder(builder -> builder.EUt(GTValues.V[GTValues.EV]).duration(150))
+                .setSlotOverlay(false, false, GuiTextures.PATTERN_OVERLAY)
+                .setSlotOverlay(true, false, GuiTextures.PATTERN_OVERLAY)
+                .setProgressBar(GuiTextures.PROGRESS_BAR_ARROW, LEFT_TO_RIGHT)
+                .setSound(com.gregtechceu.gtceu.common.data.GTSoundEntries.CHEMICAL);
 
         GTRegistries.RECIPE_TYPES.freeze();
         GTRegistries.RECIPE_CATEGORIES.freeze();

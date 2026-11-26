@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "hypercluster:block/machine/red_team_sandbox",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "hypercluster:block/machine/red_team_sandbox"
+    },
+    "facing=south": {
+      "model": "hypercluster:block/machine/red_team_sandbox",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "hypercluster:block/machine/red_team_sandbox",
+      "y": 270
+    }
+  }
+}

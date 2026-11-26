@@ -52,6 +52,8 @@ public final class HyperClusterMachines {
     public static MachineDefinition HV_TELEMETRY_ORE_WASHER;
     public static MachineDefinition EV_TELEMETRY_CHEMICAL_REACTOR;
     public static MultiblockMachineDefinition DATA_SCRUBBING_TOWER;
+    public static MultiblockMachineDefinition LORA_ENGRAVING_CHAMBER;
+    public static MultiblockMachineDefinition RED_TEAM_SANDBOX;
 
     private HyperClusterMachines() {}
 
@@ -72,7 +74,7 @@ public final class HyperClusterMachines {
         // English entries for machine tooltips, recipe type categories and buffer hints.
         // (zh_cn is maintained manually under assets/hypercluster/lang/zh_cn.json.)
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.hv_micro_burner.tooltip",
-                "Burns mining telemetry logs and blank carriers into mining edge chips.");
+                "Burns edge chips from telemetry logs and high-purity domain datasets on blank carriers.");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.hv_telemetry_ore_washer.tooltip",
                 "Settles telemetry against real outputs. Base recipe: circuit #1. Chip recipe: circuit #2 (chip is not consumed).");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.ev_telemetry_chemical_reactor.tooltip",
@@ -84,6 +86,12 @@ public final class HyperClusterMachines {
         HyperCluster.REGISTRATE.addRawLang("hypercluster.telemetry_chemical_processing",
                 "Telemetry Chemical Processing");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.data_scrubbing", "Data Scrubbing");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.lora_engraving_chamber.tooltip",
+                "Engraves domain LoRA cards from high-purity datasets plus golden samples on blank carriers.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.red_team_sandbox.tooltip",
+                "Red-teams ordinary edge chips against corrupted noise. Validated chips come out aligned.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.lora_engraving", "LoRA Engraving");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.red_team_testing", "Red-Team Testing");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.telemetry_buffer.tooltip",
                 "Telemetry log buffer: %s / %s. One log per settled batch.");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.telemetry_buffer.full",
@@ -186,6 +194,71 @@ public final class HyperClusterMachines {
                         HyperCluster.id("block/machines/data_scrubbing_tower"))
                 .tooltips(Component.translatable("hypercluster.machine.data_scrubbing_tower.tooltip"))
                 .register();
+
+        // 0.2.1 — LoRA Engraving Chamber: a fixed 3×3×3 EV multiblock turning high-purity
+        // datasets + golden samples on blank carriers into domain LoRA cards. Same shape as the
+        // red-team sandbox (verified placement semantics of the 3×5×3 tower aisle order).
+        LORA_ENGRAVING_CHAMBER = HyperCluster.REGISTRATE
+                .multiblock("lora_engraving_chamber",
+                        holder -> new WorkableElectricMultiblockMachine(holder))
+                .langValue("LoRA Engraving Chamber")
+                .rotationState(RotationState.NON_Y_AXIS)
+                .recipeType(HyperClusterRecipeTypes.LORA_ENGRAVING_RECIPES)
+                .recipeModifier(GTRecipeModifiers.OC_NON_PERFECT)
+                .appearanceBlock(GTBlocks.MACHINE_CASING_EV)
+                .pattern(definition -> chamberPattern(definition))
+                .allowExtendedFacing(false)
+                .workableCasingModel(new ResourceLocation("gtceu", "block/casings/voltage/ev/side"),
+                        HyperCluster.id("block/machines/lora_engraving_chamber"))
+                .tooltips(Component.translatable("hypercluster.machine.lora_engraving_chamber.tooltip"))
+                .register();
+
+        // 0.2.1 — Red-Team Sandbox: a fixed 3×3×3 EV multiblock validating ordinary edge chips
+        // against corrupted noise into aligned ones.
+        RED_TEAM_SANDBOX = HyperCluster.REGISTRATE
+                .multiblock("red_team_sandbox",
+                        holder -> new WorkableElectricMultiblockMachine(holder))
+                .langValue("Red-Team Sandbox")
+                .rotationState(RotationState.NON_Y_AXIS)
+                .recipeType(HyperClusterRecipeTypes.RED_TEAM_TESTING_RECIPES)
+                .recipeModifier(GTRecipeModifiers.OC_NON_PERFECT)
+                .appearanceBlock(GTBlocks.MACHINE_CASING_EV)
+                .pattern(definition -> chamberPattern(definition))
+                .allowExtendedFacing(false)
+                .workableCasingModel(new ResourceLocation("gtceu", "block/casings/voltage/ev/side"),
+                        HyperCluster.id("block/machines/red_team_sandbox"))
+                .tooltips(Component.translatable("hypercluster.machine.red_team_sandbox.tooltip"))
+                .register();
+    }
+
+    /**
+     * The shared 3×3×3 chamber shape of the 0.2.1 multiblocks: bottom layer
+     * {@code "XSX","XXX","XXX"} (controller at local (1,0,0), hatches on the bottom ring), middle
+     * layer {@code "XGX","X#X","XGX"} (glass windows around an air core), solid casing cap on top.
+     */
+    private static com.gregtechceu.gtceu.api.pattern.BlockPattern chamberPattern(
+                                                                                 MultiblockMachineDefinition definition) {
+        return FactoryBlockPattern.start(RIGHT, BACK, UP)
+                .aisle("XSX", "XXX", "XXX")
+                .aisle("XGX", "X#X", "XGX")
+                .aisle("XXX", "XXX", "XXX")
+                .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                .where('X', Predicates.blocks(GTBlocks.MACHINE_CASING_EV.get())
+                        .or(Predicates.abilities(com.gregtechceu.gtceu.api.machine.multiblock.PartAbility.IMPORT_ITEMS)
+                                .setMinGlobalLimited(1).setMaxGlobalLimited(2))
+                        .or(Predicates.abilities(
+                                com.gregtechceu.gtceu.api.machine.multiblock.PartAbility.IMPORT_FLUIDS)
+                                .setMinGlobalLimited(1).setMaxGlobalLimited(2))
+                        .or(Predicates.abilities(
+                                com.gregtechceu.gtceu.api.machine.multiblock.PartAbility.EXPORT_ITEMS)
+                                .setMinGlobalLimited(1).setMaxGlobalLimited(2))
+                        .or(Predicates.abilities(
+                                com.gregtechceu.gtceu.api.machine.multiblock.PartAbility.INPUT_ENERGY)
+                                .setMinGlobalLimited(1).setMaxGlobalLimited(2))
+                        .or(Predicates.autoAbilities(true, false, false)))
+                .where('G', Predicates.blocks(Blocks.GLASS))
+                .where('#', Predicates.air())
+                .build();
     }
 
     /** Mirrors GTMachines.init(): GTCEu 7.4.0 registers render states of its own machines only. */
@@ -196,7 +269,8 @@ public final class HyperClusterMachines {
         // switch, leaving the front overlay on its idle texture. Register them explicitly
         // (every machine added to this addon MUST be listed here — asserted by SurvivalCraftingTests).
         for (MachineDefinition machine : new MachineDefinition[] { HV_MICRO_BURNER, HV_TELEMETRY_ORE_WASHER,
-                EV_TELEMETRY_CHEMICAL_REACTOR, DATA_SCRUBBING_TOWER }) {
+                EV_TELEMETRY_CHEMICAL_REACTOR, DATA_SCRUBBING_TOWER, LORA_ENGRAVING_CHAMBER,
+                RED_TEAM_SANDBOX }) {
             for (com.gregtechceu.gtceu.client.model.machine.MachineRenderState renderState : machine
                     .getStateDefinition().getPossibleStates()) {
                 MachineDefinition.RENDER_STATE_REGISTRY.add(renderState);

@@ -32,6 +32,7 @@ public final class HyperClusterRecipes {
         registerTelemetryOreWashingRecipes(provider);
         registerTelemetryChemicalRecipes(provider);
         registerDataScrubbingRecipes(provider);
+        registerFineTuningRecipes(provider);
         registerSurvivalRecipes(provider);
     }
 
@@ -94,6 +95,35 @@ public final class HyperClusterRecipes {
                 .chancedOutput(TagPrefix.dust, GTMaterials.Cobalt, "1/3", 0)
                 .outputItems(TagPrefix.dust, GTMaterials.Stone)
                 .save(provider);
+
+        // 0.2.1 — LoRA-specialised wash (circuit #3 + a non-consumed mining LoRA card): the rare
+        // cobalt by-product chance rises from 1/3 to 2/3. Strict isolation by circuit number.
+        HyperClusterRecipeTypes.TELEMETRY_ORE_WASHING_RECIPES
+                .recipeBuilder(HyperCluster.id("wash_copper_crushed_ore_to_purified_ore_lora"))
+                .inputItems(ChemicalHelper.get(TagPrefix.crushed, GTMaterials.Copper))
+                .notConsumable(new ItemStack(HyperClusterItems.MINING_LORA_CARD.get()))
+                .circuitMeta(3)
+                .inputFluids(GTMaterials.Water.getFluid(100))
+                .outputItems(ChemicalHelper.get(TagPrefix.crushedPurified, GTMaterials.Copper))
+                .chancedOutput(TagPrefix.dust, GTMaterials.Cobalt, "2/3", 0)
+                .outputItems(TagPrefix.dust, GTMaterials.Stone)
+                .save(provider);
+
+        // 0.2.1 — aligned-chip wash (circuit #4 + a non-consumed aligned mining edge chip):
+        // the red-team validated chip runs the same wash at 25% less energy (16 -> 12 EU/t),
+        // no adversarial noise interference.
+        HyperClusterRecipeTypes.TELEMETRY_ORE_WASHING_RECIPES
+                .recipeBuilder(HyperCluster.id("wash_copper_crushed_ore_to_purified_ore_aligned"))
+                .inputItems(ChemicalHelper.get(TagPrefix.crushed, GTMaterials.Copper))
+                .notConsumable(new ItemStack(HyperClusterItems.ALIGNED_MINING_EDGE_CHIP.get()))
+                .circuitMeta(4)
+                .inputFluids(GTMaterials.Water.getFluid(1000))
+                .outputItems(ChemicalHelper.get(TagPrefix.crushedPurified, GTMaterials.Copper))
+                .chancedOutput(TagPrefix.dust, GTMaterials.Cobalt, "1/3", 0)
+                .outputItems(TagPrefix.dust, GTMaterials.Stone)
+                .EUt(12)
+                .duration(400)
+                .save(provider);
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -117,8 +147,9 @@ public final class HyperClusterRecipes {
                 .duration(50)
                 .save(provider);
 
-        // 0.2 — chip-enhanced separation: HALF the auxiliary aluminium dust (4 -> 2), identical
-        // products, chemical edge chip stays retrievable. Strict isolation by circuit #2.
+        // 0.2 — chip-enhanced separation: HALF the auxiliary aluminium dust (4 -> 2) with the
+        // aluminium sulfite output reduced to 2 as well (aluminium conservation 2 -> 2), identical
+        // indium/solution yields, chemical edge chip stays retrievable. Strict isolation by circuit #2.
         HyperClusterRecipeTypes.TELEMETRY_CHEMICAL_PROCESSING_RECIPES
                 .recipeBuilder(HyperCluster.id("indium_concentrate_separation_chip"))
                 .inputItems(ChemicalHelper.get(TagPrefix.dust, GTMaterials.Aluminium, 2))
@@ -126,9 +157,41 @@ public final class HyperClusterRecipes {
                 .circuitMeta(2)
                 .inputFluids(GTMaterials.IndiumConcentrate.getFluid(1000))
                 .outputItems(ChemicalHelper.get(TagPrefix.dustSmall, GTMaterials.Indium))
-                .outputItems(ChemicalHelper.get(TagPrefix.dust, GTMaterials.AluminiumSulfite, 4))
+                .outputItems(ChemicalHelper.get(TagPrefix.dust, GTMaterials.AluminiumSulfite, 2))
                 .outputFluids(GTMaterials.LeadZincSolution.getFluid(1000))
                 .EUt(600)
+                .duration(50)
+                .save(provider);
+
+        // 0.2.1 — LoRA-specialised separation (circuit #3 + a non-consumed chemical LoRA card):
+        // DOUBLE the small indium yield from the same 2 aluminium dust (better reagent economy AND
+        // yield), aluminium conservation kept at 2 -> 2 sulfite. Strict isolation by circuit #3.
+        HyperClusterRecipeTypes.TELEMETRY_CHEMICAL_PROCESSING_RECIPES
+                .recipeBuilder(HyperCluster.id("indium_concentrate_separation_lora"))
+                .inputItems(ChemicalHelper.get(TagPrefix.dust, GTMaterials.Aluminium, 2))
+                .notConsumable(new ItemStack(HyperClusterItems.CHEMICAL_LORA_CARD.get()))
+                .circuitMeta(3)
+                .inputFluids(GTMaterials.IndiumConcentrate.getFluid(1000))
+                .outputItems(ChemicalHelper.get(TagPrefix.dustSmall, GTMaterials.Indium, 2))
+                .outputItems(ChemicalHelper.get(TagPrefix.dust, GTMaterials.AluminiumSulfite, 2))
+                .outputFluids(GTMaterials.LeadZincSolution.getFluid(1000))
+                .EUt(600)
+                .duration(50)
+                .save(provider);
+
+        // 0.2.1 — aligned-chip separation (circuit #4 + a non-consumed aligned chemical edge chip):
+        // the red-team validated chip runs the base recipe at 25% less energy (600 -> 450 EU/t),
+        // no adversarial noise interference.
+        HyperClusterRecipeTypes.TELEMETRY_CHEMICAL_PROCESSING_RECIPES
+                .recipeBuilder(HyperCluster.id("indium_concentrate_separation_aligned"))
+                .inputItems(ChemicalHelper.get(TagPrefix.dust, GTMaterials.Aluminium, 4))
+                .notConsumable(new ItemStack(HyperClusterItems.ALIGNED_CHEMICAL_EDGE_CHIP.get()))
+                .circuitMeta(4)
+                .inputFluids(GTMaterials.IndiumConcentrate.getFluid(1000))
+                .outputItems(ChemicalHelper.get(TagPrefix.dustSmall, GTMaterials.Indium))
+                .outputItems(ChemicalHelper.get(TagPrefix.dust, GTMaterials.AluminiumSulfite, 4))
+                .outputFluids(GTMaterials.LeadZincSolution.getFluid(1000))
+                .EUt(450)
                 .duration(50)
                 .save(provider);
     }
@@ -139,7 +202,7 @@ public final class HyperClusterRecipes {
 
     private static void registerDataScrubbingRecipes(java.util.function.Consumer<FinishedRecipe> provider) {
         // Scrub raw mining telemetry: log + distilled water -> high-purity mining dataset
-        // + clean dataset + 90% corrupted noise.
+        // + clean dataset + 90% corrupted noise + 10% golden labelled samples (0.2.1).
         HyperClusterRecipeTypes.DATA_SCRUBBING_RECIPES
                 .recipeBuilder(HyperCluster.id("scrub_mining_telemetry_log"))
                 .inputItems(new ItemStack(HyperClusterItems.MINING_TELEMETRY_LOG.get()))
@@ -147,6 +210,7 @@ public final class HyperClusterRecipes {
                 .outputItems(new ItemStack(HyperClusterItems.HIGH_PURITY_MINING_DATASET.get()))
                 .outputItems(new ItemStack(HyperClusterItems.CLEAN_DATASET.get()))
                 .chancedOutput(new ItemStack(HyperClusterItems.CORRUPTED_NOISE.get()), "9/10", 0)
+                .chancedOutput(new ItemStack(HyperClusterItems.GOLDEN_DATASET.get()), "1/10", 0)
                 .save(provider);
 
         // Scrub raw chemical telemetry: same contract in the chemical domain.
@@ -157,6 +221,7 @@ public final class HyperClusterRecipes {
                 .outputItems(new ItemStack(HyperClusterItems.HIGH_PURITY_CHEMICAL_DATASET.get()))
                 .outputItems(new ItemStack(HyperClusterItems.CLEAN_DATASET.get()))
                 .chancedOutput(new ItemStack(HyperClusterItems.CORRUPTED_NOISE.get()), "9/10", 0)
+                .chancedOutput(new ItemStack(HyperClusterItems.GOLDEN_DATASET.get()), "1/10", 0)
                 .save(provider);
 
         // Every output is processable: formatted corrupted noise recovers raw silicon powder.
@@ -167,6 +232,50 @@ public final class HyperClusterRecipes {
                 .outputItems(ChemicalHelper.get(TagPrefix.dust, GTMaterials.Silicon))
                 .EUt(1024)
                 .duration(100)
+                .save(provider);
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // 0.2.1 — EV LoRA engraving chamber + red-team sandbox //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    private static void registerFineTuningRecipes(java.util.function.Consumer<FinishedRecipe> provider) {
+        // Engrave the mining LoRA card: high-purity mining dataset + blank carrier + golden
+        // labelled sample + distilled water. EV power from the multiblock's energy hatch.
+        HyperClusterRecipeTypes.LORA_ENGRAVING_RECIPES
+                .recipeBuilder(HyperCluster.id("engrave_mining_lora_card"))
+                .inputItems(new ItemStack(HyperClusterItems.HIGH_PURITY_MINING_DATASET.get()))
+                .inputItems(new ItemStack(HyperClusterItems.BLANK_CARRIER.get()))
+                .inputItems(new ItemStack(HyperClusterItems.GOLDEN_DATASET.get()))
+                .inputFluids(GTMaterials.DistilledWater.getFluid(500))
+                .outputItems(new ItemStack(HyperClusterItems.MINING_LORA_CARD.get()))
+                .save(provider);
+
+        // Engrave the chemical LoRA card: same contract in the chemical domain.
+        HyperClusterRecipeTypes.LORA_ENGRAVING_RECIPES
+                .recipeBuilder(HyperCluster.id("engrave_chemical_lora_card"))
+                .inputItems(new ItemStack(HyperClusterItems.HIGH_PURITY_CHEMICAL_DATASET.get()))
+                .inputItems(new ItemStack(HyperClusterItems.BLANK_CARRIER.get()))
+                .inputItems(new ItemStack(HyperClusterItems.GOLDEN_DATASET.get()))
+                .inputFluids(GTMaterials.DistilledWater.getFluid(500))
+                .outputItems(new ItemStack(HyperClusterItems.CHEMICAL_LORA_CARD.get()))
+                .save(provider);
+
+        // Red-team the mining edge chip: corrupted noise serves as adversarial samples; a chip
+        // that survives comes out aligned (circuit #4 recipes at 25% less energy).
+        HyperClusterRecipeTypes.RED_TEAM_TESTING_RECIPES
+                .recipeBuilder(HyperCluster.id("align_mining_edge_chip"))
+                .inputItems(new ItemStack(HyperClusterItems.CORRUPTED_NOISE.get(), 2))
+                .inputItems(new ItemStack(HyperClusterItems.MINING_EDGE_CHIP.get()))
+                .outputItems(new ItemStack(HyperClusterItems.ALIGNED_MINING_EDGE_CHIP.get()))
+                .save(provider);
+
+        // Red-team the chemical edge chip: same contract in the chemical domain.
+        HyperClusterRecipeTypes.RED_TEAM_TESTING_RECIPES
+                .recipeBuilder(HyperCluster.id("align_chemical_edge_chip"))
+                .inputItems(new ItemStack(HyperClusterItems.CORRUPTED_NOISE.get(), 2))
+                .inputItems(new ItemStack(HyperClusterItems.CHEMICAL_EDGE_CHIP.get()))
+                .outputItems(new ItemStack(HyperClusterItems.ALIGNED_CHEMICAL_EDGE_CHIP.get()))
                 .save(provider);
     }
 
@@ -187,9 +296,10 @@ public final class HyperClusterRecipes {
                 'P', ChemicalHelper.get(TagPrefix.plate, GTMaterials.Polyethylene));
 
         // 0.2 — clean datasets format blank carriers: the scrubbing residue has a purpose.
+        // 0.2.1 fix: yields 4 per craft so the clean-dataset route clearly beats the base recipe.
         VanillaRecipeHelper.addShapedRecipe(provider, true,
                 HyperCluster.id("blank_carrier_from_clean_dataset"),
-                new ItemStack(HyperClusterItems.BLANK_CARRIER.get(), 2),
+                new ItemStack(HyperClusterItems.BLANK_CARRIER.get(), 4),
                 "PDP",
                 "WCW",
                 'D', new ItemStack(HyperClusterItems.CLEAN_DATASET.get()),
@@ -248,6 +358,34 @@ public final class HyperClusterRecipes {
                 "CMC",
                 "GPG",
                 'G', Items.GLASS,
+                'C', GTCraftingComponents.CIRCUIT.get(EV),
+                'M', GTCraftingComponents.HULL.get(EV),
+                'P', ChemicalHelper.get(TagPrefix.plate, GTMaterials.Titanium));
+
+        // 0.2.1 — LoRA engraving chamber: an EV hull wired behind glass with an EV sensor for
+        // precise fine-tune optics and titanium plating.
+        VanillaRecipeHelper.addShapedRecipe(provider, true,
+                HyperCluster.id("lora_engraving_chamber"),
+                HyperClusterMachines.LORA_ENGRAVING_CHAMBER.asStack(1),
+                "GSG",
+                "CMC",
+                "GPG",
+                'G', Items.GLASS,
+                'S', GTCraftingComponents.SENSOR.get(EV),
+                'C', GTCraftingComponents.CIRCUIT.get(EV),
+                'M', GTCraftingComponents.HULL.get(EV),
+                'P', ChemicalHelper.get(TagPrefix.plate, GTMaterials.Titanium));
+
+        // 0.2.1 — red-team sandbox: an EV hull behind glass with an EV emitter for adversarial
+        // interference beams and titanium plating.
+        VanillaRecipeHelper.addShapedRecipe(provider, true,
+                HyperCluster.id("red_team_sandbox"),
+                HyperClusterMachines.RED_TEAM_SANDBOX.asStack(1),
+                "GEG",
+                "CMC",
+                "GPG",
+                'G', Items.GLASS,
+                'E', GTCraftingComponents.EMITTER.get(EV),
                 'C', GTCraftingComponents.CIRCUIT.get(EV),
                 'M', GTCraftingComponents.HULL.get(EV),
                 'P', ChemicalHelper.get(TagPrefix.plate, GTMaterials.Titanium));
