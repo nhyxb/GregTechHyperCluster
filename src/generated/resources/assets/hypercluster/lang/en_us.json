@@ -9,7 +9,6 @@
   "hypercluster.telemetry_ore_washing": "Telemetry Ore Washing",
   "item.hypercluster.blank_carrier": "Blank Carrier",
   "item.hypercluster.blank_carrier.tooltip": "Read-only carrier used to burn telemetry logs into an edge chip.",
-  "item.hypercluster.development_probe": "Development Probe",
   "item.hypercluster.mining_edge_chip": "Mining Edge Chip",
   "item.hypercluster.mining_edge_chip.tooltip": "Edge-inference chip burned from telemetry. Unlocks enhanced ore-processing recipes.",
   "item.hypercluster.mining_telemetry_log": "Mining Telemetry Log",

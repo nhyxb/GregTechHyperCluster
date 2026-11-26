@@ -78,6 +78,31 @@ public class SurvivalCraftingTests {
     }
 
     @GameTest(template = "hc_floor", batch = SURVIVAL_BATCH, timeoutTicks = 100)
+    public static void renderStatesRegisteredForSync(GameTestHelper helper) {
+        // Regression for the working-overlay bug: addon machines register after GTMachines.init(),
+        // so their MachineRenderStates must be added to MachineDefinition.RENDER_STATE_REGISTRY
+        // explicitly, otherwise the render-state payload fails to serialize and clients never
+        // switch recipe_logic_status (front overlay stuck on overlay_front).
+        for (com.gregtechceu.gtceu.api.machine.MachineDefinition machine : new com.gregtechceu.gtceu.api.machine.MachineDefinition[] {
+                HyperClusterMachines.HV_MICRO_BURNER, HyperClusterMachines.HV_TELEMETRY_ORE_WASHER }) {
+            int expected = 0;
+            int registered = 0;
+            for (com.gregtechceu.gtceu.client.model.machine.MachineRenderState state : machine
+                    .getStateDefinition().getPossibleStates()) {
+                expected++;
+                int id = com.gregtechceu.gtceu.api.machine.MachineDefinition.RENDER_STATE_REGISTRY.getId(state);
+                helper.assertTrue(id >= 0, "render state " + state + " of " + machine.getId() +
+                        " is missing from RENDER_STATE_REGISTRY — the working overlay would never sync");
+                if (id >= 0) registered++;
+            }
+            helper.assertTrue(expected > 0, machine.getId() + " has no render states at all");
+            System.out.printf("[HC-RENDER] %s: %d/%d render states registered%s%n", machine.getId(),
+                    registered, expected, registered == expected ? " (sync-ready)" : "");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "hc_floor", batch = SURVIVAL_BATCH, timeoutTicks = 100)
     public static void burnerAndWasherCraftableFromRecipeIds(GameTestHelper helper) {
         // Machine result items resolve directly (they are what /give and creative use).
         ItemStack burnerItem = HyperClusterMachines.HV_MICRO_BURNER.asStack(1);

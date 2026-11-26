@@ -40,6 +40,11 @@
 - Forge 专服生产环境字段/方法均为 SRG 名（`f_xxx_/m_xxx_`）；我们的 jar 由 MDG `reobfJar` 生成 SRG 引用，已验证与生产环境兼容（jar 内类可见 `f_/m_` 引用）。
 - P06 后 `HyperCluster.LOGGER` 存在，初始化双 INFO 日志可供打包排障：`[GregTech HyperCluster]: initializing content... / content ready`。
 
+## 0.1.0 发版修复（2026-11-26）
+
+- **移除 P00 占位物品 `development_probe`**（注册/中英语言/生成模型/README 示例全部清理，`/give` 示例改为 `hypercluster:mining_telemetry_log`）。
+- **运行贴图不切换的根因**（`Can't find id for 'hypercluster:<machine>[recipe_logic_status=idle]' in IdMapper` 堆栈 → `MachineRenderStatePayload.writePayload`）：GTCEu 7.4.0 只在 `GTMachines.init()` 末尾把它**自己**机器的全部 `MachineRenderState` 塞进 `MachineDefinition.RENDER_STATE_REGISTRY`；附属机器在 `IGTAddon.initializeAddon`（更晚）注册 → render state 不在注册表 → 服务端渲染态 payload 序列化直接抛异常 → 客户端收不到 `working`，正面贴图永远停在 `overlay_front`。**修复**：`HyperClusterMachines.registerRenderStates()` 镜像 GT 的补注册循环（未来每加一台机器都要挂进去，或写个遍历 `GTRegistries.MACHINES` 中 hypercluster 条目的循环）。回归：`SurvivalCraftingTests.renderStatesRegisteredForSync` 对每台机器断言 4/4 状态在注册表；20/20 gametest 全绿、IdMapper 异常 0 次。
+
 ## 开发测试规范（长期执行）
 
 - **客户端冒烟测试严禁占用宿主机真实桌面**：所有 `./gradlew runClient` 的自动化冒烟一律在 Xvfb 虚拟屏内跑，例如：

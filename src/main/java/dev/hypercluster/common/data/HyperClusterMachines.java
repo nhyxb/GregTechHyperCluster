@@ -39,6 +39,7 @@ public final class HyperClusterMachines {
         com.gregtechceu.gtceu.api.registry.GTRegistries.MACHINES.unfreeze();
         try {
             initMachines();
+            registerRenderStates();
         } finally {
             com.gregtechceu.gtceu.api.registry.GTRegistries.MACHINES.freeze();
         }
@@ -93,5 +94,20 @@ public final class HyperClusterMachines {
                         defaultTankSizeFunction.applyAsInt(GTValues.HV), true))
                 .tooltips(Component.translatable("hypercluster.machine.hv_telemetry_ore_washer.tooltip"))
                 .register();
+    }
+
+    /** Mirrors GTMachines.init(): GTCEu 7.4.0 registers render states of its own machines only. */
+    private static void registerRenderStates() {
+        // Addon machines register after GTMachines.init(), so their MachineRenderStates never
+        // enter MachineDefinition.RENDER_STATE_REGISTRY — the render-state sync payload then
+        // fails ("Can't find id ... in IdMapper") and clients never see recipe_logic_status
+        // switch, leaving the front overlay on its idle texture. Register them explicitly.
+        for (MachineDefinition machine : new MachineDefinition[] { HV_MICRO_BURNER,
+                HV_TELEMETRY_ORE_WASHER }) {
+            for (com.gregtechceu.gtceu.client.model.machine.MachineRenderState renderState : machine
+                    .getStateDefinition().getPossibleStates()) {
+                MachineDefinition.RENDER_STATE_REGISTRY.add(renderState);
+            }
+        }
     }
 }

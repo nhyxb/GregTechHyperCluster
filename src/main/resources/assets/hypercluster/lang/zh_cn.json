@@ -1,5 +1,4 @@
 {
-  "item.hypercluster.development_probe": "开发测试物品",
   "item.hypercluster.mining_telemetry_log": "矿处遥测日志",
   "item.hypercluster.mining_telemetry_log.tooltip": "由矿处机器在受支持配方成功结算时记录，每批一份。",
   "item.hypercluster.blank_carrier": "空白载体",
