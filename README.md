@@ -67,7 +67,7 @@ source env.fish
 
 ## 0.2.1 内容（微调与红队对齐）
 
-- **新增物品**（均堆叠 64 + 中英工具提示）：`golden_dataset` 黄金标注样本、`mining_lora_card` / `chemical_lora_card` 领域 LoRA 卡、`aligned_mining_edge_chip` / `aligned_chemical_edge_chip` 已对齐边缘芯片（贴图为占位，待美术正式稿）。
+- **新增物品**（均堆叠 64 + 中英工具提示）：`golden_dataset` 黄金标注样本、`mining_lora_card` / `chemical_lora_card` 领域 LoRA 卡、`aligned_mining_edge_chip` / `aligned_chemical_edge_chip` 已对齐边缘芯片（美术正式贴图已接入）。
 - **清洗塔副产扩展**：两条清洗配方在 9/10 乱码噪点之外，以 **1/10** 追加副产黄金标注样本。
 - **新增机器**（EV 固定多方块，共用 3×3×3 舱室结构：EV 钛机壳 + 玻璃 + 标准 5 类仓室）：
   - `lora_engraving_chamber` 神经微调刻录舱（配方类型 `lora_engraving`）：高纯领域数据集 + 空白载体 + 黄金样本 + 500mB 蒸馏水 + EV 电力 → 对应领域 LoRA 卡；
