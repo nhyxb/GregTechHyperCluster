@@ -19,8 +19,20 @@ GregTech CEu Modern 的 Minecraft 1.20.1 Forge 附属模组。首版范围和开
 
 在项目根目录执行以下命令。环境脚本优先使用 `.tools/jdk-17`，也接受指向 Java 17 JDK 的 `JAVA_HOME`。Java 21 可放在 `.tools/jdk-21`，也可通过 `HYPERCLUSTER_JDK_21` 指定。Gradle 则可通过 Foojay 自动下载缺少的工具链。IDE 可导入 `build.gradle` 并选择 Java 17 作为 Gradle JVM。
 
+bash/zsh：
+
 ```bash
 source ./env.sh
+./gradlew runData
+./gradlew build
+./gradlew runClient
+./gradlew runGametest
+```
+
+fish：
+
+```fish
+source env.fish
 ./gradlew runData
 ./gradlew build
 ./gradlew runClient

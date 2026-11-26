@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# fish shell 用户请改用同目录的 env.fish（语义一致）。
 
 _hypercluster_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 

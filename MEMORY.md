@@ -33,4 +33,5 @@
 
 - `run/server/eula.txt` 从未置 true（P00 当时 runServer 实际在 EULA 检查处退出）；`run/gametest/eula.txt` 已按 README 流程置 true。
 - 机器有 `DISPLAY=:1` 与 NVIDIA GPU：`runClient` 可启动到主菜单并完整装载 GT 资源（两台机器 overlay 贴图零报错）。
+- **用户使用 fish shell**：环境脚本用仓库内 `env.fish`（与 `env.sh` 语义一致；`return 1` 而非 exit）。系统默认 java 是 OpenJDK 25 —— 必须先 source 环境脚本再跑 `./gradlew`，否则 Gradle 8.10 的 Groovy 在 Java 25 上报 "Unsupported class file major version 69"，且会误用 `~/.gradle` 重新下载 wrapper。
 - 待移交：JEI 配方页真机确认；材料白名单扩充与缓冲满 UI 强化留给 P05。`telemetry_ore_washer` 正式贴图已交付并同步（Public 清单共 7 张贴图）。
