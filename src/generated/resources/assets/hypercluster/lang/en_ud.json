@@ -1,4 +1,12 @@
 {
+  "block.hypercluster.hv_micro_burner": "ɹǝuɹnᗺ oɹɔıW ΛH",
+  "block.hypercluster.hv_telemetry_ore_washer": "ɹǝɥsɐM ǝɹO ʎɹʇǝɯǝןǝ⟘ ΛH",
+  "hypercluster.machine.hv_micro_burner.tooltip": "˙sdıɥɔ ǝbpǝ buıuıɯ oʇuı sɹǝıɹɹɐɔ ʞuɐןq puɐ sboן ʎɹʇǝɯǝןǝʇ buıuıɯ suɹnᗺ",
+  "hypercluster.machine.hv_telemetry_ore_washer.tooltip": "˙)pǝɯnsuoɔ ʇou sı dıɥɔ( ᄅ# ʇınɔɹıɔ :ǝdıɔǝɹ dıɥƆ ˙Ɩ# ʇınɔɹıɔ :ǝdıɔǝɹ ǝsɐᗺ ˙sʇndʇno ןɐǝɹ ʇsuıɐbɐ ʎɹʇǝɯǝןǝʇ sǝןʇʇǝS",
+  "hypercluster.micro_burner": "ɹǝuɹnᗺ oɹɔıW",
+  "hypercluster.telemetry_buffer.full": "˙sboן ɹıǝɥʇ doɹp sǝɥɔʇɐq pǝןʇʇǝs ɹǝɥʇɹnɟ :ןןnɟ ɹǝɟɟnᗺ",
+  "hypercluster.telemetry_buffer.tooltip": "˙ɥɔʇɐq pǝןʇʇǝs ɹǝd boן ǝuO ˙%s / %s :ɹǝɟɟnq boן ʎɹʇǝɯǝןǝ⟘",
+  "hypercluster.telemetry_ore_washing": "buıɥsɐM ǝɹO ʎɹʇǝɯǝןǝ⟘",
   "item.hypercluster.blank_carrier": "ɹǝıɹɹɐƆ ʞuɐןᗺ",
   "item.hypercluster.blank_carrier.tooltip": "˙dıɥɔ ǝbpǝ uɐ oʇuı sboן ʎɹʇǝɯǝןǝʇ uɹnq oʇ pǝsn ɹǝıɹɹɐɔ ʎןuo-pɐǝᴚ",
   "item.hypercluster.development_probe": "ǝqoɹԀ ʇuǝɯdoןǝʌǝᗡ",

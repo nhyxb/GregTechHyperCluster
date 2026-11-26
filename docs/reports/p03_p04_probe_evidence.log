@@ -1,0 +1,14 @@
+[HC-PROBE] item=mining_telemetry_log maxStack=64 merged=64 tooltipKey=item.hypercluster.mining_telemetry_log.tooltip enUs=Mining Telemetry Log
+[HC-PROBE] item=blank_carrier maxStack=64 merged=64 tooltipKey=item.hypercluster.blank_carrier.tooltip enUs=Blank Carrier
+[HC-PROBE] item=mining_edge_chip maxStack=64 merged=64 tooltipKey=item.hypercluster.mining_edge_chip.tooltip enUs=Mining Edge Chip
+[HC-P04] interrupt at progress=0/0 buffer=0 status=IDLE
+[HC-P04] persistence: buffer after reload=3 (save size=1534 bytes)
+[HC-P04] same-tick settle proven at gameTime=12715: buffers=1/1
+[HC-P03] chip wash: log=1 purified=1 dust=1 chipRetained=1 mining_edge_chip waterLeft=net.minecraftforge.fluids.FluidStack@5a2f4039
+[HC-P03] burner: produced=1 mining_edge_chip status=IDLE
+[HC-P03] strict separation: circuit=1 + chip present -> base ran (water left=100, log=1, chip=1 mining_edge_chip)
+[HC-P04] full buffer: buffer=64 purified=3 (64 logs dropped)
+[HC-P04] jam: buffer=0 status=IDLE leftoverInput=1
+[11:33:49] [Server thread/INFO] [minecraft/GameTestServer]: 17 tests are now running!
+[11:33:57] [Server thread/INFO] [minecraft/GameTestServer]: ========= 17 GAME TESTS COMPLETE ======================
+[11:33:57] [Server thread/INFO] [minecraft/GameTestServer]: All 17 required tests passed :)

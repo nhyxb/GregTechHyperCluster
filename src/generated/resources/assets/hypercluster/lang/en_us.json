@@ -1,4 +1,12 @@
 {
+  "block.hypercluster.hv_micro_burner": "HV Micro Burner",
+  "block.hypercluster.hv_telemetry_ore_washer": "HV Telemetry Ore Washer",
+  "hypercluster.machine.hv_micro_burner.tooltip": "Burns mining telemetry logs and blank carriers into mining edge chips.",
+  "hypercluster.machine.hv_telemetry_ore_washer.tooltip": "Settles telemetry against real outputs. Base recipe: circuit #1. Chip recipe: circuit #2 (chip is not consumed).",
+  "hypercluster.micro_burner": "Micro Burner",
+  "hypercluster.telemetry_buffer.full": "Buffer full: further settled batches drop their logs.",
+  "hypercluster.telemetry_buffer.tooltip": "Telemetry log buffer: %s / %s. One log per settled batch.",
+  "hypercluster.telemetry_ore_washing": "Telemetry Ore Washing",
   "item.hypercluster.blank_carrier": "Blank Carrier",
   "item.hypercluster.blank_carrier.tooltip": "Read-only carrier used to burn telemetry logs into an edge chip.",
   "item.hypercluster.development_probe": "Development Probe",

@@ -5,5 +5,13 @@
   "item.hypercluster.blank_carrier": "空白载体",
   "item.hypercluster.blank_carrier.tooltip": "用于把遥测日志烧录成边缘芯片的只读空白载体。",
   "item.hypercluster.mining_edge_chip": "矿处边缘芯片",
-  "item.hypercluster.mining_edge_chip.tooltip": "以遥测日志烧录的边缘推理芯片，用于解锁增强版矿处配方。"
+  "item.hypercluster.mining_edge_chip.tooltip": "以遥测日志烧录的边缘推理芯片，用于解锁增强版矿处配方。",
+  "block.hypercluster.hv_micro_burner": "HV 微型烧录台",
+  "hypercluster.machine.hv_micro_burner.tooltip": "消耗矿处遥测日志与空白载体烧录矿处边缘芯片。",
+  "block.hypercluster.hv_telemetry_ore_washer": "HV 遥测示范洗矿机",
+  "hypercluster.machine.hv_telemetry_ore_washer.tooltip": "按真实产出结算的遥测示范洗矿机：基础配方用编程电路 1，芯片省水配方用编程电路 2 并保留芯片。",
+  "hypercluster.micro_burner": "微型烧录台",
+  "hypercluster.telemetry_ore_washing": "遥测洗矿",
+  "hypercluster.telemetry_buffer.tooltip": "遥测日志缓冲：%s / %s。每成功结算一批记一份。",
+  "hypercluster.telemetry_buffer.full": "缓冲已满：新批次不再入账，日志将被丢弃。"
 }

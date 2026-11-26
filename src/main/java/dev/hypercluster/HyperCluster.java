@@ -2,6 +2,7 @@ package dev.hypercluster;
 
 import com.gregtechceu.gtceu.api.registry.registrate.GTRegistrate;
 
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraftforge.fml.common.Mod;
 
@@ -12,6 +13,10 @@ public final class HyperCluster {
 
     public static final String MOD_ID = "hypercluster";
     public static final GTRegistrate REGISTRATE = GTRegistrate.create(MOD_ID);
+
+    public static ResourceLocation id(String path) {
+        return new ResourceLocation(MOD_ID, path);
+    }
 
     public HyperCluster() {
         REGISTRATE.item("development_probe", Item::new)
