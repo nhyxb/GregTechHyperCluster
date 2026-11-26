@@ -33,4 +33,4 @@
 
 - `run/server/eula.txt` 从未置 true（P00 当时 runServer 实际在 EULA 检查处退出）；`run/gametest/eula.txt` 已按 README 流程置 true。
 - 机器有 `DISPLAY=:1` 与 NVIDIA GPU：`runClient` 可启动到主菜单并完整装载 GT 资源（两台机器 overlay 贴图零报错）。
-- 待移交：`telemetry_ore_washer` 正面贴图为 micro_burner 占位（正式素材放入 `Public/textures/block/machines/telemetry_ore_washer/` 后复制到 assets 即换）；JEI 配方页真机确认；材料白名单扩充与缓冲满 UI 强化留给 P05。
+- 待移交：JEI 配方页真机确认；材料白名单扩充与缓冲满 UI 强化留给 P05。`telemetry_ore_washer` 正式贴图已交付并同步（Public 清单共 7 张贴图）。

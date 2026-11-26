@@ -44,7 +44,7 @@
 ### 1. 示范洗矿机（`hypercluster:hv_telemetry_ore_washer`）
 
 - 继承 `SimpleTieredMachine`（HV），同一机器同时运行基础洗矿镜像配方与芯片省水配方（见上表）。
-- 贴图：`Public/` 尚未提供 `telemetry_ore_washer/` 素材 —— 按 P04 条款以 micro_burner 的 overlay 临时占位接入 `assets/hypercluster/textures/block/machines/telemetry_ore_washer/`（正式素材到位后替换同名文件即可）。
+- 贴图：正式的 `telemetry_ore_washer` 正面覆盖贴图（`overlay_front.png` / `overlay_front_active.png`，16×16 RGBA，含 `.aseprite` 分层源文件）在本轮开发期间由美术侧交付进 `Public/textures/block/machines/telemetry_ore_washer/`，已按清单同步接入 `assets/hypercluster/textures/block/machines/telemetry_ore_washer/`（此前短暂使用过 micro_burner 临时占位，符合 P04 条款的兜底路径）。
 
 ### 2. 精确结算（`TelemetryRecipeLogic`，无 Mixin）
 
@@ -88,7 +88,6 @@ grep "HC-P03\|HC-P04" run/gametest/logs/latest.log   # 或本目录 p03_p04_prob
 
 ### 6. 已知边界与移交事项
 
-- `telemetry_ore_washer` 正面贴图为 micro_burner 临时占位（P04 条款允许），正式素材放入 `Public/textures/block/machines/telemetry_ore_washer/` 后复制到 assets 即换。
 - 7.4.0 子类无法更新收尾失败的 `waitingReason`（纯状态文字差异）；如需完整对齐需上游开放 setter（已记入 MEMORY）。
 - 基础洗矿镜像配方仅铜一种材料（P01 基准白名单），后续材料与“常规产物白名单”扩充在 P05 做。
 - JEI 中的配方页展示需真机客户端确认一次（服务器端已验证配方注入与匹配语义）。
