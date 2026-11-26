@@ -12,6 +12,8 @@ import dev.hypercluster.common.item.HyperClusterItems;
 public final class HyperCluster {
 
     public static final String MOD_ID = "hypercluster";
+    public static final org.apache.logging.log4j.Logger LOGGER = org.apache.logging.log4j.LogManager
+            .getLogger("GregTech HyperCluster");
     public static final GTRegistrate REGISTRATE = GTRegistrate.create(MOD_ID);
 
     public static ResourceLocation id(String path) {

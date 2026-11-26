@@ -23,9 +23,15 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>
  * Recording key facts per invocation (P02 deliverable): machine position, machine offset tick,
  * world game time, recipe id, progress vs duration (to separate "finish" from "interrupt" calls),
- * and the connection count. Activation is gated on the {@code hypercluster.probe} system property,
- * which is only set for gametest runs; production servers never load a wrapped definition because
- * {@link #install} is only called from the test batch.
+ * and the connection count.
+ *
+ * <p>
+ * <b>Mount-scope guarantee (P05):</b> the only call site of {@link #install} is the
+ * {@code hypercluster_probe} GameTest batch ({@code SettlementProbeTests#prepareProbe}), which runs
+ * exclusively under the {@code runGametest} task. Neither the {@code @Mod} constructor nor
+ * {@code IGTAddon#initializeAddon} touches this class, so ordinary single-player or dedicated
+ * server startups never wrap or otherwise alter any GregTech machine definition
+ * (including {@code gtceu:hv_ore_washer}).
  */
 public final class SettlementProbe {
 

@@ -29,6 +29,17 @@
 - GameTest 模板结构放 `src/main/resources/data/<modid>/structures/<name>.nbt`（gzip NBT，根必须带名字 TAG_Compound，DataVersion 3465）；`@GameTestHolder("hypercluster")` + `template = "<name>"`。
 - `org.jetbrains.annotations` 不在编译类路径，用 `javax.annotation.Nullable`；GTMaterials 路径 `com.gregtechceu.gtceu.common.data.GTMaterials`。
 
+## 0.1.0 已发布（P05+P06 完成，2026-11-26）
+
+- 生存合成配方（JEI 可查，id 带 `shaped/` 前缀——GT 的 ShapedRecipeBuilder 行为，GameTest 按此断言）：`blank_carrier`（聚乙烯板+硅晶圆+HV电路→×2）、`hv_micro_burner`、`hv_telemetry_ore_washer`（消费原版 `gtceu:hv_ore_washer`）。
+- UI 修复：缓冲槽用普通槽底图（去掉电路 overlay）；Tooltip 读 `slot.getItem()`（LDLib 同步栈）保证专服联机计数正确。
+- 生产冒烟组合已在 `run/pv-gt`（GT only）与 `run/pv-ae2`（+AE2）冷启动至 Done、零 ERROR；生产环境 Forge 禁用 gametest（`!isProduction()` 门），核心闭环回归固定走 dev `runGametest`（19/19）。
+- runServer /run_server eula 已按目标要求置 true（gitignore 内，不随仓库分发）。
+- **AE2 取包坑**：modmaven.dev 的 `appliedenergistics2-forge:15.4.12`（sha `094fc5…`）≠ 官方发布物（GitHub=Modrinth، sha `b9c59…`）；modmaven 版 mixin 用 mojmap 名 `@Shadow levels`，在 Forge SRG 生产运行时直接 MixinApplyError 崩溃。固定走 Modrinth/GitHub，或核对 sha256。
+- GuideME（AE2 强制依赖，20.1.7–20.2.0）无 maven：发布包为 SRG 运行时构建，**不能**进 dev classpath（dev 是 mojmap 名，加载即 NoSuchFieldError）；生产专服直接放 mods/ 即可。下载缓存在 `.tools/runtime/`（gitignore）。
+- Forge 专服生产环境字段/方法均为 SRG 名（`f_xxx_/m_xxx_`）；我们的 jar 由 MDG `reobfJar` 生成 SRG 引用，已验证与生产环境兼容（jar 内类可见 `f_/m_` 引用）。
+- P06 后 `HyperCluster.LOGGER` 存在，初始化双 INFO 日志可供打包排障：`[GregTech HyperCluster]: initializing content... / content ready`。
+
 ## 环境注意事项
 
 - `run/server/eula.txt` 从未置 true（P00 当时 runServer 实际在 EULA 检查处退出）；`run/gametest/eula.txt` 已按 README 流程置 true。

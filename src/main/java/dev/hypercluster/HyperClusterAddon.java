@@ -22,8 +22,10 @@ public final class HyperClusterAddon implements IGTAddon {
     @Override
     public void initializeAddon() {
         // Runs after GTCEu registered and froze its own content (see CommonProxy.init in 7.4.0).
+        HyperCluster.LOGGER.info("initializing content (recipe types + machines)");
         HyperClusterRecipeTypes.init();
         HyperClusterMachines.init();
+        HyperCluster.LOGGER.info("content ready: micro burner + telemetry ore washer chain");
     }
 
     @Override

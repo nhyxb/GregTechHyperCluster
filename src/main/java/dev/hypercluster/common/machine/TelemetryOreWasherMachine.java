@@ -162,14 +162,19 @@ public class TelemetryOreWasherMachine extends SimpleTieredMachine {
     private static EditableUI<SlotWidget, TelemetryOreWasherMachine> createTelemetryBufferSlot() {
         return new EditableUI<>("telemetry_buffer_slot", SlotWidget.class, SlotWidget::new,
                 (slotWidget, machine) -> {
-                    slotWidget.setBackground(GuiTextures.SLOT, GuiTextures.INT_CIRCUIT_OVERLAY);
+                    // Plain slot background: the circuit overlay confused players with the
+                    // programmed circuit slot (P05 UI fix).
+                    slotWidget.setBackground(GuiTextures.SLOT);
                     slotWidget.setHandlerSlot(machine.telemetryBuffer, 0);
                     slotWidget.setCanPutItems(false);
                     slotWidget.setCanTakeItems(true);
                     slotWidget.setOnAddedTooltips((slot, tooltips) -> {
+                        // P05 multiplayer fix: tooltips render on the client; the count must come
+                        // from the slot's own synced stack, not from the server-side machine.
+                        int displayed = slot.getItem().isEmpty() ? 0 : slot.getItem().getCount();
                         tooltips.add(Component.translatable("hypercluster.telemetry_buffer.tooltip",
-                                machine.getTelemetryBufferCount(), TELEMETRY_BUFFER_CAPACITY));
-                        if (machine.isTelemetryBufferFull()) {
+                                displayed, TELEMETRY_BUFFER_CAPACITY));
+                        if (displayed >= TELEMETRY_BUFFER_CAPACITY && !slot.getItem().isEmpty()) {
                             tooltips.add(Component.translatable("hypercluster.telemetry_buffer.full"));
                         }
                     });

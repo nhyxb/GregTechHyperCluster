@@ -50,7 +50,7 @@ public final class HyperClusterRecipeTypes {
                 .setProgressBar(GuiTextures.PROGRESS_BAR_ARROW, LEFT_TO_RIGHT);
 
         TELEMETRY_ORE_WASHING_RECIPES = register("telemetry_ore_washing")
-                .setMaxIOSize(2, 3, 1, 0)
+                .setMaxIOSize(3, 3, 1, 0)
                 .setEUIO(IO.IN)
                 .prepareBuilder(builder -> builder.EUt(16).duration(400))
                 .setSlotOverlay(false, false, GuiTextures.CRUSHED_ORE_OVERLAY)
