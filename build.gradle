@@ -35,6 +35,10 @@ repositories {
         url = 'https://maven.tterrag.com/'
         content { includeGroup 'com.tterrag.registrate' }
     }
+    exclusiveContent { // terraformers - EMI recipe viewer for dev runs
+        forRepository { maven { url = 'https://maven.terraformersmc.com/releases/' } }
+        filter { includeGroup 'dev.emi' }
+    }
 }
 
 legacyForge {
@@ -93,6 +97,8 @@ dependencies {
     }
     modImplementation("com.tterrag.registrate:Registrate:${registrate_version}")
     modImplementation("dev.toma.configuration:configuration-forge-${minecraft_version}:${configuration_version}")
+    // Dev-only recipe viewer; modRuntimeOnly rides MDG's automatic SRG->Mojmap remapping.
+    modRuntimeOnly("dev.emi:emi-forge:${emi_version}")
 }
 
 apply from: 'gradle/scripts/spotless.gradle'

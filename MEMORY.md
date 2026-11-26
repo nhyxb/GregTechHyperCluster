@@ -40,6 +40,12 @@
 - Forge 专服生产环境字段/方法均为 SRG 名（`f_xxx_/m_xxx_`）；我们的 jar 由 MDG `reobfJar` 生成 SRG 引用，已验证与生产环境兼容（jar 内类可见 `f_/m_` 引用）。
 - P06 后 `HyperCluster.LOGGER` 存在，初始化双 INFO 日志可供打包排障：`[GregTech HyperCluster]: initializing content... / content ready`。
 
+## 开发测试规范（长期执行）
+
+- **客户端冒烟测试严禁占用宿主机真实桌面**：所有 `./gradlew runClient` 的自动化冒烟一律在 Xvfb 虚拟屏内跑，例如：
+  `env -u WAYLAND_DISPLAY LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew runClient`
+  本环境 openSUSE 的 `xorg-x11-server-Xvfb` 包只带 `/usr/bin/Xvfb`、无 `xvfb-run` 脚本，等价做法：手动 `Xvfb :99 -screen 0 1280x720x24 &` 后 `env -u WAYLAND_DISPLAY LIBGL_ALWAYS_SOFTWARE=1 DISPLAY=:99 ./gradlew runClient`，结束后 kill 掉 Xvfb，不留后台进程。若以后装了 `xvfb-run`（需要用户确认安装来源），直接用标准命令即可。
+
 ## 环境注意事项
 
 - `run/server/eula.txt` 从未置 true（P00 当时 runServer 实际在 EULA 检查处退出）；`run/gametest/eula.txt` 已按 README 流程置 true。
