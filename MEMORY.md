@@ -72,6 +72,7 @@
 
 ## 开发测试规范（长期执行）
 
+- **⚠️ Xvfb 与本会话 bash 的 PID 命名空间**：每次 `bash` 调用都在独立的 `bwrap --unshare-pid` 命名空间里（私有 `/tmp`），**上一次调用启动的 Xvfb 已经随之死亡**。因此「先起 Xvfb、再单独调一次 runClient」会以 `glfwInit failed` 失败——不是显卡问题。正确做法是**把启动 Xvfb 与 runClient 写进同一个脚本一次执行**，并在同一脚本内收尾 kill。
 - **客户端冒烟测试严禁占用宿主机真实桌面**：所有 `./gradlew runClient` 的自动化冒烟一律在 Xvfb 虚拟屏内跑，例如：
   `env -u WAYLAND_DISPLAY LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew runClient`
   本环境 openSUSE 的 `xorg-x11-server-Xvfb` 包只带 `/usr/bin/Xvfb`、无 `xvfb-run` 脚本，等价做法：手动 `Xvfb :99 -screen 0 1280x720x24 &` 后 `env -u WAYLAND_DISPLAY LIBGL_ALWAYS_SOFTWARE=1 DISPLAY=:99 ./gradlew runClient`，结束后 kill 掉 Xvfb，不留后台进程。若以后装了 `xvfb-run`（需要用户确认安装来源），直接用标准命令即可。
