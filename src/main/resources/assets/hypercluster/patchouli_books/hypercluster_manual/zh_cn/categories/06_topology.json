@@ -1,0 +1,6 @@
+{
+  "name": "第六章 · 机房拓扑与模型家族",
+  "description": "TB 显存池、光交换机聚合、MoE 路由控制柜与六大模型家族。",
+  "icon": "hypercluster:moe_router_rack",
+  "sortnum": 5
+}

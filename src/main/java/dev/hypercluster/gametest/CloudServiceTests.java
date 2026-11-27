@@ -73,6 +73,14 @@ public class CloudServiceTests {
 
     public static final String CLOUD_BATCH = "hypercluster_04_cloud";
 
+    /**
+     * Base Token price of one round <b>as the station actually bills it</b>: since 0.6.1 each
+     * model carries its own price, so the expected base follows the model a fresh station dials
+     * instead of a flat constant. Every relative assertion (x0.1 cache, x0.5 batch, x2 tier)
+     * still reads off this one number.
+     */
+    private static final long BASE = CloudModels.defaultModel().tokenCostPerRound();
+
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // 1. the ledger contract (pure, no blocks) //
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -319,8 +327,8 @@ public class CloudServiceTests {
             helper.assertTrue(a.station().isTaskActive(),
                     "an LV hatch must drive the first cloud round, status=" +
                             a.station().getWaitingReason());
-            helper.assertTrue(a.station().getTaskPrice() == CloudPricing.BASE_TASK_PRICE,
-                    "the first Medium round must bill " + CloudPricing.BASE_TASK_PRICE + ", got " +
+            helper.assertTrue(a.station().getTaskPrice() == BASE,
+                    "the first Medium round must bill " + BASE + ", got " +
                             a.station().getTaskPrice());
             helper.assertTrue(a.station().getTaskTicksTotal() == CloudPricing.BASE_TASK_TICKS,
                     "the first Medium round must run " + CloudPricing.BASE_TASK_TICKS + " ticks");
@@ -328,11 +336,11 @@ public class CloudServiceTests {
 
         // Round 1 settles; round 2 (cached, 10%) runs on.
         helper.runAtTickTime(200, () -> {
-            helper.assertTrue(ledger.totalSpent(player) == CloudPricing.BASE_TASK_PRICE,
-                    "round 1 must have settled " + CloudPricing.BASE_TASK_PRICE + ", spent=" +
+            helper.assertTrue(ledger.totalSpent(player) == BASE,
+                    "round 1 must have settled " + BASE + ", spent=" +
                             ledger.totalSpent(player));
             helper.assertTrue(a.station().isTaskActive(), "round 2 must be running");
-            helper.assertTrue(a.station().getTaskPrice() == CloudPricing.BASE_TASK_PRICE / 10,
+            helper.assertTrue(a.station().getTaskPrice() == BASE / 10,
                     "round 2 must bill the cached 10% rate, got " + a.station().getTaskPrice());
         });
 
@@ -415,7 +423,7 @@ public class CloudServiceTests {
         });
 
         // Fund exactly one round: it starts, pre-deducts and holds the order.
-        helper.runAtTickTime(150, () -> ledger.credit(player, CloudPricing.BASE_TASK_PRICE));
+        helper.runAtTickTime(150, () -> ledger.credit(player, BASE));
         helper.runAtTickTime(180, () -> {
             helper.assertTrue(a.station().isTaskActive(), "the funded round must start, status=" +
                     a.station().getWaitingReason());
@@ -433,7 +441,7 @@ public class CloudServiceTests {
         // not simply start another (cache-hit) round on the refunded balance.
         helper.runAtTickTime(210, () -> {
             a.station().cancelTask();
-            helper.assertTrue(ledger.balance(player) == CloudPricing.BASE_TASK_PRICE,
+            helper.assertTrue(ledger.balance(player) == BASE,
                     "the cancel must refund the exact pre-deduction, got " + ledger.balance(player));
             helper.assertTrue(ledger.totalSpent(player) == 0,
                     "a cancelled round must not count as spend");
@@ -450,11 +458,11 @@ public class CloudServiceTests {
             a.station().cycleTier(); // MEDIUM -> EXTRA_HIGH: a new cache key, full rate.
             a.station().getInputSlot()
                     .setStackInSlot(0, new ItemStack(HyperClusterItems.CLEAN_DATASET.get(), 1));
-            ledger.credit(player, CloudPricing.BASE_TASK_PRICE * 2);
+            ledger.credit(player, BASE * 2);
         });
         helper.runAtTickTime(300, () -> {
             helper.assertTrue(a.station().isTaskActive(), "the Extra High round must start");
-            helper.assertTrue(a.station().getTaskPrice() == CloudPricing.BASE_TASK_PRICE * 2,
+            helper.assertTrue(a.station().getTaskPrice() == BASE * 2,
                     "the Extra High tier must bill x2, got " + a.station().getTaskPrice());
             helper.assertTrue(a.station().getTaskTicksTotal() == CloudPricing.BASE_TASK_TICKS / 2,
                     "the Extra High tier must halve the duration, got " +
@@ -462,9 +470,9 @@ public class CloudServiceTests {
         });
         helper.runAtTickTime(400, () -> {
             helper.assertTrue(!a.station().isTaskActive(), "the Extra High round must be done");
-            helper.assertTrue(ledger.balance(player) == CloudPricing.BASE_TASK_PRICE,
+            helper.assertTrue(ledger.balance(player) == BASE,
                     "only the settled round's price may stay deducted, balance=" + ledger.balance(player));
-            helper.assertTrue(ledger.totalSpent(player) == CloudPricing.BASE_TASK_PRICE * 2,
+            helper.assertTrue(ledger.totalSpent(player) == BASE * 2,
                     "the settled round must add to the spend");
             helper.assertTrue(!a.station().getOutputSlot().getStackInSlot(0).isEmpty(),
                     "the settled round must produce its output");
@@ -497,10 +505,10 @@ public class CloudServiceTests {
 
         // Round 1 full price; round 2 (same key) bills the 10% cache rate.
         helper.runAtTickTime(80, () -> helper.assertTrue(
-                a.station().getTaskPrice() == CloudPricing.BASE_TASK_PRICE,
+                a.station().getTaskPrice() == BASE,
                 "round 1 must bill full price"));
         helper.runAtTickTime(200, () -> {
-            helper.assertTrue(a.station().getTaskPrice() == CloudPricing.BASE_TASK_PRICE / 10,
+            helper.assertTrue(a.station().getTaskPrice() == BASE / 10,
                     "round 2 must bill the 10% cache rate, got " + a.station().getTaskPrice());
             helper.assertTrue(ledger.cacheHits(player) == 1, "exactly one cache hit must be booked");
         });
@@ -510,7 +518,7 @@ public class CloudServiceTests {
         // pointer, so A's round 6 must pay the full rate once more.
         helper.runAtTickTime(230, () -> a.station().cycleTier()); // applies to the next round
         helper.runAtTickTime(260, () -> helper.assertTrue(
-                a.station().getTaskPrice() == CloudPricing.BASE_TASK_PRICE * 2,
+                a.station().getTaskPrice() == BASE * 2,
                 "a changed tier must restart the full (Extra High x2) rate, got " +
                         a.station().getTaskPrice()));
 
@@ -519,14 +527,14 @@ public class CloudServiceTests {
                 .setStackInSlot(0, new ItemStack(HyperClusterItems.CLEAN_DATASET.get(), 1)));
         helper.runAtTickTime(400, () -> {
             helper.assertTrue(b.station().isTaskActive(), "station B must run its round");
-            helper.assertTrue(b.station().getTaskPrice() == CloudPricing.BASE_TASK_PRICE,
+            helper.assertTrue(b.station().getTaskPrice() == BASE,
                     "another machine position must restart the full rate, got " +
                             b.station().getTaskPrice());
         });
 
         // Station B's round moved the account's cache pointer: A's next round pays full again.
         helper.runAtTickTime(430, () -> helper.assertTrue(
-                a.station().getTaskPrice() == CloudPricing.BASE_TASK_PRICE * 2,
+                a.station().getTaskPrice() == BASE * 2,
                 "after B's round A must restart at its own full (tier) rate, got " +
                         a.station().getTaskPrice()));
         System.out.printf("[HC-04] prompt cache: 10%% from round 2; tier/pos changes reset the rate%n");
@@ -556,7 +564,7 @@ public class CloudServiceTests {
         helper.runAtTickTime(90, () -> {
             helper.assertTrue(a.station().isTaskActive(), "the batch round must start, status=" +
                     a.station().getWaitingReason());
-            helper.assertTrue(a.station().getTaskPrice() == CloudPricing.BASE_TASK_PRICE / 2,
+            helper.assertTrue(a.station().getTaskPrice() == BASE / 2,
                     "batch must bill x0.5, got " + a.station().getTaskPrice());
             helper.assertTrue(a.station().getTaskTicksTotal() == CloudPricing.BASE_TASK_TICKS * 2,
                     "batch must run x2 duration, got " + a.station().getTaskTicksTotal());
@@ -565,14 +573,14 @@ public class CloudServiceTests {
         // Batch round 2 with the cache hit: the documented stacking — x0.1 x x0.5 = x0.05.
         helper.runAtTickTime(330, () -> {
             helper.assertTrue(a.station().isTaskActive(), "the cached batch round must run");
-            helper.assertTrue(a.station().getTaskPrice() == CloudPricing.BASE_TASK_PRICE / 20,
-                    "cache + batch must stack to 5% (" + CloudPricing.BASE_TASK_PRICE / 20 +
+            helper.assertTrue(a.station().getTaskPrice() == BASE / 20,
+                    "cache + batch must stack to 5% (" + BASE / 20 +
                             "), got " + a.station().getTaskPrice());
             helper.assertTrue(a.station().getTaskTicksTotal() == CloudPricing.BASE_TASK_TICKS * 2,
                     "the cached batch round still runs x2 duration");
         });
         helper.runAtTickTime(380, () -> {
-            helper.assertTrue(ledger.totalSpent(player) == CloudPricing.BASE_TASK_PRICE / 2,
+            helper.assertTrue(ledger.totalSpent(player) == BASE / 2,
                     "the first batch round must have settled, spent=" + ledger.totalSpent(player));
             System.out.printf("[HC-04] batch: x0.5 bill / x2 time; stacked with cache = 5%%%n");
             helper.succeed();
@@ -621,7 +629,7 @@ public class CloudServiceTests {
                 "B must start once A's session frees, status=" + b.station().getWaitingReason()));
         helper.runAtTickTime(280, () -> helper.assertTrue(
                 ledger.sessionCount(player) == 1 && ledger.balance(player) ==
-                        CloudTokenLedger.WELCOME_BONUS - 2 * CloudPricing.BASE_TASK_PRICE,
+                        CloudTokenLedger.WELCOME_BONUS - 2 * BASE,
                 "exactly one session must run and both rounds must be billed"));
         System.out.printf("[HC-04] 429: Tier 1 ceiling holds one session; B waits unbilled, then runs%n");
         helper.succeed();
@@ -642,7 +650,9 @@ public class CloudServiceTests {
         helper.runAtTickTime(40, () -> {
             ensure(helper, a);
             a.station().getCredentialSlot().setStackInSlot(0, boundCard(player));
-            a.station().cycleModel(); // select the lifecycle demonstrator: legacy_llama
+            // Select the lifecycle demonstrator explicitly: a fresh station now boots into a
+            // non-lifecycle model, so cycling once is no longer deterministic.
+            a.station().selectModel(CloudModels.lifecycleModel());
             a.station().getInputSlot()
                     .setStackInSlot(0, new ItemStack(HyperClusterItems.CLEAN_DATASET.get(), 4));
         });
@@ -650,9 +660,9 @@ public class CloudServiceTests {
         long day = a.station().gameDay();
         helper.runAtTickTime(60, () -> {
             CloudConfigs.legacyModelRetireDay = (int) (day + 2); // ACTIVE today
-            helper.assertTrue(CloudModels.lifecycle(CloudModels.LEGACY_LLAMA, day) ==
+            helper.assertTrue(CloudModels.lifecycle(CloudModels.lifecycleModel(), day) ==
                     CloudModels.Lifecycle.ACTIVE, "day+2 must be ACTIVE");
-            helper.assertTrue(CloudModels.lifecycle(CloudModels.OMNI_FLASH, day) ==
+            helper.assertTrue(CloudModels.lifecycle(CloudModels.byIndex(0), day) ==
                     CloudModels.Lifecycle.ACTIVE, "the flagship never retires");
         });
         helper.runAtTickTime(100, () -> helper.assertTrue(a.station().isTaskActive(),
@@ -661,10 +671,10 @@ public class CloudServiceTests {
         // LEAVING_SOON: new rounds still START (round 2 begins under the countdown).
         helper.runAtTickTime(150, () -> {
             CloudConfigs.legacyModelRetireDay = (int) (day + 1); // LEAVING_SOON today
-            helper.assertTrue(CloudModels.lifecycle(CloudModels.LEGACY_LLAMA, day) ==
+            helper.assertTrue(CloudModels.lifecycle(CloudModels.lifecycleModel(), day) ==
                     CloudModels.Lifecycle.LEAVING_SOON, "day+1 must be LEAVING_SOON");
             helper.assertTrue(
-                    CloudModels.leavingSoonCountdown(CloudModels.LEGACY_LLAMA, day) == 1,
+                    CloudModels.leavingSoonCountdown(CloudModels.lifecycleModel(), day) == 1,
                     "the countdown must show 1 day");
         });
         helper.runAtTickTime(280, () -> helper.assertTrue(a.station().isTaskActive(),
@@ -676,7 +686,7 @@ public class CloudServiceTests {
         final long[] balanceAtExpiry = new long[1];
         helper.runAtTickTime(370, () -> balanceAtExpiry[0] = ledger.balance(player));
         helper.runAtTickTime(420, () -> {
-            helper.assertTrue(CloudModels.lifecycle(CloudModels.LEGACY_LLAMA, day) ==
+            helper.assertTrue(CloudModels.lifecycle(CloudModels.lifecycleModel(), day) ==
                     CloudModels.Lifecycle.RETIRED, "day must be RETIRED");
             helper.assertTrue(!a.station().isTaskActive(),
                     "the expired model must block the next round");
@@ -787,13 +797,13 @@ public class CloudServiceTests {
             helper.assertTrue(!resumed.isTaskActive(), "the resumed round must finish");
             helper.assertTrue(ledger.order(orderId[0]).state == CloudTokenLedger.OrderState.SETTLED,
                     "the order must settle once");
-            helper.assertTrue(ledger.totalSpent(player) == CloudPricing.BASE_TASK_PRICE,
+            helper.assertTrue(ledger.totalSpent(player) == BASE,
                     "the save/load must never double-charge, spent=" + ledger.totalSpent(player));
             helper.assertTrue(ledger.balance(player) ==
-                    CloudTokenLedger.WELCOME_BONUS - CloudPricing.BASE_TASK_PRICE,
+                    CloudTokenLedger.WELCOME_BONUS - BASE,
                     "the balance must reflect exactly one billed round");
             // Dedup by the same order id: nothing may ever be charged or refunded again.
-            helper.assertTrue(ledger.hold(player, orderId[0], CloudPricing.BASE_TASK_PRICE) ==
+            helper.assertTrue(ledger.hold(player, orderId[0], BASE) ==
                     CloudTokenLedger.HoldResult.ALREADY_SETTLED,
                     "the settled order id must dedup as ALREADY_SETTLED");
             helper.assertTrue(!ledger.release(orderId[0]),

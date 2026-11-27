@@ -1,0 +1,5 @@
+{
+    "ldlib": {
+        "connection": "hypercluster:block/datacenter/vram_rack_casing_ctm"
+    }
+}

@@ -20,7 +20,7 @@
     {
       "type": "patchouli:text",
       "title": "Checkpoint、OOM 与 UPS",
-      "text": "$(bold)Checkpoint$()：每跑到 $(bold)25%$() 就往存档里写一次断点，所以一次 2400 ticks 的训练路上有 25/50/75/100% 四个落点。区块卸载、存档重开后$(bold)从最近断点继续$()，不会从零重跑。$(br2)$(bold)OOM$()：训练任务按显存需求校验，范围内机柜的刀片总显存不够就$(bold)直接拒绝启动$()并写明 OOM——满插 4 刀片正好 96 GB。$(br2)$(bold)UPS$()：断电时先吃 60 秒备电；没有 UPS 罩着就掉回最近 Checkpoint，未保存的那一段清零。"
+      "text": "$(bold)Checkpoint$()：每跑到 $(bold)25%$() 就往存档里写一次断点，所以一次 2400 ticks 的训练路上有 25/50/75/100% 四个落点。区块卸载、存档重开后$(bold)从最近断点继续$()，不会从零重跑。$(br2)$(bold)OOM$()：训练任务按显存需求校验，$(bold)0.6.1 起门槛是 96 TB$()，由显存机柜的 HBM 条共同凑出——两座满插 LuV 条（各 64 TB）即可越过。显存不够就$(bold)直接拒绝启动$()并写明 OOM。$(br2)$(bold)UPS$()：断电时先吃 60 秒备电；没有 UPS 罩着就掉回最近 Checkpoint，未保存的那一段清零。"
     },
     {
       "type": "patchouli:text",

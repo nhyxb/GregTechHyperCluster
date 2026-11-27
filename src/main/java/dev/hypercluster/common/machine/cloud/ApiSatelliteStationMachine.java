@@ -138,7 +138,7 @@ public class ApiSatelliteStationMachine extends WorkableElectricMultiblockMachin
     protected int selectedTier = CloudPricing.InferenceTier.MEDIUM.ordinal();
     @Persisted
     @DescSynced
-    protected int selectedModel = 0;
+    protected int selectedModel = CloudModels.defaultModelIndex();
     @Persisted
     @DescSynced
     protected boolean batchMode = false;
@@ -246,7 +246,7 @@ public class ApiSatelliteStationMachine extends WorkableElectricMultiblockMachin
         return CloudPricing.InferenceTier.byOrdinal(selectedTier);
     }
 
-    public CloudModels.CloudModel selectedModel() {
+    public dev.hypercluster.common.model.AIModelDefinition selectedModel() {
         return CloudModels.byIndex(selectedModel);
     }
 
@@ -512,7 +512,7 @@ public class ApiSatelliteStationMachine extends WorkableElectricMultiblockMachin
         }
         double weather = CloudPricing.weatherAt(getLevel(), horn);
         boolean highAlt = CloudPricing.highAltitudeBonus(getPos());
-        CloudModels.CloudModel model = selectedModel();
+        dev.hypercluster.common.model.AIModelDefinition model = selectedModel();
         CloudPricing.InferenceTier tier = selectedTier();
 
         // Model lifecycle: past the Leaving-Soon countdown the model is offline.
@@ -540,9 +540,9 @@ public class ApiSatelliteStationMachine extends WorkableElectricMultiblockMachin
 
         // Price the round and pre-deduct it as one order (order-id deduplicated by the ledger).
         String key = CloudTokenLedger.cacheKey(owner, getPos().toShortString(), DEMO_RECIPE_ID,
-                model.id(), tier);
+                model.id().toString(), tier);
         boolean cacheHit = ledger.isCacheHit(owner, key);
-        long price = CloudPricing.demoTaskPrice(tier, cacheHit, batchMode, highAlt);
+        long price = CloudPricing.taskPrice(model.tokenCostPerRound(), tier, cacheHit, batchMode, highAlt);
         String orderId = UUID.randomUUID().toString();
         CloudTokenLedger.HoldResult hold = ledger.hold(owner, orderId, price);
         switch (hold) {
@@ -738,9 +738,17 @@ public class ApiSatelliteStationMachine extends WorkableElectricMultiblockMachin
         this.selectedTier = (selectedTier + 1) % CloudPricing.InferenceTier.values().length;
     }
 
+    /** Selects a specific catalog model by its definition (used by the UI and by tests). */
+    public void selectModel(dev.hypercluster.common.model.AIModelDefinition definition) {
+        int index = CloudModels.MODELS.indexOf(definition);
+        if (index >= 0) {
+            this.selectedModel = index;
+        }
+    }
+
     /** Cycles the selected cloud model. */
     public void cycleModel() {
-        this.selectedModel = (selectedModel + 1) % CloudModels.MODELS.length;
+        this.selectedModel = (selectedModel + 1) % CloudModels.MODELS.size();
     }
 
     public void setBatchMode(boolean batch) {
@@ -854,7 +862,7 @@ public class ApiSatelliteStationMachine extends WorkableElectricMultiblockMachin
                                         .withStyle(ChatFormatting.AQUA))
                                 .withStyle(ChatFormatting.GRAY));
                     }
-                    CloudModels.CloudModel model = selectedModel();
+                    dev.hypercluster.common.model.AIModelDefinition model = selectedModel();
                     CloudModels.Lifecycle lifecycle = CloudModels.lifecycle(model, gameDay());
                     Component modelLine = Component
                             .translatable("hypercluster.machine.api_satellite_station.model_line",

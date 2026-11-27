@@ -168,6 +168,44 @@ public final class HyperClusterBlocks {
             .build()
             .register();
 
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // 0.6.1 — TB-scale cluster memory + optical fabric //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    public static final BlockEntry<Block> VRAM_RACK_CASING = HyperCluster.REGISTRATE
+            .block("vram_rack_casing", Block::new)
+            .properties(properties -> properties.mapColor(MapColor.COLOR_PURPLE)
+                    .strength(6.0F, 14.0F)
+                    .requiresCorrectToolForDrops()
+                    .sound(SoundType.METAL))
+            .lang("VRAM Rack Casing")
+            .blockstate((context, provider) -> provider.simpleBlock(context.getEntry(),
+                    provider.models()
+                            .cubeAll(context.getName(),
+                                    provider.modLoc("block/datacenter/vram_rack_casing"))))
+            .item()
+            .model((context, provider) -> provider.withExistingParent(context.getName(),
+                    provider.modLoc("block/vram_rack_casing")))
+            .build()
+            .register();
+
+    public static final BlockEntry<Block> OPTICAL_SWITCH_CASING = HyperCluster.REGISTRATE
+            .block("optical_switch_casing", Block::new)
+            .properties(properties -> properties.mapColor(MapColor.COLOR_LIGHT_BLUE)
+                    .strength(6.0F, 14.0F)
+                    .requiresCorrectToolForDrops()
+                    .sound(SoundType.METAL))
+            .lang("Optical Switch Casing")
+            .blockstate((context, provider) -> provider.simpleBlock(context.getEntry(),
+                    provider.models()
+                            .cubeAll(context.getName(),
+                                    provider.modLoc("block/datacenter/optical_switch_casing"))))
+            .item()
+            .model((context, provider) -> provider.withExistingParent(context.getName(),
+                    provider.modLoc("block/optical_switch_casing")))
+            .build()
+            .register();
+
     private HyperClusterBlocks() {}
 
     /** Called from the mod constructor; loads the static entries into the registrate. */

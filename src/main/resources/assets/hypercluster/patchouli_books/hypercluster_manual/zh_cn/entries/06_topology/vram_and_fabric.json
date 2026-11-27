@@ -1,0 +1,47 @@
+{
+  "name": "TB 显存池与光交换机",
+  "category": "hypercluster:06_topology",
+  "icon": "hypercluster:vram_storage_rack",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "$(bold)0.6.1 起，计算刀片不再自带显存。$()刀片只管算力，显存搬进专门的机柜。这不是拆东墙补西墙，而是把两件事分开算账：算力按 CWU/t 买，显存按 TB 买。$(br2)一座$(item)显存/权重机柜$()有 4 个 HBM 槽：$(li)$(item)IV HBM 显存条$() 每条 $(bold)4 TB$()，满插 $(bold)16 TB$()；$(li)$(item)LuV HBM 显存条$() 每条 $(bold)16 TB$()，满插 $(bold)64 TB$()。"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/vram_storage_rack",
+      "recipe2": "hypercluster:shaped/luv_hbm_module"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/vram_rack_casing",
+      "recipe2": "hypercluster:shaped/iv_hbm_module"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "5×5×3 显存机柜",
+      "text": "$(li)$(#0E7490)底层 y=0$()：整片$(item)显存机柜外壳$()底座，能源仓与维护仓挂在这一层。$(li)$(#0E7490)y=1..3$()：模块仓位于$(item)强化玻璃$()门后，后壁是$(item)计算机机壳$()显存脊。$(li)$(#0E7490)顶层 y=4$()：$(item)钨钢框架$()走线桥架。$(li)$(#0E7490)主控$()：正面第二层 $(bold)(2, 1, 0)$()。$(br2)显存要$(bold)在线$()才算进池：拔掉模块、维护仓没修、软锤暂停或电力不足，这一柜的 TB 立刻从池子里消失，依赖它的模型当 tick 就下线。"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "96 TB 训练门槛",
+      "text": "预训练集群的 OOM 门槛在 0.6.1 抬到 $(bold)96 TB$()。对照显存机柜很容易算：$(li)一座满插 LuV 条 = 64 TB，$(bold)不够$()；$(li)$(bold)两座满插 LuV 条 = 128 TB，稳过$()；$(li)或 1 座 LuV + 2 座 IV = 96 TB，正好压线。$(br2)显存不足时训练$(bold)直接拒绝启动$()并写明 OOM，不会半途崩掉。"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "高速光交换机：把多柜并成一个池",
+      "text": "零散的机柜不成集群。$(item)高速光交换机$()把 $(bold)16 格$()内的算力机柜与显存机柜聚合成一个统一池：$(li)IV 风冷机柜每台贡献 $(bold)24 CWU/t$()；$(li)LuV 液冷机柜每台贡献 $(bold)64 CWU/t$()；$(li)显存机柜的 TB 一并汇总给路由柜和训练集群。$(br2)它同时是一道$(bold)硬上限$()：全集群同 tick 需求超过 $(bold)128 CWU/t$() 就触发 $(bold)503 服务器繁忙$()，冷却 $(bold)15 秒（300 ticks）$()，期间谁都不供算。"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/optical_fabric_switch",
+      "recipe2": "hypercluster:shaped/optical_switch_casing"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "5×4×3 背板机柜",
+      "text": "$(li)$(#0E7490)y=0$()：厚重背板底座，能源仓与维护仓。$(li)$(#0E7490)y=1$()：端口层，主控在正面中间 $(bold)(2, 1, 0)$()。$(li)$(#0E7490)y=2$()：$(item)强化玻璃$()后面的外露光纤盘。$(li)$(#0E7490)y=3$()：$(item)钢框架$()顶部走线桥。$(br2)界面会显示成员机柜台数、聚合 CWU/t、聚合显存 TB，以及 503 冷却剩余秒数。"
+    }
+  ]
+}

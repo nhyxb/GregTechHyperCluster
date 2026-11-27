@@ -42,6 +42,7 @@ public final class HyperClusterRecipes {
         registerDatacenterSurvivalRecipes(provider);
         registerCloudSurvivalRecipes(provider);
         registerLuVRecipes(provider);
+        registerTopologyRecipes(provider);
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -709,5 +710,105 @@ public final class HyperClusterRecipes {
                 'C', GTCraftingComponents.CIRCUIT.get(LuV),
                 'F', ChemicalHelper.get(TagPrefix.wireFine, GTMaterials.Platinum),
                 'S', GTCraftingComponents.SENSOR.get(LuV));
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // 0.6.1 — TB memory, optical fabric and MoE routing //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * 0.6.1 crafting stays inside what a vanilla GTCEu LuV player can build: IV/LuV circuits,
+     * sensors, emitters, hulls, steel/tungsten-steel/stainless frames, aluminium and polyethylene.
+     * No HPCA, research station or data-bank product appears anywhere.
+     */
+    private static void registerTopologyRecipes(java.util.function.Consumer<FinishedRecipe> provider) {
+        // VRAM rack casing: steel shell over an aluminium cold plate, 4 per craft.
+        VanillaRecipeHelper.addShapedRecipe(provider, true,
+                HyperCluster.id("vram_rack_casing"),
+                new ItemStack(HyperClusterBlocks.VRAM_RACK_CASING.get(), 4),
+                "PAP",
+                "ACA",
+                "PAP",
+                'P', ChemicalHelper.get(TagPrefix.plate, GTMaterials.Steel),
+                'A', ChemicalHelper.get(TagPrefix.plate, GTMaterials.Aluminium),
+                'C', GTCraftingComponents.CIRCUIT.get(LuV));
+
+        // Optical switch casing: stainless shell with silver wiring and an IV circuit, 4 per craft.
+        VanillaRecipeHelper.addShapedRecipe(provider, true,
+                HyperCluster.id("optical_switch_casing"),
+                new ItemStack(HyperClusterBlocks.OPTICAL_SWITCH_CASING.get(), 4),
+                "PWP",
+                "WCW",
+                "PWP",
+                'P', ChemicalHelper.get(TagPrefix.plate, GTMaterials.StainlessSteel),
+                'W', ChemicalHelper.get(TagPrefix.wireFine, GTMaterials.Silver),
+                'C', GTCraftingComponents.CIRCUIT.get(LuV));
+
+        // IV HBM module: a silicon wafer stack on a polyethylene carrier.
+        VanillaRecipeHelper.addShapedRecipe(provider, true,
+                HyperCluster.id("iv_hbm_module"),
+                new ItemStack(HyperClusterItems.IV_HBM_MODULE.get()),
+                "WWW",
+                "PCP",
+                "WWW",
+                'W', gtItem("silicon_wafer"),
+                'P', ChemicalHelper.get(TagPrefix.plate, GTMaterials.Polyethylene),
+                'C', GTCraftingComponents.CIRCUIT.get(IV));
+
+        // LuV HBM module: four times the density, platinum wiring on a LuV circuit.
+        VanillaRecipeHelper.addShapedRecipe(provider, true,
+                HyperCluster.id("luv_hbm_module"),
+                new ItemStack(HyperClusterItems.LUV_HBM_MODULE.get()),
+                "WWW",
+                "PCP",
+                "WWW",
+                'W', gtItem("silicon_wafer"),
+                'P', ChemicalHelper.get(TagPrefix.wireGtSingle, GTMaterials.Platinum),
+                'C', GTCraftingComponents.CIRCUIT.get(LuV));
+
+        // Jailbreak patch card: a polyethylene shell around a fine silver mesh.
+        VanillaRecipeHelper.addShapedRecipe(provider, true,
+                HyperCluster.id("jailbreak_card"),
+                new ItemStack(HyperClusterItems.JAILBREAK_CARD.get()),
+                "PPP",
+                "PWP",
+                "PPP",
+                'P', ChemicalHelper.get(TagPrefix.plate, GTMaterials.Polyethylene),
+                'W', ChemicalHelper.get(TagPrefix.wireFine, GTMaterials.Silver));
+
+        // VRAM storage rack controller: memory casings around an LuV hull.
+        VanillaRecipeHelper.addShapedRecipe(provider, true,
+                HyperCluster.id("vram_storage_rack"),
+                HyperClusterMachines.VRAM_STORAGE_RACK.asStack(1),
+                "VCV",
+                "EME",
+                "VCV",
+                'V', HyperClusterBlocks.VRAM_RACK_CASING.get(),
+                'E', GTCraftingComponents.SENSOR.get(LuV),
+                'C', GTCraftingComponents.CIRCUIT.get(LuV),
+                'M', GTCraftingComponents.HULL.get(LuV));
+
+        // Optical fabric switch controller: switch casings around an LuV hull.
+        VanillaRecipeHelper.addShapedRecipe(provider, true,
+                HyperCluster.id("optical_fabric_switch"),
+                HyperClusterMachines.OPTICAL_FABRIC_SWITCH.asStack(1),
+                "OCO",
+                "EME",
+                "OCO",
+                'O', HyperClusterBlocks.OPTICAL_SWITCH_CASING.get(),
+                'E', GTCraftingComponents.EMITTER.get(LuV),
+                'C', GTCraftingComponents.CIRCUIT.get(LuV),
+                'M', GTCraftingComponents.HULL.get(LuV));
+
+        // MoE routing rack controller: computer casing, emitters and a circuit around a hull.
+        VanillaRecipeHelper.addShapedRecipe(provider, true,
+                HyperCluster.id("moe_router_rack"),
+                HyperClusterMachines.MOE_ROUTER_RACK.asStack(1),
+                "CEC",
+                "EME",
+                "CEC",
+                'C', GTBlocks.COMPUTER_CASING.get(),
+                'E', GTCraftingComponents.EMITTER.get(LuV),
+                'M', GTCraftingComponents.HULL.get(LuV));
     }
 }

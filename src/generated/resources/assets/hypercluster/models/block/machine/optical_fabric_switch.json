@@ -1,0 +1,82 @@
+{
+  "parent": "minecraft:block/block",
+  "loader": "gtceu:machine",
+  "machine": "hypercluster:optical_fabric_switch",
+  "texture_overrides": {
+    "all": "hypercluster:block/datacenter/optical_switch_casing"
+  },
+  "variants": {
+    "is_formed=false,recipe_logic_status=idle": {
+      "model": {
+        "parent": "gtceu:block/machine/template/cube_all/sided",
+        "textures": {
+          "all": "hypercluster:block/datacenter/optical_switch_casing",
+          "overlay_front": "hypercluster:block/machines/optical_fabric_switch/overlay_front"
+        }
+      }
+    },
+    "is_formed=false,recipe_logic_status=suspend": {
+      "model": {
+        "parent": "gtceu:block/machine/template/cube_all/sided",
+        "textures": {
+          "all": "hypercluster:block/datacenter/optical_switch_casing",
+          "overlay_front": "hypercluster:block/machines/optical_fabric_switch/overlay_front"
+        }
+      }
+    },
+    "is_formed=false,recipe_logic_status=waiting": {
+      "model": {
+        "parent": "gtceu:block/machine/template/cube_all/sided",
+        "textures": {
+          "all": "hypercluster:block/datacenter/optical_switch_casing",
+          "overlay_front": "hypercluster:block/machines/optical_fabric_switch/overlay_front_active"
+        }
+      }
+    },
+    "is_formed=false,recipe_logic_status=working": {
+      "model": {
+        "parent": "gtceu:block/machine/template/cube_all/sided",
+        "textures": {
+          "all": "hypercluster:block/datacenter/optical_switch_casing",
+          "overlay_front": "hypercluster:block/machines/optical_fabric_switch/overlay_front_active"
+        }
+      }
+    },
+    "is_formed=true,recipe_logic_status=idle": {
+      "model": {
+        "parent": "gtceu:block/machine/template/cube_all/sided",
+        "textures": {
+          "all": "hypercluster:block/datacenter/optical_switch_casing",
+          "overlay_front": "hypercluster:block/machines/optical_fabric_switch/overlay_front"
+        }
+      }
+    },
+    "is_formed=true,recipe_logic_status=suspend": {
+      "model": {
+        "parent": "gtceu:block/machine/template/cube_all/sided",
+        "textures": {
+          "all": "hypercluster:block/datacenter/optical_switch_casing",
+          "overlay_front": "hypercluster:block/machines/optical_fabric_switch/overlay_front"
+        }
+      }
+    },
+    "is_formed=true,recipe_logic_status=waiting": {
+      "model": {
+        "parent": "gtceu:block/machine/template/cube_all/sided",
+        "textures": {
+          "all": "hypercluster:block/datacenter/optical_switch_casing",
+          "overlay_front": "hypercluster:block/machines/optical_fabric_switch/overlay_front_active"
+        }
+      }
+    },
+    "is_formed=true,recipe_logic_status=working": {
+      "model": {
+        "parent": "gtceu:block/machine/template/cube_all/sided",
+        "textures": {
+          "all": "hypercluster:block/datacenter/optical_switch_casing",
+          "overlay_front": "hypercluster:block/machines/optical_fabric_switch/overlay_front_active"
+        }
+      }
+    }
+  }
+}

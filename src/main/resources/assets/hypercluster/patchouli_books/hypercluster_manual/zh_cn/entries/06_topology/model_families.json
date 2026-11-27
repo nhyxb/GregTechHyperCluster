@@ -1,0 +1,41 @@
+{
+  "name": "六大模型家族",
+  "category": "hypercluster:06_topology",
+  "icon": "hypercluster:open_weight_module",
+  "sortnum": 2,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "本版把 0.4 的 $(italic)OmniFlash-72B$() / $(italic)LegacyLlama-8B$() 占位名换成正式家族。按$(bold)部署阵营$()分两类：$(li)$(#0E7490)开源阵营$()（LOCAL）：插进 MoE 路由柜，占本地显存，$(bold)零 Token$()。$(li)$(#0E7490)闭源阵营$()（API）：走卫星地面站扣 Token，$(bold)零本地显存$()。"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "开源 · Qwen 9187 Pro-Max-Ultra",
+      "text": "$(bold)16 TB$() + 每张 LoRA $(bold)+4 TB / +4 CWU/t$()，最多 4 个 LoRA 槽。$(br2)$(li)挂到$(item)本地兜底网关$()时，兜底只降速 $(bold)1.5×$()——没有模型时是 4×，差别很直观。$(li)矿处与化工$(bold)跨领域都不吃过拟合惩罚$()。$(li)兼容 IV 风冷机房，不一定非要液冷柜。"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "开源 · DeepSeek-V6767 Flash / Pro",
+      "text": "$(bold)Flash 32 TB$() / $(bold)Pro 64 TB$()，开 DeepThink 再占 $(bold)+16 TB$()。$(br2)$(li)两者都吃 MoE 稀疏激活，实耗只有名义 CWU/t 的 $(bold)25%$()，主打高并发省算力稳跑。$(li)$(bold)Pro$() 额外解锁 $(bold)DeepThink 蓄力$()：副产强制 100%。$(li)Pro 也是最先撞上交换机带宽、触发 $(bold)503 服务器繁忙$()的那台。"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "开源 · GLM-2333 Flash / Max",
+      "text": "$(bold)Flash 24 TB / 4 CWU/t$()，$(bold)Max 48 TB / 8 CWU/t$()。$(br2)$(li)$(bold)Flash$()：机房基础状态巡检，储能低于 $(bold)20%$() 自动保护休眠，并且$(bold)免维护$()。$(li)$(bold)Max$()：顶级 $(bold)Agent 工具调用$()，自动联动同集群关联多方块的启停——满仓或缺料时停机省待机电，恢复后自动拉起。为后续全厂黑灯控阀打底。"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "闭源 · Gemini 三兄弟",
+      "text": "都走 API 卫星站扣 Token，$(bold)不占本地显存$()。$(br2)$(li)$(bold)Gemini-Titanium-4.0$()：承担 $(bold)Leaving Soon$() 倒计时下线机制，到期后拒跑新轮次。$(li)$(bold)Gemini-Platinum$()：专精化工降噪省料。$(li)$(bold)Gemini-Xenon$()：重惰性气体路线，$(bold)强制 0 幻觉$()且$(bold)免维护$()。"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "闭源 · GPT-1145 Multiverse 与 Grok-420",
+      "text": "$(bold)GPT-1145 Multiverse$()：$(bold)最高 Token 单价$()换最高省料与副产加成。跑白名单危险化工配方会触发$(bold)道德拒答$()停机，插一张$(item)越狱补丁卡$()才放行。$(br2)$(bold)Grok-420$()：$(bold)完全零审查$()，不用越狱卡就能跑危险配方，单价还比 GPT 低。代价是$(bold)雨天/雷暴信号衰减与耗时惩罚翻倍$()——晴天用得爽，坏天气别指望它。"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/jailbreak_card"
+    }
+  ]
+}

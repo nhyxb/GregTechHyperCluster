@@ -1,0 +1,36 @@
+{
+  "name": "MoE 路由控制柜",
+  "category": "hypercluster:06_topology",
+  "icon": "hypercluster:moe_router_rack",
+  "sortnum": 1,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "$(item)MoE 路由控制柜$()是开源模型的$(bold)集中部署中枢$()：预训练产出的$(item)开放权重模型模块$()插进来，模型就常驻集群显存，下游场景统一从这里路由。$(br2)它不消耗 Token——开源阵营的算力是你自己的机房出的。"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/moe_router_rack"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "5×5×5 阶梯结构",
+      "text": "$(li)$(#0E7490)y=0$()：重型$(item)计算机机壳$()底板，能源仓、物品仓与维护仓都挂在这一层。$(li)$(#0E7490)y=1$()：部署控制层，主控在正面中间 $(bold)(2, 1, 0)$()，部署槽与 4 个 LoRA 槽都在界面上。$(li)$(#0E7490)y=2$()：路由核心，$(item)无尘室玻璃$()包着$(item)高级计算机机壳$()算力脊。$(li)$(#0E7490)y=3$()：重新外扩的肩部；$(bold)y=4$() 收进一格做屋顶散热环梁。"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "加载、OOM 与下线",
+      "text": "插入权重后，路由柜按模型声明的 TB 向集群显存池申请额度：$(li)池子够 → $(bold)ONLINE$()，模型常驻显存，按 tick 计费 CWU/t。$(li)池子不够 → $(bold)OOM$()，$(bold)拒绝加载$()，一点算力都不扣。$(br2)$(bold)拔卡、拔显存条、显存柜断电或区块重载$()都会让它当 tick 下线（EVICTED/EMPTY），不会出现“界面显示在线但显存已经没了”的情况。"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "LoRA 扩展与 DeepThink",
+      "text": "$(bold)LoRA 扩展$()：带 4 个 LoRA 槽的模型（Qwen 9187）可以把 0.2.1 的$(item)矿处 LoRA 卡$()或$(item)化工 LoRA 卡$()挂上去，每张 $(bold)+4 TB$() 显存、$(bold)+4 CWU/t$()，副产专精叠加。$(br2)$(bold)DeepThink$()：带蓄力开关的模型（DeepSeek-V6767 Pro）打开后额外占 $(bold)+16 TB$()，结算时把概率副产$(bold)强制拉满到 100%$()——洗矿的钴粉从 1/3 变必出，清洗塔的黄金样本也有了保底。$(br2)两者都可能把显存推出池子，所以先备够 TB 再开。"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "克隆副本",
+      "text": "开源主权重可以在$(item)微型烧录台$()里低成本克隆副本：一张$(item)高纯领域数据集$()+一个$(item)空白载体$()就能压出一枚新的$(item)开放权重模型模块$()，第二座机房的部署不必重跑 2400 ticks 训练。"
+    }
+  ]
+}

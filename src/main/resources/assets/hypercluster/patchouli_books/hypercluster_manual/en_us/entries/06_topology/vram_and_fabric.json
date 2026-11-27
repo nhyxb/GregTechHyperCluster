@@ -1,0 +1,47 @@
+{
+  "name": "TB Memory Pools & the Optical Fabric",
+  "category": "hypercluster:06_topology",
+  "icon": "hypercluster:vram_storage_rack",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "$(bold)Since 0.6.1 compute blades carry no memory at all.$() A blade is pure compute; memory moves into dedicated cabinets. That is not robbing Peter to pay Paul — it puts two costs on two meters: compute is bought in CWU/t, memory in TB.$(br2)A $(item)VRAM Storage Rack$() has 4 HBM slots:$(li)$(item)IV HBM Module$() — $(bold)4 TB$() each, $(bold)16 TB$() fully loaded;$(li)$(item)LuV HBM Module$() — $(bold)16 TB$() each, $(bold)64 TB$() fully loaded."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/vram_storage_rack",
+      "recipe2": "hypercluster:shaped/luv_hbm_module"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/vram_rack_casing",
+      "recipe2": "hypercluster:shaped/iv_hbm_module"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "The 5×5×3 Memory Rack",
+      "text": "$(li)$(#0E7490)Layer y=0$(): the full $(item)VRAM Rack Casing$() plinth; the energy and maintenance hatches ride this layer.$(li)$(#0E7490)y=1..3$(): the module bays behind $(item)Reinforced Glass$() doors, with a $(item)Computer Casing$() memory spine at the back.$(li)$(#0E7490)Layer y=4$(): a $(item)Tungstensteel Frame$() cable tray.$(li)$(#0E7490)Controller$(): front face, second layer, $(bold)(2, 1, 0)$().$(br2)Memory only counts while $(bold)online$(): pull a module, leave maintenance unfixed, pause with a soft mallet or cut the power and that cabinet's TB leaves the pool at once — anything loaded into it unloads the same tick."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "The 96 TB Training Gate",
+      "text": "The pretraining OOM gate rises to $(bold)96 TB$() in 0.6.1. The arithmetic is easy against the memory racks:$(li)one fully loaded LuV rack = 64 TB, $(bold)not enough$();$(li)$(bold)two fully loaded LuV racks = 128 TB, comfortably over$();$(li)or one LuV + two IV = 96 TB, exactly on the line.$(br2)If the pool is short the run $(bold)refuses to start$() with an explicit OOM instead of collapsing halfway."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Optical Fabric Switch: Many Cabinets, One Pool",
+      "text": "Loose cabinets do not make a cluster. The $(item)Optical Fabric Switch$() aggregates every compute and memory rack within $(bold)16 blocks$() into one pool:$(li)each IV air-cooled rack contributes $(bold)24 CWU/t$();$(li)each LuV liquid-cooled rack contributes $(bold)64 CWU/t$();$(li)the memory cabinets' TB is summed for the router and the training cluster.$(br2)It is also a $(bold)hard ceiling$(): demand above $(bold)128 CWU/t$() in one tick trips $(bold)503 Server Busy$() for a $(bold)15-second (300-tick)$() cooldown, during which nobody is served."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/optical_fabric_switch",
+      "recipe2": "hypercluster:shaped/optical_switch_casing"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "The 5×4×3 Backplane Cabinet",
+      "text": "$(li)$(#0E7490)y=0$(): the heavy backplane plinth with the energy and maintenance hatches.$(li)$(#0E7490)y=1$(): the port row, controller front-centre at $(bold)(2, 1, 0)$().$(li)$(#0E7490)y=2$(): the exposed fibre tray behind $(item)Reinforced Glass$().$(li)$(#0E7490)y=3$(): a $(item)Steel Frame$() overhead bridge.$(br2)The GUI reports member count, aggregated CWU/t, aggregated TB and the remaining 503 cooldown."
+    }
+  ]
+}

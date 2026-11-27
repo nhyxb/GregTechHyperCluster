@@ -20,7 +20,7 @@
     {
       "type": "patchouli:text",
       "title": "Checkpoints, OOM and UPS",
-      "text": "$(bold)Checkpoints$(): progress is written to the save every $(bold)25%$(), so one 2400-tick run has four landing points at 25/50/75/100%. Chunk unloads and save reloads $(bold)resume from the most recent checkpoint$() instead of restarting.$(br2)$(bold)OOM$(): a job declares its VRAM need, and if the racks in range cannot bring that much online the cluster $(bold)refuses to start$() and says OOM — four blades is exactly 96 GB.$(br2)$(bold)UPS$(): a brownout is covered for 60 seconds; with no UPS cover the run falls back to its last checkpoint and the unsaved stretch is cleared."
+      "text": "$(bold)Checkpoints$(): progress is written to the save every $(bold)25%$(), so one 2400-tick run has four landing points at 25/50/75/100%. Chunk unloads and save reloads $(bold)resume from the most recent checkpoint$() instead of restarting.$(br2)$(bold)OOM$(): a job declares its VRAM need, and the gate is $(bold)96 TB since 0.6.1$(), supplied by the memory racks' HBM modules — two fully loaded LuV racks (64 TB each) clear it. If the pool is short the cluster $(bold)refuses to start$() and says OOM.$(br2)$(bold)UPS$(): a brownout is covered for 60 seconds; with no UPS cover the run falls back to its last checkpoint and the unsaved stretch is cleared."
     },
     {
       "type": "patchouli:text",

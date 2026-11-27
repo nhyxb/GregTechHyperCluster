@@ -30,7 +30,7 @@
     {
       "type": "patchouli:text",
       "title": "PUE 1.20 and Two Hard Limits",
-      "text": "Room PUE settles as $(bold)total = IT draw + base cooling × environment × airflow × cold-plate efficiency$(). The liquid cabinet's base cooling ratio is only 0.20, so $(bold)a neutral room at full load is PUE 1.20$(); natural cold sources (snowy plains, frozen/deep ocean, $(bold)Y &lt; 20$()) multiply by 0.6, while the Nether and hot deserts multiply by 2.0.$(br2)Two hard limits exist for the training cluster to check:$(li)$(#0E7490)Switch bandwidth$(): one rack hands out at most $(bold)64 CWU/t$() per tick; surplus requests queue instead of erroring.$(li)$(#0E7490)VRAM$(): $(bold)24 GB$() per blade, $(bold)96 GB$() fully loaded."
+      "text": "Room PUE settles as $(bold)total = IT draw + base cooling × environment × airflow × cold-plate efficiency$(). The liquid cabinet's base cooling ratio is only 0.20, so $(bold)a neutral room at full load is PUE 1.20$(); natural cold sources (snowy plains, frozen/deep ocean, $(bold)Y &lt; 20$()) multiply by 0.6, while the Nether and hot deserts multiply by 2.0.$(br2)Two hard limits exist for the training cluster to check:$(li)$(#0E7490)Switch bandwidth$(): one rack hands out at most $(bold)64 CWU/t$() per tick; surplus requests queue instead of erroring.$(li)$(#0E7490)VRAM$(): $(bold)blades carry no memory since 0.6.1$() — cluster memory lives in the memory racks' HBM modules, see chapter 6."
     },
     {
       "type": "patchouli:text",

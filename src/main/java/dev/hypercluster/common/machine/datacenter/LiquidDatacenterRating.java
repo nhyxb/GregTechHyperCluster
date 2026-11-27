@@ -52,8 +52,11 @@ public final class LiquidDatacenterRating {
     /** Switch bandwidth ceiling one rack may hand out per tick (CWU/t). */
     public static final int SWITCH_BANDWIDTH_LIMIT = 64;
 
-    /** VRAM one inserted blade brings online (arbitrary "GB" units of the training contract). */
-    public static final int VRAM_PER_BLADE = 24;
+    /**
+     * 0.6.1 — blades no longer carry VRAM. Cluster memory is a separate budget supplied by
+     * {@code hypercluster:vram_storage_rack}'s HBM modules, so a compute rack is pure compute.
+     */
+    public static final int VRAM_PER_BLADE = 0;
 
     /** Coolant the rack drinks per tick while providing computation (mB/t). */
     public static final int COOLANT_PER_TICK = 1;
@@ -86,7 +89,10 @@ public final class LiquidDatacenterRating {
         return Math.max(0, blades) * CWU_PER_BLADE;
     }
 
-    /** Total VRAM (GB units) the inserted blades bring online. */
+    /**
+     * Total VRAM (TB) the inserted blades bring online — always 0 since 0.6.1, kept so callers
+     * read the hardware that actually holds memory ({@code VramStorageRackMachine}).
+     */
     public static int vramCapacity(int blades) {
         return Math.max(0, blades) * VRAM_PER_BLADE;
     }

@@ -245,7 +245,10 @@ public class SurvivalCraftingTests {
                 // 0.6 — LuV smart compute and training.
                 HyperClusterMachines.LIQUID_COOLED_COMPUTE_RACK, HyperClusterMachines.UPS_POWER_ARRAY,
                 HyperClusterMachines.TENSOR_PRETRAINING_CLUSTER,
-                HyperClusterMachines.CLOUD_OFFLOAD_NODE }) {
+                HyperClusterMachines.CLOUD_OFFLOAD_NODE,
+                // 0.6.1 — machine-room topology, TB memory and model deployment.
+                HyperClusterMachines.VRAM_STORAGE_RACK, HyperClusterMachines.OPTICAL_FABRIC_SWITCH,
+                HyperClusterMachines.MOE_ROUTER_RACK }) {
             int expected = 0;
             int registered = 0;
             for (com.gregtechceu.gtceu.client.model.machine.MachineRenderState state : machine
@@ -281,7 +284,10 @@ public class SurvivalCraftingTests {
                 // 0.6 — LuV smart compute and training.
                 HyperClusterMachines.LIQUID_COOLED_COMPUTE_RACK, HyperClusterMachines.UPS_POWER_ARRAY,
                 HyperClusterMachines.TENSOR_PRETRAINING_CLUSTER,
-                HyperClusterMachines.CLOUD_OFFLOAD_NODE }) {
+                HyperClusterMachines.CLOUD_OFFLOAD_NODE,
+                // 0.6.1 — machine-room topology, TB memory and model deployment.
+                HyperClusterMachines.VRAM_STORAGE_RACK, HyperClusterMachines.OPTICAL_FABRIC_SWITCH,
+                HyperClusterMachines.MOE_ROUTER_RACK }) {
             String mainKey = String.format("%s.machine.%s.tooltip", machine.getId().getNamespace(),
                     machine.getId().getPath());
             helper.assertTrue(Language.getInstance().has(mainKey),
@@ -473,6 +479,7 @@ public class SurvivalCraftingTests {
                 "categories/03_iv_datacenter.json",
                 "categories/04_iv_cloud.json",
                 "categories/05_luv_training.json",
+                "categories/06_topology.json",
                 "entries/01_hv_start/telemetry_ore_washer.json",
                 "entries/01_hv_start/micro_burner_and_circuits.json",
                 "entries/02_ev_workshop/telemetry_chemical_reactor.json",
@@ -489,7 +496,11 @@ public class SurvivalCraftingTests {
                 "entries/05_luv_training/liquid_cooled_compute_rack.json",
                 "entries/05_luv_training/ups_power_array.json",
                 "entries/05_luv_training/tensor_pretraining_cluster.json",
-                "entries/05_luv_training/cloud_offload_node.json"
+                "entries/05_luv_training/cloud_offload_node.json",
+                // 0.6.1 — chapter 6 documents the TB memory system and the model families.
+                "entries/06_topology/vram_and_fabric.json",
+                "entries/06_topology/moe_router.json",
+                "entries/06_topology/model_families.json"
         };
         for (String lang : new String[] { "zh_cn", "en_us" }) {
             for (String rel : bookFiles) {

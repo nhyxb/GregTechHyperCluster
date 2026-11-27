@@ -1,16 +1,16 @@
-# GregTech HyperCluster 0.1 – 0.6.0 贴图与 Aseprite 源文件清单
+# GregTech HyperCluster 0.1 – 0.6.1 贴图与 Aseprite 源文件清单
 
-本目录存放 **0.1（HV 首发闭环）**、**0.2（EV 数据工坊）**、**0.2.1（EV 数据工坊扩展）**、**0.3（IV 自建算力 / 智算机房 Tier I–II）**、**0.4（IV 闭源云 / API 卫星地面站与 Token 计费）**、**0.6.0（LuV 智算与训练）** 及**通用科技手册**的全部 **60 张基础/运行态贴图**（含 **10 组**多方块主控竖排多帧动画精灵表及配套 `.png.mcmeta`）、**7 张 `32×32` RGBA LDLib 2×2 CTM 衔接图集**（合计 **67 张贴图**）与对应的 **52 个分层 `.aseprite` 源文件**（45 个主资产 + 7 个 `32×32` CTM），供工程拷贝进 `src/main/resources/assets/hypercluster/textures/`。
+本目录存放 **0.1（HV 首发闭环）**、**0.2（EV 数据工坊）**、**0.2.1（EV 数据工坊扩展）**、**0.3（IV 自建算力 / 智算机房 Tier I–II）**、**0.4（IV 闭源云 / API 卫星地面站与 Token 计费）**、**0.6.0（LuV 智算与训练）**、**0.6.1（机房拓扑补完与模型注册表）** 及**通用科技手册**的全部 **71 张基础/运行态贴图**（含 **13 组**多方块主控竖排多帧动画精灵表及配套 `.png.mcmeta`）、**9 张 `32×32` RGBA LDLib 2×2 CTM 衔接图集**（合计 **80 张贴图**）与对应的 **62 个分层 `.aseprite` 源文件**（53 个主资产 + 9 个 `32×32` CTM），供工程拷贝进 `src/main/resources/assets/hypercluster/textures/`。
 
-- 基础贴图全量总览（21 件物品 `4x / 2x / 1x` 槽位对比 + 0.1–0.6.0 全部机器叠加 HV 橙金 / EV 钛紫 / IV 蓝 / LuV 淡品红紫粉机壳对比 + 架空地板/机柜冷热面 + 0.4 卫星站钢架/反射面板/馈源 + 0.6.0 LuV 液冷机柜/UPS 电池柜 + 物品栏轮廓对比）见 [contact_sheet.png](textures/previews/contact_sheet.png)。
-- 7 个结构方块的 **LDLib 2×2 CTM 衔接图集与 3×3 / T 型 / L 型 / 多方块立面实测拼接预览**见 [ctm_preview.png](textures/previews/ctm_preview.png)。
-- 10 台多方块主控的 **运行态多帧动画逐帧展开与无缝循环检视表**见 [active_animations_sheet.png](textures/previews/active_animations_sheet.png)。
+- 基础贴图全量总览（24 件物品 `4x / 2x / 1x` 槽位对比 + 0.1–0.6.1 全部机器叠加 HV 橙金 / EV 钛紫 / IV 蓝 / LuV 淡品红紫粉机壳对比 + 架空地板/机柜冷热面 + 0.4 卫星站钢架/反射面板/馈源 + 0.6.0 LuV 液冷机柜/UPS 电池柜 + 0.6.1 显存墙/光交换背板/HBM 显存条/越狱卡 + 物品栏轮廓对比）见 [contact_sheet.png](textures/previews/contact_sheet.png)。
+- 9 个结构方块的 **LDLib 2×2 CTM 衔接图集与 3×3 / T 型 / L 型 / 多方块立面实测拼接预览**见 [ctm_preview.png](textures/previews/ctm_preview.png)。
+- 13 台多方块主控的 **运行态多帧动画逐帧展开与无缝循环检视表**见 [active_animations_sheet.png](textures/previews/active_animations_sheet.png)。
 
 ---
 
 ## 交付清单
 
-### 一、物品贴图（21 张 `16×16 RGBA`）
+### 一、物品贴图（24 张 `16×16 RGBA`）
 
 | 阶段 | 中文名 | 导出贴图（`16×16 RGBA`） | 分层源文件（`.aseprite`） | 目标资源路径（`modid = hypercluster`） |
 | :---: | --- | --- | --- | --- |
@@ -35,8 +35,11 @@
 | 通用 | 超算集群科技手册 | `textures/item/hypercluster_manual.png` | `textures/source/hypercluster_manual.aseprite` | `assets/hypercluster/textures/item/hypercluster_manual.png` |
 | 0.6.0 LuV | LuV 冷板液冷计算刀片 | `textures/item/luv_liquid_blade.png` | `textures/source/luv_liquid_blade.aseprite` | `assets/hypercluster/textures/item/luv_liquid_blade.png` |
 | 0.6.0 LuV | 开源主力权重模块 | `textures/item/open_weight_module.png` | `textures/source/open_weight_module.aseprite` | `assets/hypercluster/textures/item/open_weight_module.png` |
+| 0.6.1 IV | IV 4 TB HBM 显存条 | `textures/item/iv_hbm_module.png` | `textures/source/iv_hbm_module.aseprite` | `assets/hypercluster/textures/item/iv_hbm_module.png` |
+| 0.6.1 LuV | LuV 16 TB 液冷 HBM 显存条 | `textures/item/luv_hbm_module.png` | `textures/source/luv_hbm_module.aseprite` | `assets/hypercluster/textures/item/luv_hbm_module.png` |
+| 0.6.1 | 越狱补丁卡 | `textures/item/jailbreak_card.png` | `textures/source/jailbreak_card.aseprite` | `assets/hypercluster/textures/item/jailbreak_card.png` |
 
-### 二、结构方块贴图（9 张 `16×16 RGBA` 全不透明：0.3 机房 4 张 + 0.4 卫星站 3 张 + 0.6.0 LuV 2 张）
+### 二、结构方块贴图（11 张 `16×16 RGBA` 全不透明：0.3 机房 4 张 + 0.4 卫星站 3 张 + 0.6.0 LuV 2 张 + 0.6.1 LuV 2 张）
 
 | 阶段 | 中文名与用途 | 导出贴图（`16×16 RGBA`） | 分层源文件（`.aseprite`） | 目标资源路径（`modid = hypercluster`） |
 | :---: | --- | --- | --- | --- |
@@ -49,8 +52,10 @@
 | 0.4 IV | 高频馈源接收头 | `textures/block/cloud/satellite_feed_horn.png` | `textures/source/satellite_feed_horn.aseprite` | `assets/hypercluster/textures/block/cloud/satellite_feed_horn.png` |
 | 0.6.0 LuV | LuV 冷板液冷机柜外壳 | `textures/block/datacenter/liquid_rack_casing.png` | `textures/source/liquid_rack_casing.aseprite` | `assets/hypercluster/textures/block/datacenter/liquid_rack_casing.png` |
 | 0.6.0 LuV | UPS 工业蓄电池柜外壳 | `textures/block/datacenter/ups_battery_casing.png` | `textures/source/ups_battery_casing.aseprite` | `assets/hypercluster/textures/block/datacenter/ups_battery_casing.png` |
+| 0.6.1 LuV | 42U 显存/权重机柜外壳 | `textures/block/datacenter/vram_rack_casing.png` | `textures/source/vram_rack_casing.aseprite` | `assets/hypercluster/textures/block/datacenter/vram_rack_casing.png` |
+| 0.6.1 LuV | 高速光交换机外壳 | `textures/block/datacenter/optical_switch_casing.png` | `textures/source/optical_switch_casing.aseprite` | `assets/hypercluster/textures/block/datacenter/optical_switch_casing.png` |
 
-### 三、机器与仓室正面透明贴图（30 张 RGBA，外围 2px 全透明；其中 10 台多方块主控运行态为竖排多帧动画 + `.png.mcmeta`）
+### 三、机器与仓室正面透明贴图（36 张 RGBA，外围 2px 全透明；其中 13 台多方块主控运行态为竖排多帧动画 + `.png.mcmeta`）
 
 | 阶段 | 机器 / 仓室与状态 | 导出贴图（含动画帧规） | 分层源文件（`.aseprite`） | 目标资源路径（`modid = hypercluster`） |
 | :---: | --- | --- | --- | --- |
@@ -84,8 +89,14 @@
 | 0.6.0 LuV | 张量预训练集群主控（运行动画） | `textures/block/machines/tensor_pretraining_cluster/overlay_front_active.png`（`16×96` 6 帧 + `.mcmeta`） | `textures/source/tensor_pretraining_cluster_front.aseprite`（`active` `2..7`） | `assets/hypercluster/textures/block/machines/tensor_pretraining_cluster/overlay_front_active.png`（+ `.mcmeta`） |
 | 0.6.0 LuV | 云端卸载节点主控（待机） | `textures/block/machines/cloud_offload_node/overlay_front.png` | `textures/source/cloud_offload_node_front.aseprite`（`idle`） | `assets/hypercluster/textures/block/machines/cloud_offload_node/overlay_front.png` |
 | 0.6.0 LuV | 云端卸载节点主控（运行动画） | `textures/block/machines/cloud_offload_node/overlay_front_active.png`（`16×64` 4 帧 + `.mcmeta`） | `textures/source/cloud_offload_node_front.aseprite`（`active` `2..5`） | `assets/hypercluster/textures/block/machines/cloud_offload_node/overlay_front_active.png`（+ `.mcmeta`） |
+| 0.6.1 LuV | 显存存储机柜主控（待机） | `textures/block/machines/vram_storage_rack/overlay_front.png` | `textures/source/vram_storage_rack_front.aseprite`（`idle`） | `assets/hypercluster/textures/block/machines/vram_storage_rack/overlay_front.png` |
+| 0.6.1 LuV | 显存存储机柜主控（运行动画） | `textures/block/machines/vram_storage_rack/overlay_front_active.png`（`16×64` 4 帧 + `.mcmeta`） | `textures/source/vram_storage_rack_front.aseprite`（`active` `2..5`） | `assets/hypercluster/textures/block/machines/vram_storage_rack/overlay_front_active.png`（+ `.mcmeta`） |
+| 0.6.1 LuV | 高速光交换矩阵主控（待机） | `textures/block/machines/optical_fabric_switch/overlay_front.png` | `textures/source/optical_fabric_switch_front.aseprite`（`idle`） | `assets/hypercluster/textures/block/machines/optical_fabric_switch/overlay_front.png` |
+| 0.6.1 LuV | 高速光交换矩阵主控（运行动画） | `textures/block/machines/optical_fabric_switch/overlay_front_active.png`（`16×64` 4 帧 + `.mcmeta`） | `textures/source/optical_fabric_switch_front.aseprite`（`active` `2..5`） | `assets/hypercluster/textures/block/machines/optical_fabric_switch/overlay_front_active.png`（+ `.mcmeta`） |
+| 0.6.1 LuV | MoE 路由控制柜主控（待机） | `textures/block/machines/moe_router_rack/overlay_front.png` | `textures/source/moe_router_rack_front.aseprite`（`idle`） | `assets/hypercluster/textures/block/machines/moe_router_rack/overlay_front.png` |
+| 0.6.1 LuV | MoE 路由控制柜主控（运行动画） | `textures/block/machines/moe_router_rack/overlay_front_active.png`（`16×96` 6 帧 + `.mcmeta`） | `textures/source/moe_router_rack_front.aseprite`（`active` `2..7`） | `assets/hypercluster/textures/block/machines/moe_router_rack/overlay_front_active.png`（+ `.mcmeta`） |
 
-### 四、LDLib 2×2 CTM 衔接图集（7 张 `32×32 RGBA` 全不透明）
+### 四、LDLib 2×2 CTM 衔接图集（9 张 `32×32 RGBA` 全不透明）
 
 | 阶段 | 中文名与拼接效果 | 导出图集（`32×32 RGBA`） | 分层源文件（`.aseprite`） | 目标资源路径（`modid = hypercluster`） |
 | :---: | --- | --- | --- | --- |
@@ -96,6 +107,8 @@
 | 0.4 IV | 抛物面天线反射面板 CTM | `textures/block/cloud/satellite_dish_panel_ctm.png` | `textures/source/satellite_dish_panel_ctm.aseprite` | `assets/hypercluster/textures/block/cloud/satellite_dish_panel_ctm.png` |
 | 0.6.0 LuV | LuV 冷板液冷机柜外壳 CTM | `textures/block/datacenter/liquid_rack_casing_ctm.png` | `textures/source/liquid_rack_casing_ctm.aseprite` | `assets/hypercluster/textures/block/datacenter/liquid_rack_casing_ctm.png` |
 | 0.6.0 LuV | UPS 工业蓄电池柜外壳 CTM | `textures/block/datacenter/ups_battery_casing_ctm.png` | `textures/source/ups_battery_casing_ctm.aseprite` | `assets/hypercluster/textures/block/datacenter/ups_battery_casing_ctm.png` |
+| 0.6.1 LuV | 42U 显存/权重机柜外壳 CTM | `textures/block/datacenter/vram_rack_casing_ctm.png` | `textures/source/vram_rack_casing_ctm.aseprite` | `assets/hypercluster/textures/block/datacenter/vram_rack_casing_ctm.png` |
+| 0.6.1 LuV | 高速光交换机外壳 CTM | `textures/block/datacenter/optical_switch_casing_ctm.png` | `textures/source/optical_switch_casing_ctm.aseprite` | `assets/hypercluster/textures/block/datacenter/optical_switch_casing_ctm.png` |
 
 ---
 
@@ -144,7 +157,7 @@
   - **`local_fallback_gateway`**：重型 `12×12` 全直角网络网关面板，顶部左右分置主路（云端）/ 备路（本地）双状态指示灯，下方暗色路由矩阵内绘制 Y 型双向上行分流箭头直指两侧通道。待机暗态清晰可辨（8 色），运行态同步点亮左侧青蓝云端主路灯/左分支与右侧琥珀金本地备路灯/右分支（13 色；3 图层：`gateway_bezel` / `dual_status_leds` / `routing_arrows`）。
 
 ### 5. LDLib 2×2 CTM 衔接图集规范与校验（`32×32 RGBA` 全不透明）
-5 张 CTM 图集均严格复用了各自基础 `16×16` `.aseprite` 的色板（零新增杂色）、左上光照与分层结构，并已直接对照本工程锁定的 **LDLib `1.0.40.b`（`Connections.java` / `Submap.java`）** 与 **GTCEu `7.4.0` 官方 `*_ctm.png`** 字节码与 UV 索引完成校验：
+9 张 CTM 图集均严格复用了各自基础 `16×16` `.aseprite` 的色板（零新增杂色）、左上光照与分层结构，并已直接对照本工程锁定的 **LDLib `1.0.40.b`（`Connections.java` / `Submap.java`）** 与 **GTCEu `7.4.0` 官方 `*_ctm.png`** 字节码与 UV 索引完成校验：
 - **标准 LDLib 2×2 象限映射（4 个 `16×16` 瓦片）**：
   - 左上 `(0, 0)`：`V && H && D`（`submap 0, 1, 4, 5`）—— 四周全连通的**内部无缝块**（无外边框）。
   - 右上 `(16, 0)`：`V && !H`（`submap 2, 3, 6, 7`）—— 仅**上下垂直连通**、左右有外边框（用于竖柱及大面左右边缘）。
@@ -157,10 +170,12 @@
   - `rack_casing_back_exhaust_ctm`（3 图层，7 色 ⊆ 基础 10 色）：内部连成整面同相位水平散热百叶与微暗红热腔，仅外缘保留重型背板边框，橙红色热通道标识条仅出现在顶边（L 型凹角带暗槽封口）。
   - `satellite_dish_frame_ctm`（3 图层，9 色）：外缘保留完整 2px 钨钢主梁边框，内部去除重复粗边，45° 交叉斜撑自然延伸并在四块交汇处组成与中心完全同构的 4×4 螺栓节点板，拼出连续航天钻石桁架。
   - `satellite_dish_panel_ctm`（3 图层，9 色 ⊆ 基础 10 色）：内部连成极简纯净冷白反射面板、无断层淡青细格线与对齐的微弱同心校准弧，外缘统一收出 2px 冷钢金属框线。
+  - `vram_rack_casing_ctm`（4 图层，15 色）：基于 4px 偏移网格构建的深靛蓝底板 + 4×4 银灰 HBM 堆栈阵 + 对称紫/青微内存通道轨（`x=5` 青 / `x=9` 紫），内部跨块无缝拼接成高密度连续显存墙，外缘保留 2px 深靛蓝高亮/暗部收边框。
+  - `optical_switch_casing_ctm`（3 图层，13 色）：哑光深黑金属背板 + 4 行双孔光模块端口阵，交错点亮高密度青/琥珀光纤跳线光口，内部跨块无缝连接成连续光交换矩阵背板，外缘保留 2px 哑光黑金属框与标准凹角封口。
 - 接入工程时只需为对应的基础 `16×16` 贴图配置标准 `.png.mcmeta`（`{"ldlib": {"connection": "hypercluster:block/<dir>/<name>_ctm"}}`）即可与 LDLib 渲染管线原生联动；完整 3×3 / T 型 / L 型 / 条带 / 多方块立面效果见 [ctm_preview.png](textures/previews/ctm_preview.png)。
 
-### 6. 多方块主控运行态竖排多帧动画规范（6 组 `.png` + `.png.mcmeta`）
-6 台多方块主控的运行态正面贴图已升级为标准 Minecraft 竖排多帧动画精灵表（`16 × (16×N)` RGBA），所有帧均严格复用原机色板（≤16 色）、保持外围 2px 100% 透明且 Alpha 外轮廓与对应 `overlay_front.png` 逐像素一致；配套 `.aseprite` 源文件均包含 `idle`（第 1 帧，与 `overlay_front.png` 完全一致）与 `active`（第 `2..N+1` 帧，帧时长与 `frametime × 50ms` 同步）双标签，可通过 `aseprite -b --frame-tag active <src>.aseprite --sheet-type vertical --sheet <out>.png` 复现导出：
+### 6. 多方块主控运行态竖排多帧动画规范（13 组 `.png` + `.png.mcmeta`）
+13 台多方块主控的运行态正面贴图已升级为标准 Minecraft 竖排多帧动画精灵表（`16 × (16×N)` RGBA），所有帧均严格复用原机色板（≤16 色）、保持外围 2px 100% 透明且 Alpha 外轮廓与对应 `overlay_front.png` 逐像素一致；配套 `.aseprite` 源文件均包含 `idle`（第 1 帧，与 `overlay_front.png` 完全一致）与 `active`（第 `2..N+1` 帧，帧时长与 `frametime × 50ms` 同步）双标签，可通过 `aseprite -b --frame-tag active <src>.aseprite --sheet-type vertical --sheet <out>.png` 复现导出：
 - **`data_scrubbing_tower`（6 帧，`16×96`，`frametime = 2`，600ms 循环）**：中央 2px 宽青蓝数据流以 6 行周期逐帧向上无缝滚动冲洗，两侧 4 排格栅内沿同步反射数据波峰微光。
 - **`lora_engraving_chamber`（6 帧，`16×96`，`frametime = 2`，600ms 循环）**：青/金色聚焦激光束在晶圆载台上方按「中 → 右 → 右灼烧峰值 → 中高能脉冲 → 左 → 左灼烧峰值」往返扫描，透镜高光、焦斑火花与顶部双灯呼应闪烁。
 - **`red_team_sandbox`（6 帧，`16×96`，`frametime = 2`，600ms 循环）**：防爆观察窗内锐利紫红锯齿对抗波形以 6 列周期逐帧向左实时滚动，顶部翠绿校验灯平滑呼吸明暗。
@@ -171,7 +186,10 @@
 - **`ups_power_array`（4 帧，`16×64`，`frametime = 3`，600ms 循环）**：中央 5 格竖排电量柱（底部琥珀备电段 + 上方 4 格翠绿主电量段）呈现自下而上的呼吸脉冲，左右市电（翠绿）/ 备电（琥珀）双路切换灯交替微闪（14 色；3 图层：`array_bezel` / `dual_source_lamps` / `battery_column`）。
 - **`tensor_pretraining_cluster`（6 帧，`16×96`，`frametime = 2`，600ms 循环）**：巨型 8×6 张量矩阵监控窗内青色算力波峰与紧随其后的 LuV 品红梯度光点沿对角扫描整个网格，底部 Checkpoint 进度条逐格推进并在第 6 帧亮起金色提交闪烁（15 色；3 图层：`cluster_bezel` / `tensor_matrix_window` / `checkpoint_progress_bar`）。
 - **`cloud_offload_node`（4 帧，`16×64`，`frametime = 3`，600ms 循环）**：左侧青色算力脉冲沿着向右上方倾斜的传输箭头逐帧推进至右上出口，右侧 Token 琥珀金产出主灯与副灯随算力抵达依次点亮并渐隐循环（15 色；3 图层：`node_bezel` / `upload_wave_screen` / `token_output_led`）。
-- 全部 10 组动画的逐帧展开与首尾衔接检视见 [active_animations_sheet.png](textures/previews/active_animations_sheet.png)。
+- **`vram_storage_rack`（4 帧，`16×64`，`frametime = 3`，600ms 循环）**：左侧 4 层双列高密度 HBM 槽位按紫青读写波交错呼吸，右侧 2px 显存占用柱以 `5px → 7px → 8px → 6px` 紫青渐变平滑呼吸起伏（13 色；3 图层：`rack_bezel` / `hbm_slot_array` / `vram_usage_column`）。
+- **`optical_fabric_switch`（4 帧，`16×64`，`frametime = 3`，600ms 循环）**：下方 4×3 密集光口矩阵中 12 个青色光口按交错相位轮流亮暗闪烁，顶部 8 格带宽负载条呈 `5 → 7 → 8 → 6` 格动态波动并在峰值点亮琥珀高负载尖端（13 色；3 图层：`switch_bezel` / `bandwidth_load_bar` / `optical_port_matrix`）。
+- **`moe_router_rack`（6 帧，`16×96`，`frametime = 2`，600ms 循环）**：顶部路由拓扑小屏由主干节点分叉出 4 条独立专家路由支路，逐帧动态切换激活不同的青/品红/金分流路径并同步点亮下方对应的 4 枚模型槽状态灯（13 色；3 图层：`router_bezel` / `topology_screen` / `model_slot_lamps`）。
+- 全部 13 组动画的逐帧展开与首尾衔接检视见 [active_animations_sheet.png](textures/previews/active_animations_sheet.png)。
 
 ### 7. 0.6.0 LuV 智算与训练资产说明（新增 2 物品 + 2 CTM 方块 + 4 主控）
 - **LuV 冷板液冷计算刀片（`luv_liquid_blade`）**：沿用 `iv_compute_blade.aseprite` 的 `14×10` T 型热插拔刀片外轮廓，左侧手柄灯升级为冰青液冷状态灯，上部替换为一整块高光亮银 CNC 冷板，下部与右前缘盘绕暖铜管箍与高对比冰青冷却液 L 形回路（14 色，5 图层：`blade_outline` / `blade_chassis` / `silver_cold_plate` / `cyan_copper_pipes` / `gold_fingers`）。
@@ -179,3 +197,11 @@
 - **LuV 冷板液冷机柜外壳（`liquid_rack_casing` / `liquid_rack_casing_ctm`）**：深灰黑冷板金属背板 + 双列垂直银灰冷却液歧管与冰青液流视窗，配合 8px 垂直抱箍节奏与 4×4 网格无缝对接，在 `3×3` / `T` / `L` 及大型立面中连成整面不间断的液冷歧管墙（13 色 ⊆ 16，3 图层：`metal_backplate` / `coolant_manifolds` / `cabinet_frame`）。
 - **UPS 工业蓄电池柜外壳（`ups_battery_casing` / `ups_battery_casing_ctm`）**：暗炭灰双列重型电池仓门与铜栓总线柱 + 仅位于底边的 4px 周期琥珀/翠绿分段电量指示条，CTM 拼接时内部连成垂直电池仓矩阵，底边融合为连续不停断的配电电量灯带（12 色 ⊆ 16，3 图层：`battery_bays` / `charge_indicator_bar` / `cabinet_frame`）。
 - **0.6.0 LuV 多方块主控预览底板**：全部 4 台 LuV 主控均保留外围 2px 100% 透明与一致冷钢左上光照，预览合成为基于 GTCEu `luv_machine_casing` 淡品红/紫粉金属调色的真实 LuV 机壳（见 [contact_sheet.png](textures/previews/contact_sheet.png) 与 [active_animations_sheet.png](textures/previews/active_animations_sheet.png)）。
+
+### 8. 0.6.1 机房拓扑补完与模型注册表资产说明（新增 3 物品 + 2 CTM 方块 + 3 主控）
+- **IV 4 TB HBM 显存条（`iv_hbm_module`）**：独立 `8×14` 竖长金属马甲内存条轮廓（顶部双散热护耳缺口 + 中央垂直冰蓝导热条 + 底部带防呆缺口的 2+3 组金手指），在轮廓与朝向上与横版 `14×10` 计算刀片及侧插针 LoRA 卡彻底区分（13 色，4 图层：`module_outline` / `metal_heatspreader` / `ice_blue_thermal_bar` / `gold_fingers`）。
+- **LuV 16 TB 液冷 HBM 显存条（`luv_hbm_module`）**：与 `iv_hbm_module.aseprite` 保持 Alpha 外轮廓逐像素一致，马甲升级为深紫青阳极散热装甲，中脊嵌入高亮青色蛇形液冷微管回路，底部升级为高对比亮金金手指（14 色，4 图层：`module_outline` / `violet_teal_armor` / `cyan_microtubes` / `bright_gold_fingers`）。
+- **越狱补丁卡（`jailbreak_card`）**：`12×14` 左上斜切角 + 右侧键槽缺口 + 底部双宽金手指的黑金/暖红破译数据卡廓形，顶部饰有高对比暖红警示条，中央压印已弹开锁梁并贯穿亮红/白金锯齿裂纹的解锁徽标（12 色，4 图层：`card_outline` / `obsidian_crimson_body` / `gold_security_trim` / `cracked_unlock_emblem`）。
+- **42U 显存/权重机柜外壳（`vram_rack_casing` / `vram_rack_casing_ctm`）**：深靛蓝金属背板内排布高密度银灰 HBM 芯片阵列（4×4 偏移网格）并穿插细微紫/青双色内存通道轨，CTM 拼接时连成一整面连续高密度显存墙，与银白竖管为主的冷板液冷机柜在色调与结构肌理上明显区分（15 色，4 图层：`indigo_backplate` / `hbm_array_modules` / `purple_cyan_channels` / `cabinet_frame`）。
+- **高速光交换机外壳（`optical_switch_casing` / `optical_switch_casing_ctm`）**：哑光深黑金属背板配合 4 行错位高密度青/琥珀双孔光纤跳线端口阵，CTM 拼接为整面无缝光交换背板（13 色，3 图层：`matte_backplate` / `optical_port_matrix` / `cabinet_frame`）。
+- **0.6.1 LuV 多方块主控（`vram_storage_rack` / `optical_fabric_switch` / `moe_router_rack`）**：全部 3 台主控均保持外围 2px 100% 透明与一致冷钢左上光照，预览合成于基于 GTCEu `luv_machine_casing` 淡品红/紫粉金属调色的 LuV 机壳（见 [contact_sheet.png](textures/previews/contact_sheet.png)、[ctm_preview.png](textures/previews/ctm_preview.png) 与 [active_animations_sheet.png](textures/previews/active_animations_sheet.png)）。

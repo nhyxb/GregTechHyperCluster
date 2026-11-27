@@ -1,0 +1,5 @@
+{
+    "ldlib": {
+        "connection": "hypercluster:block/datacenter/optical_switch_casing_ctm"
+    }
+}

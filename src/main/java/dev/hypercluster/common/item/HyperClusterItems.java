@@ -83,6 +83,17 @@ public final class HyperClusterItems {
             "A trained open-weight model checkpoint. Its NBT records the domain, precision and training version.",
             "item.hypercluster.open_weight_module.summary", "%s · %s · v%s");
 
+    // 0.6.1 — TB-scale cluster memory and the uncensored-model patch card.
+    public static final ItemEntry<TooltipItem> IV_HBM_MODULE = register("iv_hbm_module",
+            "IV HBM Module",
+            "4 TB of high-bandwidth cluster memory. Four of them fill one memory rack (16 TB).");
+    public static final ItemEntry<TooltipItem> LUV_HBM_MODULE = register("luv_hbm_module",
+            "LuV HBM Module",
+            "16 TB of high-bandwidth cluster memory. Four of them fill one memory rack (64 TB).");
+    public static final ItemEntry<TooltipItem> JAILBREAK_CARD = register("jailbreak_card",
+            "Jailbreak Patch Card",
+            "Unlocks whitelisted dangerous chemistry rounds on a morally-refusing closed-source model.");
+
     private HyperClusterItems() {}
 
     public static void init() {

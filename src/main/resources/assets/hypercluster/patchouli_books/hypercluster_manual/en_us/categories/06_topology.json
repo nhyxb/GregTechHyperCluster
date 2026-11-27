@@ -1,0 +1,6 @@
+{
+  "name": "Chapter 6 · Machine-Room Topology & Model Families",
+  "description": "TB memory pools, optical fabric aggregation, the MoE routing rack and the six model families.",
+  "icon": "hypercluster:moe_router_rack",
+  "sortnum": 5
+}

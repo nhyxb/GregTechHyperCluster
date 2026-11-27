@@ -96,8 +96,11 @@ public class TensorPretrainingClusterMachine extends WorkableElectricMultiblockM
         PAUSED
     }
 
-    /** The maximum VRAM a training job may declare (one full Tier III rack). */
-    public static final int JOB_VRAM = 96;
+    /**
+     * VRAM a training job needs (TB) since 0.6.1: the cluster memory pool must hold 96 TB, i.e.
+     * two full LuV memory racks (4 × 16 TB each).
+     */
+    public static final int JOB_VRAM = dev.hypercluster.common.machine.datacenter.VramRating.TRAINING_JOB_TB;
 
     // Inputs / settings.
     @Persisted
@@ -443,13 +446,58 @@ public class TensorPretrainingClusterMachine extends WorkableElectricMultiblockM
     // Host resources //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    /** VRAM the nearby liquid racks bring online (0 = no host found, which is an OOM). */
+    /**
+     * Cluster VRAM pool (TB) the memory cabinets in range provide. Since 0.6.1 compute blades carry
+     * no memory at all: an optical switch in range publishes the whole room's pool, otherwise the
+     * router sums the {@code vram_storage_rack} cabinets directly.
+     */
     public int hostVramCapacity() {
+        dev.hypercluster.common.machine.datacenter.OpticalFabricSwitchMachine fabric = nearbySwitch();
+        if (fabric != null) {
+            return fabric.aggregateMemoryTb();
+        }
         int vram = 0;
-        for (LiquidCooledComputeRackMachine rack : nearbyRacks()) {
-            vram += rack.getVramCapacity();
+        for (var rack : nearbyMemoryRacks()) {
+            vram += rack.getTerabytesOnline();
         }
         return vram;
+    }
+
+    /** The optical switch aggregating this room, or null when the racks are counted directly. */
+    private dev.hypercluster.common.machine.datacenter.OpticalFabricSwitchMachine nearbySwitch() {
+        if (getLevel() == null) {
+            return null;
+        }
+        int r = TrainingRating.OFFLOAD_RANGE;
+        for (BlockPos pos : BlockPos.betweenClosed(getPos().offset(-r, -r, -r), getPos().offset(r, r, r))) {
+            BlockEntity be = getLevel().getBlockEntity(pos);
+            if (be instanceof com.gregtechceu.gtceu.api.machine.IMachineBlockEntity machineBE &&
+                    machineBE
+                            .getMetaMachine() instanceof dev.hypercluster.common.machine.datacenter.OpticalFabricSwitchMachine fabric &&
+                    fabric.isFormed()) {
+                return fabric;
+            }
+        }
+        return null;
+    }
+
+    /** Memory cabinets in range supplying this cluster's VRAM pool. */
+    public java.util.List<dev.hypercluster.common.machine.datacenter.VramStorageRackMachine> nearbyMemoryRacks() {
+        java.util.List<dev.hypercluster.common.machine.datacenter.VramStorageRackMachine> found = new java.util.ArrayList<>();
+        if (getLevel() == null) {
+            return found;
+        }
+        int r = TrainingRating.OFFLOAD_RANGE;
+        for (BlockPos pos : BlockPos.betweenClosed(getPos().offset(-r, -r, -r), getPos().offset(r, r, r))) {
+            BlockEntity be = getLevel().getBlockEntity(pos);
+            if (be instanceof com.gregtechceu.gtceu.api.machine.IMachineBlockEntity machineBE &&
+                    machineBE
+                            .getMetaMachine() instanceof dev.hypercluster.common.machine.datacenter.VramStorageRackMachine rack &&
+                    rack.isFormed()) {
+                found.add(rack);
+            }
+        }
+        return found;
     }
 
     protected boolean hasComputation() {

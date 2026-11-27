@@ -73,6 +73,9 @@
 ## 开发测试规范（长期执行）
 
 - **⚠️ Xvfb 与本会话 bash 的 PID 命名空间**：每次 `bash` 调用都在独立的 `bwrap --unshare-pid` 命名空间里（私有 `/tmp`），**上一次调用启动的 Xvfb 已经随之死亡**。因此「先起 Xvfb、再单独调一次 runClient」会以 `glfwInit failed` 失败——不是显卡问题。正确做法是**把启动 Xvfb 与 runClient 写进同一个脚本一次执行**，并在同一脚本内收尾 kill。
+  - **私有 `/tmp` 同样不跨调用**：上一次调用写下的 `/tmp/xxx.log` 下一次读到的是「没有那个文件」。中间产物（清洗后的日志、grep 结果）要么在同一次调用内生成并使用，要么写进仓库 `run/validation/`。
+- **冒烟脚本模板**：`run/validation/client-smoke-061.sh` 是当前完整版（Xvfb :99 + `setsid` 起客户端 + 标记轮询 + 45s 稳定期 + `import -window root` 截图 + `run/client/logs/latest.log` 存档 + trap 收尾并自检 `pgrep Xvfb/java`）。新版本号冒烟直接复制改文件名与输出路径即可。
+- **日志误报陷阱**：narrator（`flite_cmu_us_kal16`）的堆栈行里内嵌**整条 `-cp` 类路径**，其中含 `ldlib`、`text2speech` 等字样。直接 `grep -i ldlib` 会命中它，看起来像 ldlib 报错。**先剔除 narrator 连续行（以 `[HH:MM:SS]` 起始的行为边界）再 grep**，否则会误判内容资源加载失败。
 - **客户端冒烟测试严禁占用宿主机真实桌面**：所有 `./gradlew runClient` 的自动化冒烟一律在 Xvfb 虚拟屏内跑，例如：
   `env -u WAYLAND_DISPLAY LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew runClient`
   本环境 openSUSE 的 `xorg-x11-server-Xvfb` 包只带 `/usr/bin/Xvfb`、无 `xvfb-run` 脚本，等价做法：手动 `Xvfb :99 -screen 0 1280x720x24 &` 后 `env -u WAYLAND_DISPLAY LIBGL_ALWAYS_SOFTWARE=1 DISPLAY=:99 ./gradlew runClient`，结束后 kill 掉 Xvfb，不留后台进程。若以后装了 `xvfb-run`（需要用户确认安装来源），直接用标准命令即可。
@@ -150,3 +153,12 @@
 - **可选部件字符要独立**：把可选部件（外包节点）挂在已被 `T` 谓词占用的格子上会整体成型失败且报错指向无关格子；正确做法是让承载它的外层谓词（此处 `L` 机柜外壳）追加 `.or(Predicates.abilities(CLOUD_OFFLOAD).setMinGlobalLimited(0).setMaxGlobalLimited(1))`。
 - **先摆部件再成型**：多方块成型后拒绝结构编辑，带可选部件的结构必须在 `ensureFormed` 之前把部件放好。
 - **测试场地边界**：结构贴场地边缘时，GT 的正反两种匹配变体可能探到场地外（bedrock），表现为「某台机器单独摆就成型、加挂部件就不成型」。把结构往内挪或加外墙余量。
+
+## 0.6.1 机房拓扑补完 + TB 显存 + 模型注册表（2026-11-27，0.6.1）
+
+- **交付**：`vram_rack_casing`/`optical_switch_casing`（原生 CTM）、`iv_hbm_module`(4 TB)/`luv_hbm_module`(16 TB)/`jailbreak_card` 物品、`vram_storage_rack`（5×5×3，4 槽，16/64 TB）、`optical_fabric_switch`（5×4×3，聚合 16 格内 IV 24/LuV 64，**带宽 128 CWU/t**，超限 **503 + 300 ticks**）、`moe_router_rack`（5×5×5，部署槽 + 4 LoRA + DeepThink）、`AIModelDefinition`/`AIModels` 十台模型。runGametest **79/79**；手册新增双语第六章。报告 `docs/reports/0.6.1_acceptance_report.md`。
+- **显存口径迁移**：`VRAM_PER_BLADE = 0`（刀片纯算力），集群显存只由 `VramStorageRackMachine` 提供；训练 OOM 门槛 **96 TB**（`VramRating.TRAINING_JOB_TB`），两座满插 LuV 柜过关。显存须 `state == ONLINE` 才计入池。
+- **模型注册表**：`AIModelDefinition` 是**运行时注册表**（非 MC registry），`Camp.LOCAL` 占显存/零 Token、`Camp.API` 零本地显存/计 Token；`Trait` 枚举承载各模型专属机制。`CloudModels.MODELS` 现为 API 阵营视图，`defaultModel()` 跳过带 `LIFECYCLE` 的型号，避免新站启动即 RETIRED。
+- **⚠️ GameTest 场地共享的坑（长期有效）**：`hc_field` 是**单一共享场地**，16 格聚合半径会跨测试串味——光交换机/路由柜/训练集群会看到别的测试摆的机柜。断言必须**基于机器自身读数**（`poolTerabytes()`、`aggregateAvailableCwu()`）而不是写死"应该为 16 TB/0 台"。同理 `tripBusy()` 可用来确定性地复现 503，不必构造真实并发。
+- **⚠️ 机器状态在 tick 中刷新**：在同一 `runAtTickTime` 回调里改槽位再读 `state` 会读到**上一 tick** 的判定。改完必须在**后续 tick** 断言（0.6.1 路由柜 OOM/ONLINE 曾因此假失败）。
+- **占位图流程**：美术未到位时可程序化生成 16×16 / 16×64 占位图先行通关；正式素材到位后用 `cmp` 逐字节核对替换，并以 jar 体积变化佐证打进了交付物。

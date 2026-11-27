@@ -30,7 +30,10 @@ import dev.hypercluster.common.machine.cloud.LocalFallbackGatewayMachine;
 import dev.hypercluster.common.machine.datacenter.AirCooledComputeRackMachine;
 import dev.hypercluster.common.machine.datacenter.IvInferenceHatchMachine;
 import dev.hypercluster.common.machine.datacenter.LiquidCooledComputeRackMachine;
+import dev.hypercluster.common.machine.datacenter.OpticalFabricSwitchMachine;
 import dev.hypercluster.common.machine.datacenter.PrecisionCracMachine;
+import dev.hypercluster.common.machine.datacenter.VramStorageRackMachine;
+import dev.hypercluster.common.machine.model.MoeRouterRackMachine;
 import dev.hypercluster.common.machine.training.CloudOffloadNodeMachine;
 import dev.hypercluster.common.machine.training.TensorPretrainingClusterMachine;
 import dev.hypercluster.common.machine.training.UpsPowerArrayMachine;
@@ -79,6 +82,10 @@ public final class HyperClusterMachines {
     public static MultiblockMachineDefinition UPS_POWER_ARRAY;
     public static MultiblockMachineDefinition TENSOR_PRETRAINING_CLUSTER;
     public static MachineDefinition CLOUD_OFFLOAD_NODE;
+    // 0.6.1 — machine-room topology completion + TB memory + model deployment.
+    public static MultiblockMachineDefinition VRAM_STORAGE_RACK;
+    public static MultiblockMachineDefinition OPTICAL_FABRIC_SWITCH;
+    public static MultiblockMachineDefinition MOE_ROUTER_RACK;
 
     private HyperClusterMachines() {}
 
@@ -97,6 +104,7 @@ public final class HyperClusterMachines {
 
     private static void initMachines() {
         initLuvMachines();
+        initTopologyMachines();
         // English entries for machine tooltips, recipe type categories and buffer hints.
         // (zh_cn is maintained manually under assets/hypercluster/lang/zh_cn.json.)
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.hv_micro_burner.tooltip",
@@ -842,6 +850,216 @@ public final class HyperClusterMachines {
                 .register();
     }
 
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // 0.6.1 — machine-room topology completion, TB memory and model deployment //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    private static void initTopologyMachines() {
+        // ---- lang: TB memory items, the three new machines and the model catalog ----
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.vram_storage_rack.tooltip",
+                "TB-scale cluster memory cabinet: four HBM modules expose the cluster VRAM pool (16 TB with IV modules, 64 TB with LuV).");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.vram_storage_rack.label.modules",
+                "HBM modules");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.vram_storage_rack.module_slot",
+                "HBM module slot: IV gives 4 TB, LuV gives 16 TB. Four modules fill the rack.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.vram_storage_rack.online",
+                "Memory online");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.vram_storage_rack.pool",
+                "Cluster memory pool: %s TB (rack maximum %s TB)");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.vram_storage_rack.draw",
+                "Module refresh draw: %s");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.vram_storage_rack.state.online", "");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.vram_storage_rack.state.empty",
+                "No HBM modules inserted.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.vram_storage_rack.state.maintenance",
+                "Memory offline: maintenance problems unfixed.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.vram_storage_rack.state.paused",
+                "Memory offline: rack paused (soft mallet).");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.vram_storage_rack.state.low_power",
+                "Memory offline: not enough energy to refresh the modules.");
+
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.optical_fabric_switch.tooltip",
+                "Optical fabric switch: aggregates nearby IV/LuV compute racks and memory cabinets into one cluster pool with a hard bandwidth ceiling.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.optical_fabric_switch.serving",
+                "Serving the cluster");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.optical_fabric_switch.members",
+                "Member racks: %s (%s CWU/t aggregated)");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.optical_fabric_switch.bandwidth",
+                "Switch bandwidth ceiling: %s CWU/t");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.optical_fabric_switch.memory",
+                "Aggregated cluster memory: %s TB");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.optical_fabric_switch.busy",
+                "503 Server Busy: over the bandwidth ceiling, cooling down (%ss).");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.optical_fabric_switch.status.no_members",
+                "No compute racks in range.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.optical_fabric_switch.status.busy_503",
+                "503 Server Busy: over the bandwidth ceiling.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.optical_fabric_switch.status.low_power",
+                "Not enough energy.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.optical_fabric_switch.status.paused",
+                "Paused (soft mallet).");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.optical_fabric_switch.status.maintenance",
+                "Maintenance problems unfixed.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.optical_fabric_switch.status.serving", "");
+
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.tooltip",
+                "MoE routing rack: deploys open-weight models into the cluster memory pool, with four LoRA slots and the DeepThink charge switch.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.label.model",
+                "Model weights");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.label.lora",
+                "LoRA extensions");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.model_slot",
+                "Deployment slot: one open-weight module. The model loads into cluster memory.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.lora_slot",
+                "LoRA extension slot: mining or chemical LoRA card, +4 TB and +4 CWU/t each.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.deepthink.tooltip",
+                "DeepThink: reserve +16 TB and force probability by-products to 100%.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.online",
+                "Model online");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.model_line",
+                "Deployed model: %s");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.vram",
+                "VRAM: %s TB required / %s TB in the pool");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.compute",
+                "Compute: %s CWU/t billed / %s CWU/t available");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.deepthink.on",
+                "DeepThink charged: by-products forced to 100%.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.state.online", "");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.state.empty",
+                "Insert an open-weight module to deploy a model.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.state.loading",
+                "Waiting for enough cluster compute to load the model.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.state.oom",
+                "OOM: the cluster memory pool is too small for this model.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.state.evicted",
+                "Model evicted: the memory pool or compute feed went away.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.state.paused",
+                "Paused (soft mallet).");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.state.maintenance",
+                "Maintenance problems unfixed.");
+
+        // ---- model catalog display names ----
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.model.qwen_9187_pro_max_ultra",
+                "Qwen 9187 Pro-Max-Ultra");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.model.deepseek_v6767_flash",
+                "DeepSeek-V6767 Flash");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.model.deepseek_v6767_pro",
+                "DeepSeek-V6767 Pro");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.model.glm_2333_flash", "GLM-2333 Flash");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.model.glm_2333_max", "GLM-2333 Max");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.model.gemini_titanium_4_0", "Gemini-Titanium-4.0");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.model.gemini_platinum", "Gemini-Platinum");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.model.gemini_xenon", "Gemini-Xenon");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.model.gpt_1145_multiverse", "GPT-1145 Multiverse");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.model.grok_420", "Grok-420");
+
+        // ---- VRAM storage rack: 5×5×3, the memory cabinet ----
+        // start(RIGHT, BACK, UP): char->east(+x), aisle->south(+z), string->up(+y).
+        // Controller on the front face, second layer: x=2, y=1, z=0.
+        VRAM_STORAGE_RACK = HyperCluster.REGISTRATE
+                .multiblock("vram_storage_rack", VramStorageRackMachine::new)
+                .langValue("VRAM Storage Rack")
+                .rotationState(RotationState.NON_Y_AXIS)
+                .recipeType(GTRecipeTypes.DUMMY_RECIPES)
+                .appearanceBlock(HyperClusterBlocks.VRAM_RACK_CASING)
+                .pattern(definition -> FactoryBlockPattern.start(RIGHT, BACK, UP)
+                        // y=0: the closed plinth.
+                        .aisle("VVVVV", "VVVVV", "VVVVV")
+                        // y=1: the module bays behind glass doors; controller front-centre.
+                        .aisle("VGGGV", "V###V", "VGGGV")
+                        // y=2: the module bay row with the memory spine at the back.
+                        .aisle("VGVSV", "V###V", "VMMMV")
+                        // y=3: the upper bay row.
+                        .aisle("VGGGV", "V###V", "VGGGV")
+                        // y=4: the steel cable tray roof.
+                        .aisle("TTTTT", "T###T", "TTTTT")
+                        .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                        .where('V', Predicates.blocks(HyperClusterBlocks.VRAM_RACK_CASING.get())
+                                .or(Predicates.abilities(PartAbility.INPUT_ENERGY)
+                                        .setMinGlobalLimited(1).setMaxGlobalLimited(2))
+                                .or(Predicates.autoAbilities(true, false, false)))
+                        .where('G', Predicates.blocks(GTBlocks.CASING_LAMINATED_GLASS.get()))
+                        .where('M', Predicates.blocks(GTBlocks.COMPUTER_CASING.get()))
+                        .where('T', Predicates.frames(GTMaterials.TungstenSteel))
+                        .where('#', Predicates.air())
+                        .build())
+                .allowExtendedFacing(false)
+                .workableCasingModel(HyperCluster.id("block/datacenter/vram_rack_casing"),
+                        HyperCluster.id("block/machines/vram_storage_rack"))
+                .register();
+
+        // ---- Optical fabric switch: 5×4×3 backplane cabinet ----
+        // Controller front-centre, second layer: x=2, y=1, z=0.
+        OPTICAL_FABRIC_SWITCH = HyperCluster.REGISTRATE
+                .multiblock("optical_fabric_switch", OpticalFabricSwitchMachine::new)
+                .langValue("Optical Fabric Switch")
+                .rotationState(RotationState.NON_Y_AXIS)
+                .recipeType(GTRecipeTypes.DUMMY_RECIPES)
+                .appearanceBlock(HyperClusterBlocks.OPTICAL_SWITCH_CASING)
+                .pattern(definition -> FactoryBlockPattern.start(RIGHT, BACK, UP)
+                        // y=0: the heavy backplane plinth.
+                        .aisle("OOOOO", "OOOOO", "OOOOO")
+                        // y=1: the port row; controller front-centre.
+                        .aisle("OOOSO", "OOOOO", "OOOOO")
+                        // y=2: the exposed fibre tray behind a glass front.
+                        .aisle("OGGGO", "O###O", "O###O")
+                        // y=3: the overhead steel frame carrying the fibre bridge.
+                        .aisle("TTTTT", "T###T", "T###T")
+                        .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                        .where('O', Predicates.blocks(HyperClusterBlocks.OPTICAL_SWITCH_CASING.get())
+                                .or(Predicates.abilities(PartAbility.INPUT_ENERGY)
+                                        .setMinGlobalLimited(1).setMaxGlobalLimited(2))
+                                .or(Predicates.autoAbilities(true, false, false)))
+                        .where('G', Predicates.blocks(GTBlocks.CASING_LAMINATED_GLASS.get()))
+                        .where('T', Predicates.frames(GTMaterials.Steel))
+                        .where('#', Predicates.air())
+                        .build())
+                .allowExtendedFacing(false)
+                .workableCasingModel(HyperCluster.id("block/datacenter/optical_switch_casing"),
+                        HyperCluster.id("block/machines/optical_fabric_switch"))
+                .register();
+
+        // ---- MoE routing rack: 5×5×5 stepped control cluster ----
+        // Controller front-centre on the second layer: x=2, y=1, z=0.
+        MOE_ROUTER_RACK = HyperCluster.REGISTRATE
+                .multiblock("moe_router_rack", MoeRouterRackMachine::new)
+                .langValue("MoE Routing Rack")
+                .rotationState(RotationState.NON_Y_AXIS)
+                .recipeType(GTRecipeTypes.DUMMY_RECIPES)
+                .appearanceBlock(GTBlocks.COMPUTER_CASING)
+                .pattern(definition -> FactoryBlockPattern.start(RIGHT, BACK, UP)
+                        // y=0: the heavy base plate.
+                        .aisle("CCCCC", "CCCCC", "CCCCC", "CCCCC", "CCCCC")
+                        // y=1: the deployment console row (controller front-centre).
+                        .aisle("CCSCC", "CCCCC", "CCCCC", "CCCCC", "CCCCC")
+                        // y=2: the routing core, glass around the compute spine.
+                        .aisle("CGGGC", "G###G", "G#R#G", "G###G", "CGGGC")
+                        // y=3: the re-widened shoulder.
+                        .aisle("CCCCC", "CCCCC", "CCCCC", "CCCCC", "CCCCC")
+                        // y=4: the stepped-in roof with the heat ring beam.
+                        .aisle("#####", "#TTT#", "#TTT#", "#TTT#", "#####")
+                        .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                        .where('C', Predicates.blocks(GTBlocks.COMPUTER_CASING.get())
+                                .or(Predicates.abilities(PartAbility.IMPORT_ITEMS)
+                                        .setMinGlobalLimited(0).setMaxGlobalLimited(2))
+                                .or(Predicates.abilities(PartAbility.EXPORT_ITEMS)
+                                        .setMinGlobalLimited(0).setMaxGlobalLimited(2))
+                                .or(Predicates.abilities(PartAbility.INPUT_ENERGY)
+                                        .setMinGlobalLimited(1).setMaxGlobalLimited(2))
+                                .or(Predicates.abilities(PartAbility.COMPUTATION_DATA_RECEPTION)
+                                        .setMinGlobalLimited(0).setMaxGlobalLimited(1))
+                                .or(Predicates.autoAbilities(true, false, false)))
+                        .where('G', Predicates.blocks(GTBlocks.CLEANROOM_GLASS.get()))
+                        .where('R', Predicates.blocks(GTBlocks.ADVANCED_COMPUTER_CASING.get()))
+                        .where('T', Predicates.frames(GTMaterials.TungstenSteel))
+                        .where('#', Predicates.air())
+                        .build())
+                .allowExtendedFacing(false)
+                .workableCasingModel(new ResourceLocation("gtceu", "block/casings/hpca/computer_casing/side"),
+                        HyperCluster.id("block/machines/moe_router_rack"))
+                .register();
+    }
+
     /** Mirrors GTMachines.init(): GTCEu 7.4.0 registers render states of its own machines only. */
     private static void registerRenderStates() {
         // Addon machines register after GTMachines.init(), so their MachineRenderStates never
@@ -854,7 +1072,8 @@ public final class HyperClusterMachines {
                 RED_TEAM_SANDBOX, AIR_COOLED_COMPUTE_RACK, PRECISION_CRAC, IV_INFERENCE_HATCH,
                 API_SATELLITE_STATION, LOCAL_FALLBACK_GATEWAY,
                 LIQUID_COOLED_COMPUTE_RACK, UPS_POWER_ARRAY, TENSOR_PRETRAINING_CLUSTER,
-                CLOUD_OFFLOAD_NODE }) {
+                CLOUD_OFFLOAD_NODE,
+                VRAM_STORAGE_RACK, OPTICAL_FABRIC_SWITCH, MOE_ROUTER_RACK }) {
             for (com.gregtechceu.gtceu.client.model.machine.MachineRenderState renderState : machine
                     .getStateDefinition().getPossibleStates()) {
                 MachineDefinition.RENDER_STATE_REGISTRY.add(renderState);

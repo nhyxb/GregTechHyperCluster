@@ -119,6 +119,41 @@ public class MachineUiTests {
         helper.succeed();
     }
 
+    @GameTest(template = "hc_floor", batch = BATCH)
+    public static void vramRackControlBounds(GameTestHelper helper) {
+        WidgetGroup page = openPage(helper, HyperClusterMachines.VRAM_STORAGE_RACK);
+        WidgetGroup controls = checkMultiblockPage(helper, page);
+        helper.assertTrue(controls.getWidgetsByType(SlotWidget.class).size() == 4,
+                "the VRAM rack needs four HBM module slots");
+        helper.assertTrue(controls.getWidgetsByType(ImageWidget.class).size() == 1,
+                "the VRAM rack needs one slot label");
+        helper.succeed();
+    }
+
+    @GameTest(template = "hc_floor", batch = BATCH)
+    public static void opticalSwitchControlBounds(GameTestHelper helper) {
+        WidgetGroup page = openPage(helper, HyperClusterMachines.OPTICAL_FABRIC_SWITCH);
+        WidgetGroup controls = checkMultiblockPage(helper, page);
+        helper.assertTrue(controls.widgets.isEmpty(),
+                "the switch has no controls: its whole state is the status display");
+        helper.assertTrue(controls.getSizeHeight() > 0,
+                "the switch still needs a non-degenerate controls strip");
+        helper.succeed();
+    }
+
+    @GameTest(template = "hc_floor", batch = BATCH)
+    public static void moeRouterControlBounds(GameTestHelper helper) {
+        WidgetGroup page = openPage(helper, HyperClusterMachines.MOE_ROUTER_RACK);
+        WidgetGroup controls = checkMultiblockPage(helper, page);
+        helper.assertTrue(controls.getWidgetsByType(SlotWidget.class).size() == 5,
+                "the router needs one deployment slot plus four LoRA slots");
+        helper.assertTrue(controls.getWidgetsByType(ImageWidget.class).size() == 2,
+                "the router needs two slot labels");
+        helper.assertTrue(controls.getWidgetsByType(SwitchWidget.class).size() == 1,
+                "the router needs the DeepThink toggle");
+        helper.succeed();
+    }
+
     private static WidgetGroup openPage(GameTestHelper helper, MachineDefinition definition) {
         BlockPos pos = new BlockPos(1, 1, 1);
         helper.setBlock(pos, definition.getBlock().defaultBlockState());
