@@ -329,7 +329,7 @@ public class TrainingTests {
             helper.assertTrue(cluster.controller().findCoveringUps() != null,
                     "the charged UPS in range must cover the cluster");
             System.out.printf("[HC-06] UPS: charged %d EU, delivered %d EU on brownout, cover=%dt, " +
-                    "cluster vram=%d GB%n", ups.controller().getStoredEu() + drawn, drawn,
+                    "cluster vram=%d TB%n", ups.controller().getStoredEu() + drawn, drawn,
                     TrainingRating.UPS_BUFFER_TICKS, cluster.controller().hostVramCapacity());
         });
 
@@ -354,9 +354,9 @@ public class TrainingTests {
 
     @GameTest(template = "hc_field", batch = TRAINING_BATCH, timeoutTicks = 500)
     public static void oomGateRefusesOversizedJob(GameTestHelper helper) {
-        helper.assertTrue(!LiquidDatacenterRating.fitsVram(0, 96), "zero VRAM must refuse a 96 GB job");
-        helper.assertTrue(LiquidDatacenterRating.fitsVram(96, 96), "96 GB of blades must hold a 96 GB job");
-        helper.assertTrue(!LiquidDatacenterRating.fitsVram(72, 96), "72 GB of blades must refuse a 96 GB job");
+        helper.assertTrue(!LiquidDatacenterRating.fitsVram(0, 96), "zero VRAM must refuse a 96 TB job");
+        helper.assertTrue(LiquidDatacenterRating.fitsVram(96, 96), "96 TB of memory must hold a 96 TB job");
+        helper.assertTrue(!LiquidDatacenterRating.fitsVram(72, 96), "72 TB of memory must refuse a 96 TB job");
 
         ClusterParts cluster = placeTensorCluster(helper, 1, 1, 1);
         primeEnergy(cluster.energyHatch(), helper, 20, 500);

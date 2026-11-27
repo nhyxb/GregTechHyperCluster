@@ -128,6 +128,33 @@ public class TopologyTests {
         });
     }
 
+    /**
+     * The 0.6.1 UI must speak TB everywhere: any "GB" left in a VRAM label is a unit drift bug,
+     * because blades carry 0 and the pool is measured in TB.
+     */
+    @GameTest(template = "hc_floor", batch = TOPOLOGY_BATCH, timeoutTicks = 100)
+    public static void vramLabelsUseTerabytesOnly(GameTestHelper helper) {
+        String[] vramKeys = {
+                "hypercluster.machine.tensor_pretraining_cluster.vram",
+                "hypercluster.machine.moe_router_rack.vram",
+                "hypercluster.machine.vram_storage_rack.pool"
+        };
+        for (String key : vramKeys) {
+            String text = net.minecraft.network.chat.Component.translatable(key).getString();
+            helper.assertTrue(!text.contains("GB"),
+                    "VRAM label " + key + " must not say GB (TB-scale since 0.6.1): " + text);
+            helper.assertTrue(text.contains("TB"),
+                    "VRAM label " + key + " must state TB: " + text);
+        }
+        // The compute rack must not advertise a VRAM figure at all any more.
+        String stale = net.minecraft.network.chat.Component
+                .translatable("hypercluster.machine.liquid_cooled_compute_rack.vram").getString();
+        helper.assertTrue(stale.contains("liquid_cooled_compute_rack.vram"),
+                "the compute rack must no longer carry a VRAM line, found: " + stale);
+        System.out.printf("[HC-061] units: every VRAM label says TB, no GB drift%n");
+        helper.succeed();
+    }
+
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // 2. optical fabric: multi-rack aggregation + the 503 bandwidth ceiling //
     ///////////////////////////////////////////////////////////////////////////////////////////////

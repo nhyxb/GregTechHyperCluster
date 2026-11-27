@@ -598,7 +598,7 @@ public final class HyperClusterMachines {
                 "Liquid blades");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.liquid_cooled_compute_rack.label.snack", "Snack");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.liquid_cooled_compute_rack.blade_slot",
-                "LuV liquid blade slot: 16 CWU/t and 24 GB VRAM per blade.");
+                "LuV liquid blade slot: 16 CWU/t per blade. Memory lives elsewhere — build a VRAM Storage Rack.");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.liquid_cooled_compute_rack.snack_slot",
                 "Green snack pack: keep the machine room tidy (-5% total EU/t, config-gated).");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.liquid_cooled_compute_rack.providing",
@@ -607,8 +607,6 @@ public final class HyperClusterMachines {
                 "Computation: %s / %s CWU/t");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.liquid_cooled_compute_rack.bandwidth",
                 "Switch bandwidth: up to %s CWU/t per tick");
-        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.liquid_cooled_compute_rack.vram",
-                "VRAM budget: %s GB");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.liquid_cooled_compute_rack.room",
                 "Room rating: Tier %s (environment %s)");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.liquid_cooled_compute_rack.pue",
@@ -655,7 +653,7 @@ public final class HyperClusterMachines {
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.progress",
                 "Progress: %s (checkpoint %s%%)");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.vram",
-                "VRAM: %s GB online / %s GB required");
+                "VRAM: %s TB online / %s TB required");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.ups",
                 "UPS cover: %s");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.ups.covered",

@@ -15,7 +15,7 @@ package dev.hypercluster.common.machine.datacenter;
  * <li>A rack has {@value #HBM_SLOTS} slots, so a full IV rack is {@value #IV_RACK_TB} TB and a
  * full LuV rack is {@value #LUV_RACK_TB} TB.</li>
  * <li>A pretraining job needs {@value #TRAINING_JOB_TB} TB, i.e. two full LuV racks (or any mix
- * that reaches the target) — the 0.6.1 replacement for 0.6.0's 96 GB gate.</li>
+ * that reaches the target) — the 0.6.1 replacement for 0.6.0's 96 GB gate (TB-scale since this version).</li>
  * </ul>
  */
 public final class VramRating {

@@ -65,7 +65,8 @@ import javax.annotation.Nullable;
  * <p>
  * <b>Two hard budgets</b> are exposed for the training cluster: the switch bandwidth ceiling
  * ({@value LiquidDatacenterRating#SWITCH_BANDWIDTH_LIMIT} CWU/t per tick) and the VRAM budget
- * ({@value LiquidDatacenterRating#VRAM_PER_BLADE} GB per blade).
+ * ({@value LiquidDatacenterRating#VRAM_PER_BLADE} TB per blade — 0 since 0.6.1; cluster memory comes from the VRAM
+ * storage rack).
  *
  * <p>
  * <b>Strict same-tick CWU/t budget.</b> Identical to the 0.3 rack: {@code simulate} only queries,
@@ -460,7 +461,10 @@ public class LiquidCooledComputeRackMachine extends WorkableElectricMultiblockMa
         return LiquidDatacenterRating.SWITCH_BANDWIDTH_LIMIT;
     }
 
-    /** VRAM budget the inserted blades bring online. */
+    /**
+     * VRAM carried by the blades — always 0 since 0.6.1. Kept as an explicit accessor so callers
+     * (and tests) read "blades carry no memory" instead of guessing.
+     */
     public int getVramCapacity() {
         return LiquidDatacenterRating.vramCapacity(getBladeCount());
     }
@@ -528,9 +532,8 @@ public class LiquidCooledComputeRackMachine extends WorkableElectricMultiblockMa
                             Component.literal(String.valueOf(getSwitchBandwidthLimit()))
                                     .withStyle(ChatFormatting.AQUA))
                             .withStyle(ChatFormatting.GRAY));
-                    lines.add(Component.translatable(uiKey("vram"),
-                            Component.literal(String.valueOf(getVramCapacity())).withStyle(ChatFormatting.AQUA))
-                            .withStyle(ChatFormatting.GRAY));
+                    // No VRAM line: blades carry 0 TB since 0.6.1. Cluster memory is a separate
+                    // hardware budget reported by the VRAM storage rack and the MoE router.
                     lines.add(Component.translatable(uiKey("room"),
                             Component.literal(String.valueOf(roomTier)).withStyle(ChatFormatting.YELLOW),
                             Component.literal(String.valueOf(getEnvironmentMultiplier() * 100) + "%")

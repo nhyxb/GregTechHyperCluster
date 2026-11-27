@@ -46,7 +46,7 @@ import java.util.List;
  *
  * <p>
  * Two full LuV racks reach the {@value VramRating#TRAINING_JOB_TB} TB pretraining gate — the
- * 0.6.1 replacement for the old "96 GB on the blades" rule. Compute blades no longer carry any
+ * 0.6.1 replacement for the old on-blade memory rule. Compute blades no longer carry any
  * memory at all: this rack is the only place cluster VRAM exists, so pulling a module (or losing
  * power here) takes the memory offline immediately and every dependent model unloads.
  */

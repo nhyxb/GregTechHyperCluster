@@ -138,12 +138,12 @@ public final class LiquidDatacenterRating {
         return requested >= 0 && requested <= SWITCH_BANDWIDTH_LIMIT;
     }
 
-    /** True when {@code hostVram} GB of blades hold a training job needing {@code requiredVram} GB. */
+    /** True when the pool holds {@code hostVram} TB for a job needing {@code requiredVram} TB. */
     public static boolean fitsVram(int hostVram, int requiredVram) {
         return Math.max(0, hostVram) >= Math.max(0, requiredVram);
     }
 
-    /** Convenience: does a rack with {@code blades} hold a job needing {@code requiredVram} GB? */
+    /** Convenience: do {@code blades} (0 TB since 0.6.1) hold a job needing {@code requiredVram} TB? */
     public static boolean bladesFitVram(int blades, int requiredVram) {
         return fitsVram(vramCapacity(blades), requiredVram);
     }
