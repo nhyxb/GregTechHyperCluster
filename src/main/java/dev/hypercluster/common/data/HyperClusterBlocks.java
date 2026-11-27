@@ -130,6 +130,44 @@ public final class HyperClusterBlocks {
             .build()
             .register();
 
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // 0.6 — LuV cold-plate liquid cooling + UPS power distribution //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    public static final BlockEntry<Block> LIQUID_RACK_CASING = HyperCluster.REGISTRATE
+            .block("liquid_rack_casing", Block::new)
+            .properties(properties -> properties.mapColor(MapColor.COLOR_CYAN)
+                    .strength(6.0F, 14.0F)
+                    .requiresCorrectToolForDrops()
+                    .sound(SoundType.METAL))
+            .lang("Cold-Plate Liquid Rack Casing")
+            .blockstate((context, provider) -> provider.simpleBlock(context.getEntry(),
+                    provider.models()
+                            .cubeAll(context.getName(),
+                                    provider.modLoc("block/datacenter/liquid_rack_casing"))))
+            .item()
+            .model((context, provider) -> provider.withExistingParent(context.getName(),
+                    provider.modLoc("block/liquid_rack_casing")))
+            .build()
+            .register();
+
+    public static final BlockEntry<Block> UPS_BATTERY_CASING = HyperCluster.REGISTRATE
+            .block("ups_battery_casing", Block::new)
+            .properties(properties -> properties.mapColor(MapColor.COLOR_GREEN)
+                    .strength(6.0F, 14.0F)
+                    .requiresCorrectToolForDrops()
+                    .sound(SoundType.METAL))
+            .lang("UPS Battery Casing")
+            .blockstate((context, provider) -> provider.simpleBlock(context.getEntry(),
+                    provider.models()
+                            .cubeAll(context.getName(),
+                                    provider.modLoc("block/datacenter/ups_battery_casing"))))
+            .item()
+            .model((context, provider) -> provider.withExistingParent(context.getName(),
+                    provider.modLoc("block/ups_battery_casing")))
+            .build()
+            .register();
+
     private HyperClusterBlocks() {}
 
     /** Called from the mod constructor; loads the static entries into the registrate. */

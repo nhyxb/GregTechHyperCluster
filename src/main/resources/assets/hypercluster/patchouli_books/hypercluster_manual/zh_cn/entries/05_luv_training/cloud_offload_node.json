@@ -1,0 +1,31 @@
+{
+  "name": "云算力外包节点",
+  "category": "hypercluster:05_luv_training",
+  "icon": "hypercluster:cloud_offload_node",
+  "sortnum": 3,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "第四章你已经在往闭源云里$(bold)花$() Token 了。$(item)云算力外包节点$()把方向反过来：把自建机房的$(bold)富余算力租出去$()，按 tick 收 Token，正式接成“$(bold)开源机房养闭源 API$()”的闭环。"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/cloud_offload_node"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "怎么装",
+      "text": "外包节点是$(bold)部件$()，挂在$(item)冷板液冷算力机柜$()的柜壁外壳格上，$(bold)每柜最多一个$()。需要两样东西：$(li)$(item)API 凭据卡$()：先对着$(item)卫星地面站$()主控右键绑定，再插进节点——租金打给这张卡绑定的账户。$(li)$(#0E7490)算力接收仓$()：柜体后壁 $(bold)y=2$() 的$(item)计算机机壳$()位上放 1 个 GT 原生$(item)算力接收仓$()，用光学管道接到传输仓。"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "计价与防双花",
+      "text": "每 tick 节点$(bold)真实申请$()机柜的富余 CWU/t（上限 64），按 $(bold)实际租出 CWU/t × (1.20 ÷ 机房 PUE)$() 折算 Token 打进账户。$(br2)$(bold)机房越凉越赚$()：PUE 1.20 时系数为 1.00，PUE 更高的糟糕机房同样的算力只能换到更少的 Token。$(br2)$(bold)严格防双花$()：租出去的 CWU/t 是$(bold)同一 tick 预算里实扣$()的。同一 tick 里科研站或预训练集群再来要算力，只能拿到剩下的部分，$(bold)绝不会同一份算力既出租又被本地用掉$()。"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "什么时候会停发",
+      "text": "节点只在$(bold)真的租出去并且真的到账$()时才计费，以下任一情况当 tick 就停：$(li)没插凭据卡，或卡没绑定账户。$(li)柜体没有算力接收仓，或光学链路断开。$(li)机柜本身算力归零（没刀片、没冷却液、没电、维护没修、被软锤暂停）。$(li)结构拆开、区块卸载。$(br2)界面会写明具体原因，不会出现“看着在跑但账没动”的情况。"
+    }
+  ]
+}

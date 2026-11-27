@@ -241,7 +241,11 @@ public class SurvivalCraftingTests {
                 HyperClusterMachines.LORA_ENGRAVING_CHAMBER, HyperClusterMachines.RED_TEAM_SANDBOX,
                 HyperClusterMachines.AIR_COOLED_COMPUTE_RACK, HyperClusterMachines.PRECISION_CRAC,
                 HyperClusterMachines.IV_INFERENCE_HATCH, HyperClusterMachines.API_SATELLITE_STATION,
-                HyperClusterMachines.LOCAL_FALLBACK_GATEWAY }) {
+                HyperClusterMachines.LOCAL_FALLBACK_GATEWAY,
+                // 0.6 — LuV smart compute and training.
+                HyperClusterMachines.LIQUID_COOLED_COMPUTE_RACK, HyperClusterMachines.UPS_POWER_ARRAY,
+                HyperClusterMachines.TENSOR_PRETRAINING_CLUSTER,
+                HyperClusterMachines.CLOUD_OFFLOAD_NODE }) {
             int expected = 0;
             int registered = 0;
             for (com.gregtechceu.gtceu.client.model.machine.MachineRenderState state : machine
@@ -273,7 +277,11 @@ public class SurvivalCraftingTests {
                 HyperClusterMachines.LORA_ENGRAVING_CHAMBER, HyperClusterMachines.RED_TEAM_SANDBOX,
                 HyperClusterMachines.AIR_COOLED_COMPUTE_RACK, HyperClusterMachines.PRECISION_CRAC,
                 HyperClusterMachines.IV_INFERENCE_HATCH, HyperClusterMachines.API_SATELLITE_STATION,
-                HyperClusterMachines.LOCAL_FALLBACK_GATEWAY }) {
+                HyperClusterMachines.LOCAL_FALLBACK_GATEWAY,
+                // 0.6 — LuV smart compute and training.
+                HyperClusterMachines.LIQUID_COOLED_COMPUTE_RACK, HyperClusterMachines.UPS_POWER_ARRAY,
+                HyperClusterMachines.TENSOR_PRETRAINING_CLUSTER,
+                HyperClusterMachines.CLOUD_OFFLOAD_NODE }) {
             String mainKey = String.format("%s.machine.%s.tooltip", machine.getId().getNamespace(),
                     machine.getId().getPath());
             helper.assertTrue(Language.getInstance().has(mainKey),
@@ -464,6 +472,7 @@ public class SurvivalCraftingTests {
                 "categories/02_ev_workshop.json",
                 "categories/03_iv_datacenter.json",
                 "categories/04_iv_cloud.json",
+                "categories/05_luv_training.json",
                 "entries/01_hv_start/telemetry_ore_washer.json",
                 "entries/01_hv_start/micro_burner_and_circuits.json",
                 "entries/02_ev_workshop/telemetry_chemical_reactor.json",
@@ -475,7 +484,12 @@ public class SurvivalCraftingTests {
                 "entries/03_iv_datacenter/inference_hatch_and_snack.json",
                 "entries/04_iv_cloud/satellite_station_and_accounts.json",
                 "entries/04_iv_cloud/cloud_billing_and_cache.json",
-                "entries/04_iv_cloud/rate_limit_and_fallback.json"
+                "entries/04_iv_cloud/rate_limit_and_fallback.json",
+                // 0.6 — chapter 5 documents only what this version actually ships.
+                "entries/05_luv_training/liquid_cooled_compute_rack.json",
+                "entries/05_luv_training/ups_power_array.json",
+                "entries/05_luv_training/tensor_pretraining_cluster.json",
+                "entries/05_luv_training/cloud_offload_node.json"
         };
         for (String lang : new String[] { "zh_cn", "en_us" }) {
             for (String rel : bookFiles) {
@@ -483,6 +497,33 @@ public class SurvivalCraftingTests {
                         "assets/hypercluster/patchouli_books/hypercluster_manual/" + lang + "/" + rel);
                 helper.assertTrue(obj.has("name") && !obj.get("name").getAsString().isEmpty(),
                         "missing name in " + lang + "/" + rel);
+                if (rel.startsWith("entries/")) {
+                    // The icon must be a registered item, or Patchouli renders a missing sprite.
+                    String icon = obj.get("icon").getAsString();
+                    helper.assertTrue(BuiltInRegistries.ITEM.containsKey(ResourceLocation.tryParse(icon)),
+                            "entry icon not registered: " + icon + " (" + lang + "/" + rel + ")");
+                    // The category must be one of the book's own chapters.
+                    String category = obj.get("category").getAsString()
+                            .substring(obj.get("category").getAsString().indexOf(':') + 1);
+                    JsonObject cat = readJsonResource(helper,
+                            "assets/hypercluster/patchouli_books/hypercluster_manual/" + lang + "/categories/" +
+                                    category + ".json");
+                    helper.assertTrue(cat.has("name"), "missing category file " + lang + "/" + category);
+                    // Every crafting page must point at a recipe this mod really registered.
+                    for (var page : obj.getAsJsonArray("pages")) {
+                        JsonObject p = page.getAsJsonObject();
+                        for (String key : new String[] { "recipe", "recipe2" }) {
+                            if (p.has(key)) {
+                                helper.assertTrue(
+                                        helper.getLevel().getRecipeManager()
+                                                .byKey(ResourceLocation.tryParse(p.get(key).getAsString()))
+                                                .isPresent(),
+                                        "manual page references a missing recipe: " + p.get(key) +
+                                                " (" + lang + "/" + rel + ")");
+                            }
+                        }
+                    }
+                }
             }
         }
         System.out.printf("[HC-MANUAL] Patchouli soft integration verified (patchouliLoaded=%s, %d bilingual files)%n",

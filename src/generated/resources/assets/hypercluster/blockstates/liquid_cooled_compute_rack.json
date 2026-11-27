@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "hypercluster:block/machine/liquid_cooled_compute_rack",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "hypercluster:block/machine/liquid_cooled_compute_rack"
+    },
+    "facing=south": {
+      "model": "hypercluster:block/machine/liquid_cooled_compute_rack",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "hypercluster:block/machine/liquid_cooled_compute_rack",
+      "y": 270
+    }
+  }
+}

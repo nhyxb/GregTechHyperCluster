@@ -21,5 +21,11 @@ public final class HyperClusterPartAbilities {
 
     public static final PartAbility LOCAL_FALLBACK_GATEWAY = new PartAbility("local_fallback_gateway");
 
+    /**
+     * 0.6 — the LuV cloud compute offload node. Accepted (optionally, at most one) by the Tier III
+     * liquid-cooled compute rack's structure: it rents the rack's spare CWU/t and pays Tokens.
+     */
+    public static final PartAbility CLOUD_OFFLOAD = new PartAbility("cloud_offload");
+
     private HyperClusterPartAbilities() {}
 }

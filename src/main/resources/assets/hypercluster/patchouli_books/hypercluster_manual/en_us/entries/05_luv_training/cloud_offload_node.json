@@ -1,0 +1,31 @@
+{
+  "name": "Cloud Compute Offload Node",
+  "category": "hypercluster:05_luv_training",
+  "icon": "hypercluster:cloud_offload_node",
+  "sortnum": 3,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "In chapter 4 you were already $(bold)spending$() Tokens on the closed-source cloud. The $(item)Cloud Compute Offload Node$() turns that around: rent out your own room's $(bold)spare computation$(), collect Tokens per tick, and close the loop where $(bold)open-source racks feed the closed-source API$()."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/cloud_offload_node"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "How to Fit It",
+      "text": "The offload node is a $(bold)part$(): mount it on a casing cell of a $(item)Liquid-Cooled Compute Rack$()'s wall, $(bold)at most one per rack$(). It needs two things:$(li)An $(item)API Credential Card$(): right-click a $(item)Satellite Ground Station$() controller to bind it, then insert the card here — the rental Tokens go to that card's account.$(li)$(#0E7490)A computation reception hatch$(): place one GT $(item)Computation Data Reception Hatch$() on the cabinet's rear $(bold)y=2$() $(item)Computer Casing$() cells and connect it to the transmission hatch with optical pipes."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Pricing and Anti-Double-Spend",
+      "text": "Every tick the node $(bold)really requests$() the rack's spare CWU/t (capped at 64) and credits $(bold)actual rented CWU/t × (1.20 ÷ room PUE)$() as Tokens.$(br2)$(bold)A cooler room earns more$(): at PUE 1.20 the coefficient is 1.00, while a hotter room pays less for the same silicon.$(br2)$(bold)Strict anti-double-spend$(): the rented CWU/t is $(bold)actually deducted from that tick's budget$(). A Research Station or pretraining cluster asking in the same tick only ever gets the remainder — $(bold)one slice of computation is never both rented out and used locally$()."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "When Payout Stops",
+      "text": "The node only bills when computation is $(bold)really rented and really delivered$(). Any of these stops the payout on that very tick:$(li)No credential card, or a card not bound to an account.$(li)No reception hatch on the frame, or a cut optical link.$(li)The rack itself at 0 CWU/t (no blades, no coolant, no power, unfixed maintenance, soft-mallet pause).$(li)A broken structure or an unloaded chunk.$(br2)The GUI names the exact reason, so it never looks busy while the ledger stays still."
+    }
+  ]
+}

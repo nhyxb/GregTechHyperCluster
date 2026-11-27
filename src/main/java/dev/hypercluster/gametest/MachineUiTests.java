@@ -83,6 +83,42 @@ public class MachineUiTests {
         helper.succeed();
     }
 
+    @GameTest(template = "hc_floor", batch = BATCH)
+    public static void liquidRackControlBounds(GameTestHelper helper) {
+        WidgetGroup page = openPage(helper, HyperClusterMachines.LIQUID_COOLED_COMPUTE_RACK);
+        WidgetGroup controls = checkMultiblockPage(helper, page);
+        helper.assertTrue(controls.getWidgetsByType(SlotWidget.class).size() == 5,
+                "liquid rack needs four blades and one snack");
+        helper.assertTrue(controls.getWidgetsByType(ImageWidget.class).size() == 2,
+                "liquid rack needs two slot labels");
+        helper.succeed();
+    }
+
+    @GameTest(template = "hc_floor", batch = BATCH)
+    public static void tensorClusterControlBounds(GameTestHelper helper) {
+        WidgetGroup page = openPage(helper, HyperClusterMachines.TENSOR_PRETRAINING_CLUSTER);
+        WidgetGroup controls = checkMultiblockPage(helper, page);
+        helper.assertTrue(controls.getWidgetsByType(SlotWidget.class).size() == 1,
+                "the training cluster has one dataset slot");
+        helper.assertTrue(controls.getWidgetsByType(ImageWidget.class).size() == 2,
+                "the training cluster needs two slot labels");
+        helper.succeed();
+    }
+
+    @GameTest(template = "hc_floor", batch = BATCH)
+    public static void offloadNodeControlBounds(GameTestHelper helper) {
+        WidgetGroup page = openPage(helper, HyperClusterMachines.CLOUD_OFFLOAD_NODE);
+        helper.assertTrue(page.widgets.size() == 3, "the offload node needs a label, a slot and a status panel");
+        Widget label = page.widgets.get(0);
+        Widget slot = page.widgets.get(1);
+        Widget status = page.widgets.get(2);
+        helper.assertTrue(label instanceof ImageWidget && slot instanceof SlotWidget,
+                "unexpected offload node controls");
+        checkStatusScreen(helper, status);
+        checkBounds(helper, page);
+        helper.succeed();
+    }
+
     private static WidgetGroup openPage(GameTestHelper helper, MachineDefinition definition) {
         BlockPos pos = new BlockPos(1, 1, 1);
         helper.setBlock(pos, definition.getBlock().defaultBlockState());

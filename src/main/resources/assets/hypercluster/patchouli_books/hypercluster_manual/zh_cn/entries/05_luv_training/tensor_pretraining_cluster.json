@@ -1,0 +1,31 @@
+{
+  "name": "张量预训练集群",
+  "category": "hypercluster:05_luv_training",
+  "icon": "hypercluster:tensor_pretraining_cluster",
+  "sortnum": 2,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "$(item)张量预训练集群$()把前面几章攒下来的东西接成一条线：$(li)LuV 电力$(li)持续 $(bold)32 CWU/t$() 的原生算力$(li)蒸馏水或 PCB 冷却液$(li)一份$(item)高纯领域数据集$()（矿处或化工）$(br2)跑完 $(bold)2400 ticks$() 之后，产出一枚$(item)开放权重模型模块$()。"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/tensor_pretraining_cluster"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "7×6×7 阶梯结构",
+      "text": "$(li)$(#0E7490)y=0..1$()：重型$(item)计算机机壳$()底座，主控在$(bold)第 2 层正面 (2, 1, 0)$()，仓室都挂在这一层。$(li)$(#0E7490)y=2..3$()：$(bold)收腰$()的中段，四周缩进一格，整圈$(item)无尘室玻璃$()核心视窗，$(item)高级计算机机壳$()算力核心柱立在里面，站在外面能直接看见。$(li)$(#0E7490)y=4$()：重新外扩的肩部。$(li)$(#0E7490)y=5$()：$(item)钨钢框架$()散热环梁，只留屋顶边缘一圈。"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Checkpoint、OOM 与 UPS",
+      "text": "$(bold)Checkpoint$()：每跑到 $(bold)25%$() 就往存档里写一次断点，所以一次 2400 ticks 的训练路上有 25/50/75/100% 四个落点。区块卸载、存档重开后$(bold)从最近断点继续$()，不会从零重跑。$(br2)$(bold)OOM$()：训练任务按显存需求校验，范围内机柜的刀片总显存不够就$(bold)直接拒绝启动$()并写明 OOM——满插 4 刀片正好 96 GB。$(br2)$(bold)UPS$()：断电时先吃 60 秒备电；没有 UPS 罩着就掉回最近 Checkpoint，未保存的那一段清零。"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "开放权重模型模块",
+      "text": "训练完成的产物是$(item)开放权重模型模块$()，一枚物品带三个 NBT 字段：$(li)$(#0E7490)领域$()：矿处或化工，取决于喂进去的是哪一种高纯数据集。$(li)$(#0E7490)精度$()：当前版本固定 $(bold)fp16$()。$(li)$(#0E7490)版本$()：从第几个 Checkpoint 导出。$(br2)鼠标悬停就能看到这三项，模块可以正常堆叠、装箱、进 ME 存储。"
+    }
+  ]
+}

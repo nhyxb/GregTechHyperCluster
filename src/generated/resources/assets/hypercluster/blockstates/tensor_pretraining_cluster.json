@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "hypercluster:block/machine/tensor_pretraining_cluster",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "hypercluster:block/machine/tensor_pretraining_cluster"
+    },
+    "facing=south": {
+      "model": "hypercluster:block/machine/tensor_pretraining_cluster",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "hypercluster:block/machine/tensor_pretraining_cluster",
+      "y": 270
+    }
+  }
+}

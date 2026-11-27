@@ -43,6 +43,7 @@ public final class HyperClusterRecipeTypes {
     public static GTRecipeType DATA_SCRUBBING_RECIPES;
     public static GTRecipeType LORA_ENGRAVING_RECIPES;
     public static GTRecipeType RED_TEAM_TESTING_RECIPES;
+    public static GTRecipeType TENSOR_TRAINING_RECIPES;
 
     private HyperClusterRecipeTypes() {}
 
@@ -110,6 +111,18 @@ public final class HyperClusterRecipeTypes {
                 .setSlotOverlay(true, false, GuiTextures.PATTERN_OVERLAY)
                 .setProgressBar(GuiTextures.PROGRESS_BAR_ARROW, LEFT_TO_RIGHT)
                 .setSound(com.gregtechceu.gtceu.common.data.GTSoundEntries.CHEMICAL);
+
+        // 0.6 — tensor pretraining: one long annealing pass per high-purity domain dataset.
+        // The recipe type exists so the cluster's UI shows a progress bar and the job is
+        // inspectable in EMI/JEI; the run engine itself is the controller's tick contract.
+        TENSOR_TRAINING_RECIPES = register("tensor_training", "multiblock")
+                .setMaxIOSize(2, 1, 1, 0)
+                .setEUIO(IO.IN)
+                .prepareBuilder(builder -> builder.EUt(32768).duration(2400))
+                .setSlotOverlay(false, false, GuiTextures.PATTERN_OVERLAY)
+                .setSlotOverlay(true, false, GuiTextures.PATTERN_OVERLAY)
+                .setProgressBar(GuiTextures.PROGRESS_BAR_ARROW_MULTIPLE, LEFT_TO_RIGHT)
+                .setSound(com.gregtechceu.gtceu.common.data.GTSoundEntries.COMPUTATION);
 
         GTRegistries.RECIPE_TYPES.freeze();
         GTRegistries.RECIPE_CATEGORIES.freeze();

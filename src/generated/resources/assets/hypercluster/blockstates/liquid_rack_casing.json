@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "hypercluster:block/liquid_rack_casing"
+    }
+  }
+}

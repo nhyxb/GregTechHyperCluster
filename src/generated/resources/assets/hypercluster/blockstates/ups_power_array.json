@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "hypercluster:block/machine/ups_power_array",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "hypercluster:block/machine/ups_power_array"
+    },
+    "facing=south": {
+      "model": "hypercluster:block/machine/ups_power_array",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "hypercluster:block/machine/ups_power_array",
+      "y": 270
+    }
+  }
+}

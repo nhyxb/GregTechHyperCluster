@@ -1,0 +1,27 @@
+{
+  "name": "UPS 蓄电池配电矩阵",
+  "category": "hypercluster:05_luv_training",
+  "icon": "hypercluster:ups_power_array",
+  "sortnum": 1,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "训练线最怕的不是停机，是$(bold)跑到一半掉电$()。$(item)UPS 蓄电池配电矩阵$()就是为这一件事存在的：电网正常时浮充蓄电，掉电时接管负载，给邻近的预训练集群争取 $(bold)60 秒（1200 ticks）$() 的缓冲。$(br2)它$(bold)不发电$()，只是把存进去的电还回来。"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/ups_power_array",
+      "recipe2": "hypercluster:shaped/ups_battery_casing"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "5×4×3 结构与浮充",
+      "text": "$(li)$(#0E7490)y=0..1$()：电池架本体，$(item)UPS 蓄电池外壳$()，正面第二层中间放主控 $(bold)(2, 1, 0)$()，同层挂能源仓与维护仓。$(li)$(#0E7490)y=2$()：两条电池组之间的母排检修通道，中间是$(item)固态钢机壳$()。$(li)$(#0E7490)y=3$()：$(item)钢框架$()顶部桁架，走电缆桥架。$(br2)通电后每 tick 以 $(bold)4096 EU/t$() 浮充，满电 $(bold)4,000,000 EU$()。"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "60 秒备电的实际含义",
+      "text": "掉电瞬间，范围内（$(bold)12 格$()）的预训练集群会从 UPS 取电，放电上限 $(bold)8192 EU/t$()。这 60 秒换来的是：$(li)正在跑的批次继续推进，$(bold)Checkpoint 照常落盘$()。$(li)60 秒内电网恢复，训练$(bold)从最近 Checkpoint 无缝续训$()，进度不丢。$(li)缓冲耗尽仍无电，未保存进度清零，回到最近 Checkpoint。$(br2)UPS 本身断电不丢电量——它的电量写在存档里，重新上线后接着用。"
+    }
+  ]
+}

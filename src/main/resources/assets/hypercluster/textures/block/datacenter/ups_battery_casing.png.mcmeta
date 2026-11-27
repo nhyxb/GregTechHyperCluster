@@ -1,0 +1,5 @@
+{
+    "ldlib": {
+        "connection": "hypercluster:block/datacenter/ups_battery_casing_ctm"
+    }
+}

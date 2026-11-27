@@ -1,0 +1,27 @@
+{
+  "name": "UPS Power Distribution Array",
+  "category": "hypercluster:05_luv_training",
+  "icon": "hypercluster:ups_power_array",
+  "sortnum": 1,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "The thing a training line fears is not stopping — it is $(bold)losing power mid-run$(). The $(item)UPS Power Distribution Array$() exists for exactly that: it float-charges while the grid is healthy, takes over the load when it browns out, and buys a nearby pretraining cluster $(bold)60 seconds (1200 ticks)$() of buffer.$(br2)It $(bold)generates nothing$() — it only returns what it stored."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/ups_power_array",
+      "recipe2": "hypercluster:shaped/ups_battery_casing"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "5×4×3 Structure & Float Charge",
+      "text": "$(li)$(#0E7490)y=0..1$(): the battery banks of $(item)UPS Battery Casing$(); the controller sits front-centre on the second layer at $(bold)(2, 1, 0)$() with the Energy and Maintenance Hatches on the same layer.$(li)$(#0E7490)y=2$(): the bus-bar service walkway between the two banks, $(item)Solid Steel Machine Casing$() in the middle.$(li)$(#0E7490)y=3$(): a $(item)Steel Frame$() roof girder carrying the cable tray.$(br2)Once powered it float-charges at $(bold)4096 EU/t$() into a $(bold)4,000,000 EU$() bank."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "What 60 Seconds Actually Buys",
+      "text": "The moment the grid drops, any pretraining cluster within $(bold)12 blocks$() draws from the UPS, up to $(bold)8192 EU/t$() of discharge. Those 60 seconds buy:$(li)The running batch keeps stepping, so $(bold)checkpoints keep landing$().$(li)If the grid returns inside the window, training $(bold)resumes from the most recent checkpoint$() with no lost progress.$(li)If the bank drains first, the unsaved progress is cleared and the run falls back to that checkpoint.$(br2)The UPS itself never loses charge on a power cut — its stored EU lives in the save."
+    }
+  ]
+}

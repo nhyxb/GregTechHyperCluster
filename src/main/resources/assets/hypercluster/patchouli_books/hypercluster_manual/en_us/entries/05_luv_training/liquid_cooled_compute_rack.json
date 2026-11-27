@@ -1,0 +1,41 @@
+{
+  "name": "Tier III Liquid-Cooled Compute Rack",
+  "category": "hypercluster:05_luv_training",
+  "icon": "hypercluster:liquid_cooled_compute_rack",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "By LuV the air-cooled rack's 24 CWU/t no longer feeds a training line. The $(item)Liquid-Cooled Compute Rack$() packs the same optical compute supply into a 5×5×3 double-row cabinet: $(bold)four LuV liquid blades give exactly 64 CWU/t$().$(br2)That number has a purpose — the vanilla $(item)Research Station$() wants $(bold)32 CWU/t$() per recipe, so $(bold)one rack now drives it alone$() with no extra racks and no HPCA."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/liquid_cooled_compute_rack",
+      "recipe2": "hypercluster:shaped/luv_liquid_blade"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/liquid_rack_casing"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "The 5×5×3 Structure",
+      "text": "$(li)$(#0E7490)Layer y=0$(): a full plinth of $(item)Cold-Plate Liquid Rack Casing$(); the Energy Hatch, Fluid Input Hatch and Maintenance Hatch all ride this layer's wall.$(li)$(#0E7490)Layers y=1..3$(): $(item)Reinforced Glass$() cold/hot aisle doors front and back with an open airflow core; the y=2 rear wall is $(item)Computer Casing$() hosting $(bold)1–2 GT Computation Data Transmission Hatches$().$(li)$(#0E7490)Layer y=4$(): $(item)Tungstensteel Frame$() cable tray and heat grates.$(li)$(#0E7490)Controller$(): front face, second layer, $(bold)(2, 2, 0)$() — clickable standing up."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Coolant Is a Real Input",
+      "text": "A cold plate running on electricity alone is an illusion: while providing computation the rack drinks $(bold)1 mB$() of coolant per tick from its fluid input hatch.$(li)$(item)Distilled Water$(): efficiency 1.00, the simple choice.$(li)$(item)PCB Coolant$(): efficiency 0.85, another 15% off cooling power and a lower PUE.$(br2)With no coolant the rack grants a $(bold)20-tick$() grace window, then $(bold)drops to 0 CWU/t$() and labels the GUI \"cold plates starved of coolant\". Refilling restores it immediately — the derate is never sticky."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "PUE 1.20 and Two Hard Limits",
+      "text": "Room PUE settles as $(bold)total = IT draw + base cooling × environment × airflow × cold-plate efficiency$(). The liquid cabinet's base cooling ratio is only 0.20, so $(bold)a neutral room at full load is PUE 1.20$(); natural cold sources (snowy plains, frozen/deep ocean, $(bold)Y &lt; 20$()) multiply by 0.6, while the Nether and hot deserts multiply by 2.0.$(br2)Two hard limits exist for the training cluster to check:$(li)$(#0E7490)Switch bandwidth$(): one rack hands out at most $(bold)64 CWU/t$() per tick; surplus requests queue instead of erroring.$(li)$(#0E7490)VRAM$(): $(bold)24 GB$() per blade, $(bold)96 GB$() fully loaded."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Strict Same-Tick Budget",
+      "text": "Same rules as the 0.3 air-cooled rack:$(li)Simulation queries only read; they never deduct.$(li)Real allocations share one tick window, so $(bold)a Research Station, a pretraining cluster and an offload node all compete for the same pool$() — nobody gets the same CWU/t twice.$(li)A soft-mallet pause, unfixed maintenance, no blades, low power or a dry cold plate all zero the output and name the reason in the GUI."
+    }
+  ]
+}

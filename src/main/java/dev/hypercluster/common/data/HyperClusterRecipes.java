@@ -2,6 +2,7 @@ package dev.hypercluster.common.data;
 
 import com.gregtechceu.gtceu.api.data.chemical.ChemicalHelper;
 import com.gregtechceu.gtceu.api.data.tag.TagPrefix;
+import com.gregtechceu.gtceu.common.data.GTBlocks;
 import com.gregtechceu.gtceu.common.data.GTMachines;
 import com.gregtechceu.gtceu.common.data.GTMaterials;
 import com.gregtechceu.gtceu.data.recipe.GTCraftingComponents;
@@ -20,6 +21,7 @@ import dev.hypercluster.common.machine.datacenter.IvInferenceHatchMachine;
 import static com.gregtechceu.gtceu.api.GTValues.EV;
 import static com.gregtechceu.gtceu.api.GTValues.HV;
 import static com.gregtechceu.gtceu.api.GTValues.IV;
+import static com.gregtechceu.gtceu.api.GTValues.LuV;
 
 /**
  * GregTech HyperCluster recipes, injected through {@code IGTAddon#addRecipes}. All recipe ids live
@@ -39,6 +41,7 @@ public final class HyperClusterRecipes {
         registerInferenceScrubbingRecipes(provider);
         registerDatacenterSurvivalRecipes(provider);
         registerCloudSurvivalRecipes(provider);
+        registerLuVRecipes(provider);
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -612,5 +615,99 @@ public final class HyperClusterRecipes {
                 'A', ChemicalHelper.get(TagPrefix.plate, GTMaterials.Aluminium),
                 'C', GTCraftingComponents.CIRCUIT.get(IV),
                 'M', GTCraftingComponents.HULL.get(IV));
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // 0.6 — LuV smart compute: cold-plate cooling, UPS, training, offload //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * Every 0.6 crafting recipe only uses materials a vanilla GTCEu 7.4.0 LuV player can obtain
+     * directly (steel, stainless steel, tungsten-steel, polyethylene, glass, silicon wafers,
+     * platinum wiring, LuV circuits/sensors/emitters/hulls, vanilla paper/sugar/dye). No HPCA
+     * component, no research-station product and no computation hatch appears anywhere in the
+     * ingredient graph — asserted by {@code SurvivalCraftingTests}.
+     */
+    private static void registerLuVRecipes(java.util.function.Consumer<FinishedRecipe> provider) {
+        // Cold-plate liquid rack casing: stainless plate over an aluminium cold plate, 4 per craft.
+        VanillaRecipeHelper.addShapedRecipe(provider, true,
+                HyperCluster.id("liquid_rack_casing"),
+                new ItemStack(HyperClusterBlocks.LIQUID_RACK_CASING.get(), 4),
+                "PAP",
+                "ACA",
+                "PAP",
+                'P', ChemicalHelper.get(TagPrefix.plate, GTMaterials.StainlessSteel),
+                'A', ChemicalHelper.get(TagPrefix.plate, GTMaterials.Aluminium),
+                'C', GTCraftingComponents.CIRCUIT.get(LuV));
+
+        // UPS battery casing: steel shell around a lapotron-grade cell, 4 per craft.
+        VanillaRecipeHelper.addShapedRecipe(provider, true,
+                HyperCluster.id("ups_battery_casing"),
+                new ItemStack(HyperClusterBlocks.UPS_BATTERY_CASING.get(), 4),
+                "PSP",
+                "SCS",
+                "PSP",
+                'P', ChemicalHelper.get(TagPrefix.plate, GTMaterials.Steel),
+                'S', ChemicalHelper.get(TagPrefix.plate, GTMaterials.StainlessSteel),
+                'C', GTCraftingComponents.CIRCUIT.get(LuV));
+
+        // LuV liquid-cooled blade: a platinum-wired LuV circuit on silicon wafers in a coolant sleeve.
+        VanillaRecipeHelper.addShapedRecipe(provider, true,
+                HyperCluster.id("luv_liquid_blade"),
+                new ItemStack(HyperClusterItems.LUV_LIQUID_BLADE.get()),
+                "WAW",
+                "ACA",
+                "WAW",
+                'W', ChemicalHelper.get(TagPrefix.wireGtSingle, GTMaterials.Platinum),
+                'A', ChemicalHelper.get(TagPrefix.plate, GTMaterials.Aluminium),
+                'C', GTCraftingComponents.CIRCUIT.get(LuV));
+
+        // Tier III liquid-cooled rack controller: liquid casings around a LuV hull.
+        VanillaRecipeHelper.addShapedRecipe(provider, true,
+                HyperCluster.id("liquid_cooled_compute_rack"),
+                HyperClusterMachines.LIQUID_COOLED_COMPUTE_RACK.asStack(1),
+                "LCL",
+                "EME",
+                "LCL",
+                'L', HyperClusterBlocks.LIQUID_RACK_CASING.get(),
+                'E', GTCraftingComponents.EMITTER.get(LuV),
+                'C', GTCraftingComponents.CIRCUIT.get(LuV),
+                'M', GTCraftingComponents.HULL.get(LuV));
+
+        // UPS array controller: battery casings, an LuV sensor and a LuV hull.
+        VanillaRecipeHelper.addShapedRecipe(provider, true,
+                HyperCluster.id("ups_power_array"),
+                HyperClusterMachines.UPS_POWER_ARRAY.asStack(1),
+                "UCU",
+                "SMS",
+                "UCU",
+                'U', HyperClusterBlocks.UPS_BATTERY_CASING.get(),
+                'S', GTCraftingComponents.SENSOR.get(LuV),
+                'C', GTCraftingComponents.CIRCUIT.get(LuV),
+                'M', GTCraftingComponents.HULL.get(LuV));
+
+        // Tensor pretraining cluster controller: computer casing, LuV sensor/emitter and a hull.
+        VanillaRecipeHelper.addShapedRecipe(provider, true,
+                HyperCluster.id("tensor_pretraining_cluster"),
+                HyperClusterMachines.TENSOR_PRETRAINING_CLUSTER.asStack(1),
+                "CEC",
+                "SMS",
+                "CEC",
+                'C', GTBlocks.COMPUTER_CASING.get(),
+                'E', GTCraftingComponents.EMITTER.get(LuV),
+                'S', GTCraftingComponents.SENSOR.get(LuV),
+                'M', GTCraftingComponents.HULL.get(LuV));
+
+        // Cloud offload node: an LuV sensor behind fine platinum wiring on an LuV hull.
+        VanillaRecipeHelper.addShapedRecipe(provider, true,
+                HyperCluster.id("cloud_offload_node"),
+                HyperClusterMachines.CLOUD_OFFLOAD_NODE.asStack(1),
+                "WCW",
+                "FSF",
+                "WCW",
+                'W', gtItem("silicon_wafer"),
+                'C', GTCraftingComponents.CIRCUIT.get(LuV),
+                'F', ChemicalHelper.get(TagPrefix.wireFine, GTMaterials.Platinum),
+                'S', GTCraftingComponents.SENSOR.get(LuV));
     }
 }

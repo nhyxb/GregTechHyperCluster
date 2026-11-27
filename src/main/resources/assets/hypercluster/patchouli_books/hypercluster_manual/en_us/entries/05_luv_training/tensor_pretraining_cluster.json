@@ -1,0 +1,31 @@
+{
+  "name": "Tensor Pretraining Cluster",
+  "category": "hypercluster:05_luv_training",
+  "icon": "hypercluster:tensor_pretraining_cluster",
+  "sortnum": 2,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "The $(item)Tensor Pretraining Cluster$() ties the earlier chapters into one line:$(li)LuV power$(li)a sustained $(bold)32 CWU/t$() native optical feed$(li)distilled water or PCB coolant$(li)one $(item)High-Purity Domain Dataset$() (mining or chemical)$(br2)After $(bold)2400 ticks$() it exports one $(item)Open-Weight Module$()."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/tensor_pretraining_cluster"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "The 7×6×7 Stepped Structure",
+      "text": "$(li)$(#0E7490)y=0..1$(): the heavy $(item)Computer Casing$() base; the controller is on the $(bold)second layer's front face at (2, 1, 0)$(), and every hatch rides this layer.$(li)$(#0E7490)y=2..3$(): the $(bold)waisted$() mid-section, inset one ring on all sides, wrapped in a full band of $(item)Cleanroom Glass$() core windows with the $(item)Advanced Computer Casing$() compute spine standing visibly inside.$(li)$(#0E7490)y=4$(): the re-widened shoulder.$(li)$(#0E7490)y=5$(): a $(item)Tungstensteel Frame$() heat-dissipation ring beam on the roof rim only."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Checkpoints, OOM and UPS",
+      "text": "$(bold)Checkpoints$(): progress is written to the save every $(bold)25%$(), so one 2400-tick run has four landing points at 25/50/75/100%. Chunk unloads and save reloads $(bold)resume from the most recent checkpoint$() instead of restarting.$(br2)$(bold)OOM$(): a job declares its VRAM need, and if the racks in range cannot bring that much online the cluster $(bold)refuses to start$() and says OOM — four blades is exactly 96 GB.$(br2)$(bold)UPS$(): a brownout is covered for 60 seconds; with no UPS cover the run falls back to its last checkpoint and the unsaved stretch is cleared."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "The Open-Weight Module",
+      "text": "The finished artifact is an $(item)Open-Weight Module$() carrying three NBT fields:$(li)$(#0E7490)Domain$(): mining or chemical, decided by which high-purity dataset went in.$(li)$(#0E7490)Precision$(): fixed at $(bold)fp16$() in this version.$(li)$(#0E7490)Version$(): which checkpoint count the module was exported from.$(br2)All three show on hover, and the module stacks, stores and travels like any normal item."
+    }
+  ]
+}

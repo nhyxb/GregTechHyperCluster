@@ -1,0 +1,6 @@
+{
+  "name": "Chapter 5 · LuV Smart Compute & Training",
+  "description": "Cold-plate liquid rack, UPS backup, tensor pretraining and cloud compute offload.",
+  "icon": "hypercluster:liquid_cooled_compute_rack",
+  "sortnum": 4
+}

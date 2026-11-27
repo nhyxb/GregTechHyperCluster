@@ -73,6 +73,16 @@ public final class HyperClusterItems {
             "Carries Tokens between your pocket and a satellite station's card slot.",
             "item.hypercluster.token_credit_card.value", "Stored Tokens: %s");
 
+    // 0.6 — LuV training: liquid-cooled blades and the open-weight model artifact.
+    public static final ItemEntry<TooltipItem> LUV_LIQUID_BLADE = register("luv_liquid_blade",
+            "LuV Liquid-Cooled Blade",
+            "Cold-plate liquid-cooled compute blade. Each blade grants 16 CWU/t in a Tier III liquid rack.");
+    public static final ItemEntry<OpenWeightModuleItem> OPEN_WEIGHT_MODULE = registerModule(
+            "open_weight_module", "Open-Weight Module",
+            "item.hypercluster.open_weight_module.tooltip",
+            "A trained open-weight model checkpoint. Its NBT records the domain, precision and training version.",
+            "item.hypercluster.open_weight_module.summary", "%s · %s · v%s");
+
     private HyperClusterItems() {}
 
     public static void init() {
@@ -109,6 +119,21 @@ public final class HyperClusterItems {
         }
         return HyperCluster.REGISTRATE
                 .item(name, factory)
+                .model((context, provider) -> provider.withExistingParent(context.getName(),
+                        provider.mcLoc("item/generated"))
+                        .texture("layer0", provider.modLoc("item/" + context.getName())))
+                .lang(englishName)
+                .register();
+    }
+
+    /** 0.6 — the trained open-weight module: its own item class renders the NBT summary line. */
+    private static ItemEntry<OpenWeightModuleItem> registerModule(String name, String englishName,
+                                                                  String... langKeyValuePairs) {
+        for (int i = 0; i + 1 < langKeyValuePairs.length; i += 2) {
+            HyperCluster.REGISTRATE.addRawLang(langKeyValuePairs[i], langKeyValuePairs[i + 1]);
+        }
+        return HyperCluster.REGISTRATE
+                .item(name, OpenWeightModuleItem::new)
                 .model((context, provider) -> provider.withExistingParent(context.getName(),
                         provider.mcLoc("item/generated"))
                         .texture("layer0", provider.modLoc("item/" + context.getName())))

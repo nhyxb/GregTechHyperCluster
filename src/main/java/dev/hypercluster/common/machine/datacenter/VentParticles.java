@@ -7,11 +7,12 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 
 /** Draws airflow just outside the face of a three-block-wide vent. */
-final class VentParticles {
+public final class VentParticles {
 
     private VentParticles() {}
 
-    static void emit(Level level, RandomSource random, BlockPos vent, Direction outward, double halfHeight, int count) {
+    public static void emit(Level level, RandomSource random, BlockPos vent, Direction outward, double halfHeight,
+                            int count) {
         Direction across = outward.getClockWise();
         for (int i = 0; i < count; i++) {
             double sideways = (random.nextDouble() - 0.5) * 2.6;

@@ -139,3 +139,13 @@
 - GTCEu 7.4.0 自动读取机器描述键 `<modid>.machine.<name>.tooltip`。在语言文件保留主描述，注册时仅向 `.tooltips(...)` 添加额外信息。回归入口为 `SurvivalCraftingTests.machineDescriptionTooltipsNotDuplicated`。
 - 0.5 的尺寸、控制器及馈源坐标见 [验收报告](docs/reports/0.5_acceptance_report.md)。`hc_field` 模板为 15×12×15。其基岩地板在 GameTest 相对 y=1，底面含必需空气格的红队舱和卫星站摆在 y=2；要求露天的测试沿用平坦世界。改变场地或大幅改形后，用新的测试世界运行可排除残留方块。
 - GTCEu 的全局能力计数以 `SimplePredicate` 实例为键。若把同一组最低仓室需求分别写到两个字符的独立谓词里，会变成每组都要满足最低数量。红队舱在底座检查最低数量，上层只接受可选仓室。
+
+## 0.6.0 LuV 智算与训练已完成（2026-11-27，0.6.0）
+
+- **交付**：`liquid_rack_casing`/`ups_battery_casing` 方块（原生 LDLib CTM，模板同 0.4.1）、`luv_liquid_blade`/`open_weight_module` 物品、`liquid_cooled_compute_rack`（5×5×3，4 刀片 0→64 CWU/t，24 GB 显存/片，交换带宽 64 CWU/t，**PUE 1.20**）、`ups_power_array`（5×4×3，浮充 4096 EU/t、满 4,000,000 EU、放电 8192 EU/t、**60s/1200t 备电**）、`tensor_pretraining_cluster`（7×6×7 阶梯收腰，2400t 训练，**每 25% 落 NBT Checkpoint**，OOM 显存闸门，UPS 保护续训，产出带领域/精度/版本 NBT 的模块）、`cloud_offload_node`（LuV 部件，租富余 CWU/t 按 1.20÷PUE 折算 Token）。runGametest **72/72**；手册新增双语第五章（21 个双语文件）。报告 `docs/reports/0.6_acceptance_report.md`。
+- **冷却液是真实输入**：机柜供算时每 tick 喝 1 mB，`LiquidDatacenterRating.coolantEfficiency` 认 `distilled_water`(1.00)/`pcb_coolant`(0.85)，其他一律 0。断液先给 20 tick 容错窗口再归零（`NO_COOLANT`），补液即恢复。
+- **⚠️ GT 流体仓排液坑（长期有效）**：`NotifiableFluidTank.drain()` 受 `canCapOutput()` 门控——**输入仓（capabilityIO=IN）直接返回 EMPTY**；`drainInternal(int,...)` 会遍历所有储罐、不按流体匹配。可靠做法是**直接写底层**：`tank.getStorages()[slot].setFluid(remain)` + `tank.onContentsChanged()`。0.6 机柜与预训练集群都用这条路喝冷却液。
+- **多方块图案与测试放置必须同源**：0.6 起 GameTest 用 `buildStructure(rows, chars, controllerBlock)` 从**同一份图案数组**生成摆放（控制器落在图案 `'S'` 格），否则手写坐标会和 `FactoryBlockPattern` 漂移。`start(RIGHT, BACK, UP)` 下 **aisle=y 层、每层 3 个 5 字符串对应 z**，即 `rows[y][z]`。
+- **可选部件字符要独立**：把可选部件（外包节点）挂在已被 `T` 谓词占用的格子上会整体成型失败且报错指向无关格子；正确做法是让承载它的外层谓词（此处 `L` 机柜外壳）追加 `.or(Predicates.abilities(CLOUD_OFFLOAD).setMinGlobalLimited(0).setMaxGlobalLimited(1))`。
+- **先摆部件再成型**：多方块成型后拒绝结构编辑，带可选部件的结构必须在 `ensureFormed` 之前把部件放好。
+- **测试场地边界**：结构贴场地边缘时，GT 的正反两种匹配变体可能探到场地外（bedrock），表现为「某台机器单独摆就成型、加挂部件就不成型」。把结构往内挪或加外墙余量。

@@ -1,0 +1,41 @@
+{
+  "name": "Tier III 冷板液冷算力机柜",
+  "category": "hypercluster:05_luv_training",
+  "icon": "hypercluster:liquid_cooled_compute_rack",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "到了 LuV，风冷机柜的 24 CWU/t 已经不够喂一条训练线。$(item)冷板液冷算力机柜$()把同样的光学供算做进 5×5×3 的双排液冷柜体里：$(bold)满插 4 枚 LuV 液冷刀片就是 64 CWU/t$()。$(br2)这个数字有明确的用途——原版 $(item)科研站$() 每条配方要 $(bold)32 CWU/t$()，现在$(bold)单柜就能稳定驱动$()，不必堆机柜或上 HPCA。"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/liquid_cooled_compute_rack",
+      "recipe2": "hypercluster:shaped/luv_liquid_blade"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/liquid_rack_casing"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "5×5×3 结构",
+      "text": "$(li)$(#0E7490)底层 y=0$()：整片$(item)冷板液冷机柜外壳$()底座，能源仓、流体输入仓与维护仓都挂在这一层的柜壁上。$(li)$(#0E7490)中层 y=1..3$()：前后是$(item)强化玻璃$()冷热通道门，柜体内部留空走风；y=2 的后壁是$(item)计算机机壳$()，上面放 $(bold)1–2 个 GT 原生算力传输仓$()。$(li)$(#0E7490)顶层 y=4$()：$(item)钨钢框架$()光缆桥架与散热格栅。$(li)$(#0E7490)主控位置$()：正面第二层 $(bold)(2, 2, 0)$()，站着就能点到。"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "冷却液是真实输入",
+      "text": "冷板不吃电就能跑是错觉：机柜供算时每 tick 从流体输入仓喝 $(bold)1 mB$() 冷却液。$(li)$(item)蒸馏水$()：效率 1.00，最省事。$(li)$(item)PCB 冷却液$()：效率 0.85，制冷耗电再降 15%，PUE 更低。$(br2)喝不到冷却液时，机柜先给 $(bold)20 tick$() 的容错窗口，之后$(bold)算力直接归零$()并在界面标出“冷板冷却液断供”。补回冷却液立刻恢复，不会锁死。"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "PUE 1.20 与两条硬上限",
+      "text": "机房的 PUE 按 $(bold)总耗电 = IT 耗电 + 基础制冷 × 环境系数 × 气流系数 × 冷板效率$() 结算。液冷柜的基础制冷比只有 0.20，$(bold)中性环境满插即 PUE 1.20$()；自然冷源（雪原、冻结深海、$(bold)Y &lt; 20$()）再乘 0.6，下界与炎热沙漠乘 2.0。$(br2)供训练集群校验的两条硬上限：$(li)$(#0E7490)交换机带宽$()：单柜每 tick 最多出租 $(bold)64 CWU/t$()，超出的请求排队而不是报错。$(li)$(#0E7490)显存容量$()：每枚刀片 $(bold)24 GB$()，满插 $(bold)96 GB$()。"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "同 tick 严格预算",
+      "text": "和 0.3 的风冷机柜同一套规矩：$(li)预览查询（simulate）只读，不扣预算。$(li)真实分配共用同一个 tick 窗口，$(bold)科研站、预训练集群和外包节点抢同一池算力$()，谁也拿不到重复的一份。$(li)软锤暂停、维护仓未修、未插刀片、电力不足或冷却断供，都会把算力压到 0 并在界面写明原因。"
+    }
+  ]
+}

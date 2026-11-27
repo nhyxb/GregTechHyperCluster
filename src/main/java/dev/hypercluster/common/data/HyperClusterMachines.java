@@ -29,7 +29,11 @@ import dev.hypercluster.common.machine.cloud.ApiSatelliteStationMachine;
 import dev.hypercluster.common.machine.cloud.LocalFallbackGatewayMachine;
 import dev.hypercluster.common.machine.datacenter.AirCooledComputeRackMachine;
 import dev.hypercluster.common.machine.datacenter.IvInferenceHatchMachine;
+import dev.hypercluster.common.machine.datacenter.LiquidCooledComputeRackMachine;
 import dev.hypercluster.common.machine.datacenter.PrecisionCracMachine;
+import dev.hypercluster.common.machine.training.CloudOffloadNodeMachine;
+import dev.hypercluster.common.machine.training.TensorPretrainingClusterMachine;
+import dev.hypercluster.common.machine.training.UpsPowerArrayMachine;
 
 import static com.gregtechceu.gtceu.api.pattern.util.RelativeDirection.BACK;
 import static com.gregtechceu.gtceu.api.pattern.util.RelativeDirection.RIGHT;
@@ -70,6 +74,11 @@ public final class HyperClusterMachines {
     public static MachineDefinition IV_INFERENCE_HATCH;
     public static MultiblockMachineDefinition API_SATELLITE_STATION;
     public static MachineDefinition LOCAL_FALLBACK_GATEWAY;
+    // 0.6 — LuV smart compute and training.
+    public static MultiblockMachineDefinition LIQUID_COOLED_COMPUTE_RACK;
+    public static MultiblockMachineDefinition UPS_POWER_ARRAY;
+    public static MultiblockMachineDefinition TENSOR_PRETRAINING_CLUSTER;
+    public static MachineDefinition CLOUD_OFFLOAD_NODE;
 
     private HyperClusterMachines() {}
 
@@ -87,6 +96,7 @@ public final class HyperClusterMachines {
     }
 
     private static void initMachines() {
+        initLuvMachines();
         // English entries for machine tooltips, recipe type categories and buffer hints.
         // (zh_cn is maintained manually under assets/hypercluster/lang/zh_cn.json.)
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.hv_micro_burner.tooltip",
@@ -566,6 +576,272 @@ public final class HyperClusterMachines {
                 .register();
     }
 
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // 0.6 — LuV smart compute and training //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    private static void initLuvMachines() {
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.tensor_training", "Tensor Pretraining");
+
+        // Tooltips and UI keys for the four 0.6 machines.
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.liquid_cooled_compute_rack.tooltip",
+                "Tier III cold-plate liquid rack: 4 LuV liquid blades give up to 64 CWU/t through optical pipes. Drinks distilled water or PCB coolant; PUE 1.20.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.liquid_cooled_compute_rack.label.blades",
+                "Liquid blades");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.liquid_cooled_compute_rack.label.snack", "Snack");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.liquid_cooled_compute_rack.blade_slot",
+                "LuV liquid blade slot: 16 CWU/t and 24 GB VRAM per blade.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.liquid_cooled_compute_rack.snack_slot",
+                "Green snack pack: keep the machine room tidy (-5% total EU/t, config-gated).");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.liquid_cooled_compute_rack.providing",
+                "Providing computation");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.liquid_cooled_compute_rack.computation",
+                "Computation: %s / %s CWU/t");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.liquid_cooled_compute_rack.bandwidth",
+                "Switch bandwidth: up to %s CWU/t per tick");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.liquid_cooled_compute_rack.vram",
+                "VRAM budget: %s GB");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.liquid_cooled_compute_rack.room",
+                "Room rating: Tier %s (environment %s)");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.liquid_cooled_compute_rack.pue",
+                "PUE: %s (IT %s EU/t + cooling %s EU/t)");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.liquid_cooled_compute_rack.standby",
+                "Standby: %s");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.liquid_cooled_compute_rack.coolant",
+                "Cold-plate coolant: %s");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.liquid_cooled_compute_rack.coolant.none",
+                "DRY — no cold-plate coolant");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.liquid_cooled_compute_rack.snack_bonus",
+                "Snack pack bonus active: -5% total EU/t.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.liquid_cooled_compute_rack.derate.none",
+                "Providing computation.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.liquid_cooled_compute_rack.derate.paused",
+                "Derated to 0 CWU/t: rack paused (soft mallet).");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.liquid_cooled_compute_rack.derate.maintenance",
+                "Derated to 0 CWU/t: maintenance problems unfixed.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.liquid_cooled_compute_rack.derate.no_blades",
+                "Derated to 0 CWU/t: no liquid blades inserted.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.liquid_cooled_compute_rack.derate.low_power",
+                "Derated to 0 CWU/t: not enough energy.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.liquid_cooled_compute_rack.derate.no_coolant",
+                "Derated to 0 CWU/t: cold plates starved of coolant.");
+
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.ups_power_array.tooltip",
+                "UPS power distribution array: float-charges while the grid is up and covers a nearby pretraining cluster for 60 s of brownout.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.ups_power_array.discharging", "On backup power");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.ups_power_array.charge",
+                "Battery charge: %s (%s EU)");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.ups_power_array.cover",
+                "Remaining cover: %s / %s");
+
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.tooltip",
+                "Tensor pretraining cluster: long LuV runs over high-purity datasets with NBT checkpoints, a VRAM (OOM) gate and UPS-protected resume.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.label.dataset",
+                "Training dataset");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.label.module",
+                "Modules");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.dataset_slot",
+                "High-purity mining or chemical dataset: one per training run.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.training",
+                "Training");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.progress",
+                "Progress: %s (checkpoint %s%%)");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.vram",
+                "VRAM: %s GB online / %s GB required");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.ups",
+                "UPS cover: %s");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.ups.covered",
+                "covered");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.ups.bare",
+                "none — unsaved progress is at risk");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.backup",
+                "Running on UPS backup power — the checkpoint survives this brownout.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.state.idle", "");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.state.no_dataset",
+                "Insert a high-purity dataset to start a run.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.state.no_computation",
+                "No CWU/t on the optical link: connect a liquid rack's computation hatch.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.state.oom",
+                "OOM: the racks in range do not provide enough VRAM to start this job.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.state.no_coolant",
+                "No distilled water or PCB coolant in the fluid hatches.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.state.low_power",
+                "Not enough LuV power, or the maintenance hatch has open problems.");
+        HyperCluster.REGISTRATE.addRawLang(
+                "hypercluster.machine.tensor_pretraining_cluster.state.no_power_checkpoint_lost",
+                "Run stopped: power or cooling lost. Progress rolled back to the last checkpoint.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.state.paused",
+                "Paused (soft mallet).");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.training.domain.mining", "Mining");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.training.domain.chemical", "Chemical");
+
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.cloud_offload_node.tooltip",
+                "Cloud offload node: rents the host liquid rack's spare CWU/t and pays the bound player's cloud account Tokens at the room's PUE rate.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.cloud_offload_node.label.credential",
+                "API credential");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.cloud_offload_node.credential_slot",
+                "API credential card: the cloud account that receives the rental Tokens.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.cloud_offload_node.renting",
+                "Rented out: %s CWU/t");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.cloud_offload_node.payout",
+                "Last payout: %s Tokens");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.cloud_offload_node.lifetime",
+                "Lifetime payout: %s Tokens");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.cloud_offload_node.reason.renting",
+                "Renting spare computation.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.cloud_offload_node.reason.no_credential",
+                "Insert a bound API credential card.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.cloud_offload_node.reason.no_host",
+                "Not attached to a liquid-cooled compute rack.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.cloud_offload_node.reason.no_link",
+                "No computation reception hatch on this frame.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.cloud_offload_node.reason.no_computation",
+                "The host rack has no spare CWU/t this tick.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.cloud_offload_node.reason.unformed",
+                "The structure is not formed.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.cloud_offload_node.reason.unloaded",
+                "Unloaded.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.cloud_offload_node.reason.detached",
+                "Detached from its host.");
+
+        // ---- Tier III cold-plate liquid rack: 5×5×3 double-row cabinet ----
+        // start(RIGHT, BACK, UP) => char index walks east (+x), aisle index walks south (+z),
+        // string index walks up (+y). Each .aisle(...) is ONE y layer holding 3 aisles of 5 chars:
+        // 5 wide (x) × 3 deep (z) × 5 tall (y). The controller 'S' sits at x=2, z=0 of layer y=2
+        // — the front face, second layer, i.e. eye height for a standing player.
+        LIQUID_COOLED_COMPUTE_RACK = HyperCluster.REGISTRATE
+                .multiblock("liquid_cooled_compute_rack", LiquidCooledComputeRackMachine::new)
+                .langValue("Liquid-Cooled Compute Rack")
+                .rotationState(RotationState.NON_Y_AXIS)
+                .recipeType(GTRecipeTypes.DUMMY_RECIPES)
+                .appearanceBlock(HyperClusterBlocks.LIQUID_RACK_CASING)
+                .pattern(definition -> FactoryBlockPattern.start(RIGHT, BACK, UP)
+                        // y=0: the closed plinth (the whole 5×3 footprint is solid casing).
+                        .aisle("LLLLL", "LLLLL", "LLLLL")
+                        // y=1: intake row — perforated glass doors front, catwalk behind.
+                        .aisle("LGGGL", "LGGGL", "LLLLL")
+                        // y=2: the blade bay — controller front, cold-plate spine at the back.
+                        .aisle("LGCSL", "L###L", "LCCCL")
+                        // y=3: exhaust row — glass doors again.
+                        .aisle("LGGGL", "LGGGL", "LLLLL")
+                        // y=4: the overhead cable tray (girders on the rim, grates in the middle,
+                        // and one dedicated cell for the optional cloud offload node).
+                        .aisle("TTTTT", "T###T", "THHHT")
+                        .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                        .where('L', Predicates.blocks(HyperClusterBlocks.LIQUID_RACK_CASING.get())
+                                .or(Predicates.abilities(PartAbility.IMPORT_FLUIDS)
+                                        .setMinGlobalLimited(1).setMaxGlobalLimited(2))
+                                .or(Predicates.abilities(PartAbility.INPUT_ENERGY)
+                                        .setMinGlobalLimited(1).setMaxGlobalLimited(2))
+                                // The optional cloud offload node rides any casing cell of the
+                                // cabinet wall; at most one per rack.
+                                .or(Predicates.abilities(HyperClusterPartAbilities.CLOUD_OFFLOAD)
+                                        .setMinGlobalLimited(0).setMaxGlobalLimited(1))
+                                .or(Predicates.autoAbilities(true, false, false)))
+                        .where('G', Predicates.blocks(GTBlocks.CASING_LAMINATED_GLASS.get()))
+                        .where('C', Predicates.blocks(GTBlocks.COMPUTER_CASING.get())
+                                .or(Predicates.abilities(PartAbility.COMPUTATION_DATA_TRANSMISSION)
+                                        .setMinGlobalLimited(1).setMaxGlobalLimited(2))
+                                .or(Predicates.abilities(HyperClusterPartAbilities.CLOUD_OFFLOAD)
+                                        .setMinGlobalLimited(0).setMaxGlobalLimited(1)))
+                        .where('T', Predicates.frames(GTMaterials.TungstenSteel))
+                        .where('H', Predicates.blocks(GTBlocks.CASING_GRATE.get()))
+                        .where('#', Predicates.air())
+                        .build())
+                .allowExtendedFacing(false)
+                .workableCasingModel(HyperCluster.id("block/datacenter/liquid_rack_casing"),
+                        HyperCluster.id("block/machines/liquid_cooled_compute_rack"))
+                .register();
+
+        // ---- UPS power distribution array: 5×4×3 industrial battery bank ----
+        // 5 wide (x) × 3 deep (z) × 4 tall (y); controller at x=2, z=0 of layer y=1.
+        UPS_POWER_ARRAY = HyperCluster.REGISTRATE
+                .multiblock("ups_power_array", UpsPowerArrayMachine::new)
+                .langValue("UPS Power Array")
+                .rotationState(RotationState.NON_Y_AXIS)
+                .recipeType(GTRecipeTypes.DUMMY_RECIPES)
+                .appearanceBlock(HyperClusterBlocks.UPS_BATTERY_CASING)
+                .pattern(definition -> FactoryBlockPattern.start(RIGHT, BACK, UP)
+                        // y=0: the battery racks on the plinth.
+                        .aisle("UUUUU", "UUUUU", "UUUUU")
+                        // y=1: the console row — controller front, cell banks behind.
+                        .aisle("UUSUU", "UUUUU", "UUUUU")
+                        // y=2: the open bus-bar walkway between the two banks.
+                        .aisle("U###U", "#FFF#", "U###U")
+                        // y=3: the overhead steel girder ring carrying the cable tray.
+                        .aisle("TTTTT", "T###T", "TTTTT")
+                        .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                        .where('U', Predicates.blocks(HyperClusterBlocks.UPS_BATTERY_CASING.get())
+                                .or(Predicates.abilities(PartAbility.INPUT_ENERGY)
+                                        .setMinGlobalLimited(1).setMaxGlobalLimited(2))
+                                .or(Predicates.autoAbilities(true, false, false)))
+                        .where('F', Predicates.blocks(GTBlocks.CASING_STEEL_SOLID.get()))
+                        .where('T', Predicates.frames(GTMaterials.Steel))
+                        .where('#', Predicates.air())
+                        .build())
+                .allowExtendedFacing(false)
+                .workableCasingModel(HyperCluster.id("block/datacenter/ups_battery_casing"),
+                        HyperCluster.id("block/machines/ups_power_array"))
+                .register();
+
+        // ---- Tensor pretraining cluster: 7×6×7 stepped cluster ----
+        // 7 wide (x) × 7 deep (z) × 6 tall (y); controller at x=2, z=0 of layer y=1 (2nd layer,
+        // front face = comfortable eye height).
+        TENSOR_PRETRAINING_CLUSTER = HyperCluster.REGISTRATE
+                .multiblock("tensor_pretraining_cluster", TensorPretrainingClusterMachine::new)
+                .langValue("Tensor Pretraining Cluster")
+                .recipeType(HyperClusterRecipeTypes.TENSOR_TRAINING_RECIPES)
+                .recipeModifier(GTRecipeModifiers.OC_NON_PERFECT)
+                .rotationState(RotationState.NON_Y_AXIS)
+                .appearanceBlock(GTBlocks.COMPUTER_CASING)
+                .pattern(definition -> FactoryBlockPattern.start(RIGHT, BACK, UP)
+                        // y=0: the heavy casing base.
+                        .aisle("BBBBBBB", "BBBBBBB", "BBBBBBB", "BBBBBBB", "BBBBBBB", "BBBBBBB", "BBBBBBB")
+                        // y=1: the base shoulder; controller on the front face.
+                        .aisle("BBSBBBB", "BBBBBBB", "BBBBBBB", "BBBBBBB", "BBBBBBB", "BBBBBBB", "BBBBBBB")
+                        // y=2..3: the waisted glass core section, inset one ring on all sides.
+                        .aisle("#######", "#GGGGG#", "#GCGCG#", "#GGGGG#", "#GCGCG#", "#GGGGG#", "#######")
+                        .aisle("#######", "#GGGGG#", "#GCGCG#", "#GGGGG#", "#GCGCG#", "#GGGGG#", "#######")
+                        // y=4: the re-widened shoulder.
+                        .aisle("BBBBBBB", "BBBBBBB", "BBBBBBB", "BBBBBBB", "BBBBBBB", "BBBBBBB", "BBBBBBB")
+                        // y=5: the heat-dissipation ring beam on the roof rim.
+                        .aisle("TTTTTTT", "T#####T", "T#####T", "T#####T", "T#####T", "T#####T", "TTTTTTT")
+                        .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                        .where('B', Predicates.blocks(GTBlocks.COMPUTER_CASING.get())
+                                .or(Predicates.abilities(PartAbility.IMPORT_ITEMS)
+                                        .setMinGlobalLimited(1).setMaxGlobalLimited(2))
+                                .or(Predicates.abilities(PartAbility.EXPORT_ITEMS)
+                                        .setMinGlobalLimited(0).setMaxGlobalLimited(2))
+                                .or(Predicates.abilities(PartAbility.IMPORT_FLUIDS)
+                                        .setMinGlobalLimited(1).setMaxGlobalLimited(2))
+                                .or(Predicates.abilities(PartAbility.INPUT_ENERGY)
+                                        .setMinGlobalLimited(1).setMaxGlobalLimited(2))
+                                .or(Predicates.abilities(PartAbility.COMPUTATION_DATA_RECEPTION)
+                                        .setMinGlobalLimited(1).setMaxGlobalLimited(1))
+                                .or(Predicates.autoAbilities(true, false, false)))
+                        .where('G', Predicates.blocks(GTBlocks.CLEANROOM_GLASS.get()))
+                        .where('C', Predicates.blocks(GTBlocks.ADVANCED_COMPUTER_CASING.get()))
+                        .where('T', Predicates.frames(GTMaterials.TungstenSteel))
+                        .where('#', Predicates.air())
+                        .build())
+                .allowExtendedFacing(false)
+                .workableCasingModel(new ResourceLocation("gtceu", "block/casings/hpca/computer_casing/side"),
+                        HyperCluster.id("block/machines/tensor_pretraining_cluster"))
+                .register();
+
+        // ---- Cloud compute offload node: LuV optical part on the liquid rack ----
+        CLOUD_OFFLOAD_NODE = HyperCluster.REGISTRATE
+                .machine("cloud_offload_node", CloudOffloadNodeMachine::new)
+                .tier(GTValues.LuV)
+                .langValue("Cloud Offload Node")
+                .rotationState(RotationState.ALL)
+                .abilities(HyperClusterPartAbilities.CLOUD_OFFLOAD)
+                .modelProperty(GTMachineModelProperties.IS_FORMED, false)
+                .modelProperty(GTMachineModelProperties.RECIPE_LOGIC_STATUS, RecipeLogic.Status.IDLE)
+                .workableTieredHullModel(HyperCluster.id("block/machines/cloud_offload_node"))
+                .register();
+    }
+
     /** Mirrors GTMachines.init(): GTCEu 7.4.0 registers render states of its own machines only. */
     private static void registerRenderStates() {
         // Addon machines register after GTMachines.init(), so their MachineRenderStates never
@@ -576,7 +852,9 @@ public final class HyperClusterMachines {
         for (MachineDefinition machine : new MachineDefinition[] { HV_MICRO_BURNER, HV_TELEMETRY_ORE_WASHER,
                 EV_TELEMETRY_CHEMICAL_REACTOR, DATA_SCRUBBING_TOWER, LORA_ENGRAVING_CHAMBER,
                 RED_TEAM_SANDBOX, AIR_COOLED_COMPUTE_RACK, PRECISION_CRAC, IV_INFERENCE_HATCH,
-                API_SATELLITE_STATION, LOCAL_FALLBACK_GATEWAY }) {
+                API_SATELLITE_STATION, LOCAL_FALLBACK_GATEWAY,
+                LIQUID_COOLED_COMPUTE_RACK, UPS_POWER_ARRAY, TENSOR_PRETRAINING_CLUSTER,
+                CLOUD_OFFLOAD_NODE }) {
             for (com.gregtechceu.gtceu.client.model.machine.MachineRenderState renderState : machine
                     .getStateDefinition().getPossibleStates()) {
                 MachineDefinition.RENDER_STATE_REGISTRY.add(renderState);
