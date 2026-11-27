@@ -1,6 +1,8 @@
 package dev.hypercluster.gametest;
 
 import com.gregtechceu.gtceu.api.capability.recipe.EURecipeCapability;
+import com.gregtechceu.gtceu.api.data.chemical.ChemicalHelper;
+import com.gregtechceu.gtceu.api.data.tag.TagPrefix;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.multiblock.WorkableElectricMultiblockMachine;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
@@ -944,90 +946,104 @@ public class DatacenterTests {
     }
 
     /**
-     * The data scrubbing tower (3×5×3, bottom corner (1,1,1)) with the inference hatch replacing
-     * the middle casing cell of its hatch ring, plus a rack at (7..9, 1..5, z 1..2) and optical
-     * pipes from the rack's transmitter hatch to the inference hatch.
+     * The data scrubbing tower (5×9×5, bottom corner (1,1,1)) with the inference hatch on the
+     * front of its pedestal second layer (2,2,1), plus a rack at (7..9, 1..5, z 1..2) and
+     * optical pipes running around the tower's north and west sides to the inference hatch.
      */
     private static TowerRackParts placeTowerWithInference(GameTestHelper helper) {
         int bx = 1, by = 1, bz = 1;
         ItemBusPartMachine importBus = null, exportBus = null;
         com.gregtechceu.gtceu.common.machine.multiblock.part.FluidHatchPartMachine fluidHatch = null;
-        // L1: solid bottom.
-        for (int x = 0; x < 3; x++) {
-            for (int z = 0; z < 3; z++) {
-                helper.setBlock(new BlockPos(bx + x, by, bz + z),
-                        GTBlocks.MACHINE_CASING_EV.get().defaultBlockState());
-            }
-        }
-        // L2 + L3: glass layers.
-        for (int dy = 1; dy <= 2; dy++) {
-            for (int x = 0; x < 3; x++) {
-                for (int z = 0; z < 3; z++) {
-                    if (x == 1 && z == 1) continue;
-                    BlockPos pos = new BlockPos(bx + x, by + dy, bz + z);
-                    helper.setBlock(pos, x == 1 && (z == 0 || z == 2) ? Blocks.GLASS.defaultBlockState() :
-                            GTBlocks.MACHINE_CASING_EV.get().defaultBlockState());
+        // y=0..1: the 5×2×5 clean stainless pedestal; the controller sits at (3,2,1) — front of
+        // layer 2 at eye height — and the inference hatch flanks it at (2,2,1).
+        for (int y = 0; y <= 1; y++) {
+            for (int x = 0; x < 5; x++) {
+                for (int z = 0; z < 5; z++) {
+                    if (y == 1 && x == 2 && z == 0) continue; // controller slot
+                    if (y == 1 && x == 1 && z == 0) continue; // inference hatch slot
+                    helper.setBlock(new BlockPos(bx + x, by + y, bz + z),
+                            GTBlocks.CASING_STAINLESS_CLEAN.get().defaultBlockState());
                 }
             }
         }
-        // L4: the hatch ring — the inference hatch takes the middle front cell (bx+1, y4, bz).
-        helper.setBlock(new BlockPos(bx, by + 3, bz),
-                GTMachines.ITEM_IMPORT_BUS[EV].getBlock().defaultBlockState());
-        helper.setBlock(new BlockPos(bx + 2, by + 3, bz),
-                GTMachines.ITEM_EXPORT_BUS[EV].getBlock().defaultBlockState());
-        helper.setBlock(new BlockPos(bx, by + 3, bz + 2),
-                GTMachines.FLUID_IMPORT_HATCH[EV].getBlock().defaultBlockState());
-        helper.setBlock(new BlockPos(bx + 2, by + 3, bz + 2),
-                GTMachines.ENERGY_INPUT_HATCH[EV].getBlock().defaultBlockState());
-        helper.setBlock(new BlockPos(bx + 1, by + 3, bz + 2),
-                GTMachines.MAINTENANCE_HATCH.getBlock().defaultBlockState());
-        ((MaintenanceHatchPartMachine) metaMachine(helper, new BlockPos(bx + 1, by + 3, bz + 2)))
+        // The standard hatches ride the pedestal floor ring.
+        helper.setBlock(new BlockPos(bx, by, bz), GTMachines.ITEM_IMPORT_BUS[EV].getBlock().defaultBlockState());
+        helper.setBlock(new BlockPos(bx + 4, by, bz), GTMachines.ITEM_EXPORT_BUS[EV].getBlock()
+                .defaultBlockState());
+        helper.setBlock(new BlockPos(bx, by, bz + 4), GTMachines.FLUID_IMPORT_HATCH[EV].getBlock()
+                .defaultBlockState());
+        helper.setBlock(new BlockPos(bx + 4, by, bz + 4), GTMachines.ENERGY_INPUT_HATCH[EV].getBlock()
+                .defaultBlockState());
+        helper.setBlock(new BlockPos(bx + 2, by, bz + 4), GTMachines.MAINTENANCE_HATCH.getBlock()
+                .defaultBlockState());
+        ((MaintenanceHatchPartMachine) metaMachine(helper, new BlockPos(bx + 2, by, bz + 4)))
                 .fixAllMaintenanceProblems();
-        for (int[] cell : new int[][] { { 1, 0 }, { 0, 1 }, { 2, 1 } }) {
-            helper.setBlock(new BlockPos(bx + cell[0], by + 3, bz + cell[1]),
-                    GTBlocks.MACHINE_CASING_EV.get().defaultBlockState());
-        }
-        helper.setBlock(new BlockPos(bx + 1, by + 3, bz),
+        // The inference hatch on the pedestal front, beside the controller.
+        helper.setBlock(new BlockPos(bx + 1, by + 1, bz),
                 HyperClusterMachines.IV_INFERENCE_HATCH.getBlock().defaultBlockState());
         IvInferenceHatchMachine inferenceHatch = (IvInferenceHatchMachine) metaMachine(helper,
-                new BlockPos(bx + 1, by + 3, bz));
-        importBus = (ItemBusPartMachine) metaMachine(helper, new BlockPos(bx, by + 3, bz));
-        exportBus = (ItemBusPartMachine) metaMachine(helper, new BlockPos(bx + 2, by + 3, bz));
+                new BlockPos(bx + 1, by + 1, bz));
+        importBus = (ItemBusPartMachine) metaMachine(helper, new BlockPos(bx, by, bz));
+        exportBus = (ItemBusPartMachine) metaMachine(helper, new BlockPos(bx + 4, by, bz));
         fluidHatch = (com.gregtechceu.gtceu.common.machine.multiblock.part.FluidHatchPartMachine) metaMachine(
-                helper, new BlockPos(bx, by + 3, bz + 2));
+                helper, new BlockPos(bx, by, bz + 4));
         // Tower energy: prime the EV energy hatch.
         EnergyHatchPartMachine towerEnergy = (EnergyHatchPartMachine) metaMachine(helper,
-                new BlockPos(bx + 2, by + 3, bz + 2));
+                new BlockPos(bx + 4, by, bz + 4));
         for (long t = 40; t <= 1500; t += 20) {
             helper.runAtTickTime(t, () -> towerEnergy.energyContainer
                     .addEnergy(towerEnergy.energyContainer.getEnergyCapacity()));
         }
-        // L5: top layer with the controller.
-        for (int x = 0; x < 3; x++) {
-            for (int z = 0; z < 3; z++) {
-                if (x == 1 && z == 0) continue;
-                helper.setBlock(new BlockPos(bx + x, by + 4, bz + z),
-                        GTBlocks.MACHINE_CASING_EV.get().defaultBlockState());
+        // y=2..6: the middle section — glass body around the titanium pipe core, ring beams and
+        // corner columns; y=7..8: the flared grate heat cap (mirrors DataWorkshopTests.placeTower).
+        for (int y = 2; y <= 6; y++) {
+            boolean ringBeam = y == 2 || y == 6;
+            int wy = by + y;
+            for (int x = 0; x < 5; x++) {
+                for (int z = 0; z < 5; z++) {
+                    BlockPos pos = new BlockPos(bx + x, wy, bz + z);
+                    boolean interior = x >= 1 && x <= 3 && z >= 1 && z <= 3;
+                    boolean perimeter = x == 0 || x == 4 || z == 0 || z == 4;
+                    boolean corner = (x == 0 || x == 4) && (z == 0 || z == 4);
+                    if (interior) {
+                        boolean pipeCore = x == 2 && z == 2;
+                        helper.setBlock(pos, pipeCore ? GTBlocks.CASING_TITANIUM_PIPE.get().defaultBlockState() :
+                                GTBlocks.CLEANROOM_GLASS.get().defaultBlockState());
+                    } else if (perimeter && (ringBeam || corner)) {
+                        helper.setBlock(pos,
+                                ChemicalHelper.getBlock(TagPrefix.frameGt, GTMaterials.Titanium).defaultBlockState());
+                    }
+                }
             }
         }
-        helper.setBlock(new BlockPos(bx + 1, by + 4, bz),
+        for (int x = 0; x < 5; x++) {
+            for (int z = 0; z < 5; z++) {
+                boolean perimeter = x == 0 || x == 4 || z == 0 || z == 4;
+                helper.setBlock(new BlockPos(bx + x, by + 7, bz + z),
+                        perimeter ? GTBlocks.CASING_GRATE.get().defaultBlockState() :
+                                GTBlocks.MACHINE_CASING_EV.get().defaultBlockState());
+                helper.setBlock(new BlockPos(bx + x, by + 8, bz + z),
+                        perimeter ? GTBlocks.MACHINE_CASING_EV.get().defaultBlockState() :
+                                GTBlocks.CASING_GRATE.get().defaultBlockState());
+            }
+        }
+        helper.setBlock(new BlockPos(bx + 2, by + 1, bz),
                 HyperClusterMachines.DATA_SCRUBBING_TOWER.getBlock().defaultBlockState());
         WorkableElectricMultiblockMachine tower = (WorkableElectricMultiblockMachine) metaMachine(
-                helper, new BlockPos(bx + 1, by + 4, bz));
+                helper, new BlockPos(bx + 2, by + 1, bz));
 
         // Rack at x 7..9, z 1..2, y 1..5 (transmitter hatch at (9,2,2)).
         RackParts rack = placeRack(helper, 7, 1, 1);
-        // Pipes: transmitter (9,2,2) -> (9,2,3) -> west along z=3 -> north at x=4 -> west at
-        // z=0 -> up -> (2,4,0), adjacent to the inference hatch (2,4,1).
-        placeOpticalPipeRun(helper, new BlockPos(9, 2, 3), new BlockPos(4, 2, 3));
-        placeOpticalPipeRun(helper, new BlockPos(4, 2, 2), new BlockPos(4, 2, 0));
-        placeOpticalPipeRun(helper, new BlockPos(3, 2, 0), new BlockPos(2, 2, 0));
-        placeOpticalPipeRun(helper, new BlockPos(2, 3, 0), new BlockPos(2, 4, 0));
-        connectPipes(helper, new BlockPos(4, 2, 3), new BlockPos(4, 2, 2));
-        connectPipes(helper, new BlockPos(4, 2, 0), new BlockPos(3, 2, 0));
-        connectPipes(helper, new BlockPos(2, 2, 0), new BlockPos(2, 3, 0));
+        // Pipes: transmitter (9,2,2) -> (9,2,3) -> west along z=3 (clear of the tower footprint
+        // x<=5) -> north along x=6 -> west along z=0 (north of the tower) -> (2,2,0), adjacent
+        // to the inference hatch (2,2,1).
+        placeOpticalPipeRun(helper, new BlockPos(9, 2, 3), new BlockPos(6, 2, 3));
+        placeOpticalPipeRun(helper, new BlockPos(6, 2, 2), new BlockPos(6, 2, 0));
+        placeOpticalPipeRun(helper, new BlockPos(5, 2, 0), new BlockPos(2, 2, 0));
+        connectPipes(helper, new BlockPos(6, 2, 3), new BlockPos(6, 2, 2));
+        connectPipes(helper, new BlockPos(6, 2, 0), new BlockPos(5, 2, 0));
         connectPipeToBlock(helper, new BlockPos(9, 2, 3), Direction.NORTH);
-        connectPipeToBlock(helper, new BlockPos(2, 4, 0), Direction.SOUTH);
+        connectPipeToBlock(helper, new BlockPos(2, 2, 0), Direction.SOUTH);
         return new TowerRackParts(tower, importBus, exportBus, fluidHatch, inferenceHatch, rack);
     }
 

@@ -42,7 +42,7 @@ import static com.gregtechceu.gtceu.api.GTValues.HV;
  * (circuit #1) settles one chemical telemetry log per batch; jams/interrupts account zero;</li>
  * <li>the chemical edge chip recipe (circuit #2, chip not consumed) halves auxiliary aluminium
  * dust with identical products;</li>
- * <li>the data scrubbing tower (3×5×3 fixed GT multiblock) forms and fractions raw logs into
+ * <li>the data scrubbing tower (5×9×5 tiered GT multiblock) forms and fractions raw logs into
  * high-purity datasets + clean datasets, and recycles corrupted noise into silicon;</li>
  * <li>the HV micro burner turns high-purity datasets into domain edge chips.</li>
  * </ul>
@@ -430,7 +430,7 @@ public class DataWorkshopTests {
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
-    // Data scrubbing tower placement (3×5×3 fixed GT multiblock) //
+    // Data scrubbing tower placement (5×9×5 tiered GT multiblock) //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     /** The parts the tests drive: controller, import/export bus, fluid hatch, energy hatch. */
@@ -439,78 +439,89 @@ public class DataWorkshopTests {
                               EnergyHatchPartMachine energyHatch) {}
 
     /**
-     * Places the 3×5×3 tower into the hc_field template. Layout: bottom corner at (5, 1, 5),
-     * controller at (6, 5, 5). Aisles bottom-up (pattern FRONT=NORTH, BACK=SOUTH, RIGHT=EAST):
-     * L1 "XXX/XXX/XXX" casing, L2+L3 "XGX/X#X/XGX" glass layer, L4 "XXX/X#X/XXX" pipe layer with
-     * the five hatches, L5 "XSX/XXX/XXX".
+     * Places the 5×9×5 tower into the hc_field template. Bottom corner at (4, 1, 4), controller
+     * at (6, 2, 4) — front of pedestal layer 2 at eye height. start(RIGHT, BACK, UP): aisle=y,
+     * string=z front→back, char=x. y=0..1 the clean-stainless pedestal with the five hatches
+     * riding its floor ring; y=2..6 the cleanroom-glass fractionating body around the central
+     * titanium pipe core, titanium ring beams at y=2/y=6 plus the four free-standing corner
+     * columns; y=7..8 the flared grate heat cap.
      */
     private static TowerParts placeTower(GameTestHelper helper) {
-        int bx = 5, by = 1, bz = 5;
-        // L1: solid bottom layer.
-        for (int x = 0; x < 3; x++) {
-            for (int z = 0; z < 3; z++) {
-                helper.setBlock(new BlockPos(bx + x, by, bz + z),
-                        GTBlocks.MACHINE_CASING_EV.get().defaultBlockState());
+        int bx = 4, by = 1, bz = 4;
+        // y=0..1: the 5×2×5 clean stainless pedestal ('C' cells; controller slot skipped).
+        for (int y = 0; y <= 1; y++) {
+            for (int x = 0; x < 5; x++) {
+                for (int z = 0; z < 5; z++) {
+                    if (y == 1 && x == 2 && z == 0) continue; // controller slot
+                    helper.setBlock(new BlockPos(bx + x, by + y, bz + z),
+                            GTBlocks.CASING_STAINLESS_CLEAN.get().defaultBlockState());
+                }
             }
         }
-        // L2 + L3: glass observation layers ("XGX","X#X","XGX"); '#' stays air.
-        for (int dy = 1; dy <= 2; dy++) {
-            int y = by + dy;
-            for (int x = 0; x < 3; x++) {
-                for (int z = 0; z < 3; z++) {
-                    boolean center = x == 1 && z == 1;
-                    boolean glass = x == 1 && (z == 0 || z == 2);
-                    if (center) continue;
-                    if (glass) {
-                        helper.setBlock(new BlockPos(bx + x, y, bz + z), Blocks.GLASS.defaultBlockState());
-                    } else {
-                        helper.setBlock(new BlockPos(bx + x, y, bz + z),
-                                GTBlocks.MACHINE_CASING_EV.get().defaultBlockState());
+        // The standard hatches ride the pedestal floor ring.
+        helper.setBlock(new BlockPos(bx, by, bz), GTMachines.ITEM_IMPORT_BUS[EV].getBlock().defaultBlockState());
+        helper.setBlock(new BlockPos(bx + 4, by, bz), GTMachines.ITEM_EXPORT_BUS[EV].getBlock()
+                .defaultBlockState());
+        helper.setBlock(new BlockPos(bx, by, bz + 4), GTMachines.FLUID_IMPORT_HATCH[EV].getBlock()
+                .defaultBlockState());
+        helper.setBlock(new BlockPos(bx + 4, by, bz + 4), GTMachines.ENERGY_INPUT_HATCH[EV].getBlock()
+                .defaultBlockState());
+        helper.setBlock(new BlockPos(bx + 2, by, bz + 4), GTMachines.MAINTENANCE_HATCH.getBlock()
+                .defaultBlockState());
+        // GTCEu convention: a fresh maintenance hatch starts with ALL problems present
+        // (ALL_PROBLEMS = bitmask 0, each bit fixed with 1) — fix them like a player would.
+        ((MaintenanceHatchPartMachine) metaMachine(helper, new BlockPos(bx + 2, by, bz + 4)))
+                .fixAllMaintenanceProblems();
+
+        // y=2..6: the middle section — 3×5×3 cleanroom-glass body around the 1×5×1 titanium
+        // pipe core; the 5×5 perimeter carries titanium ring beams at y=2/y=6 and the four
+        // free-standing corner columns between them; everything else stays open air.
+        for (int y = 2; y <= 6; y++) {
+            boolean ringBeam = y == 2 || y == 6;
+            int wy = by + y;
+            for (int x = 0; x < 5; x++) {
+                for (int z = 0; z < 5; z++) {
+                    BlockPos pos = new BlockPos(bx + x, wy, bz + z);
+                    boolean interior = x >= 1 && x <= 3 && z >= 1 && z <= 3;
+                    boolean perimeter = x == 0 || x == 4 || z == 0 || z == 4;
+                    boolean corner = (x == 0 || x == 4) && (z == 0 || z == 4);
+                    if (interior) {
+                        boolean pipeCore = x == 2 && z == 2;
+                        helper.setBlock(pos, pipeCore ? GTBlocks.CASING_TITANIUM_PIPE.get().defaultBlockState() :
+                                GTBlocks.CLEANROOM_GLASS.get().defaultBlockState());
+                    } else if (perimeter && (ringBeam || corner)) {
+                        helper.setBlock(pos,
+                                ChemicalHelper.getBlock(TagPrefix.frameGt, GTMaterials.Titanium).defaultBlockState());
                     }
                 }
             }
         }
-        // L4: pipe layer with the standard hatches (all on the outer ring).
-        int y4 = by + 3;
-        ItemBusPartMachine importBus = null, exportBus = null;
-        FluidHatchPartMachine fluidHatch = null;
-        EnergyHatchPartMachine energyHatch = null;
-        helper.setBlock(new BlockPos(bx, y4, bz), GTMachines.ITEM_IMPORT_BUS[EV].getBlock().defaultBlockState());
-        helper.setBlock(new BlockPos(bx + 2, y4, bz), GTMachines.ITEM_EXPORT_BUS[EV].getBlock().defaultBlockState());
-        helper.setBlock(new BlockPos(bx, y4, bz + 2), GTMachines.FLUID_IMPORT_HATCH[EV].getBlock()
-                .defaultBlockState());
-        helper.setBlock(new BlockPos(bx + 2, y4, bz + 2), GTMachines.ENERGY_INPUT_HATCH[EV].getBlock()
-                .defaultBlockState());
-        helper.setBlock(new BlockPos(bx + 1, y4, bz + 2), GTMachines.MAINTENANCE_HATCH.getBlock().defaultBlockState());
-        // GTCEu convention: a fresh maintenance hatch starts with ALL problems present
-        // (ALL_PROBLEMS = bitmask 0, each bit fixed with 1) — fix them like a player would.
-        ((MaintenanceHatchPartMachine) metaMachine(helper, new BlockPos(bx + 1, y4, bz + 2)))
-                .fixAllMaintenanceProblems();
-        importBus = (ItemBusPartMachine) metaMachine(helper, new BlockPos(bx, y4, bz));
-        exportBus = (ItemBusPartMachine) metaMachine(helper, new BlockPos(bx + 2, y4, bz));
-        fluidHatch = (FluidHatchPartMachine) metaMachine(helper, new BlockPos(bx, y4, bz + 2));
-        energyHatch = (EnergyHatchPartMachine) metaMachine(helper, new BlockPos(bx + 2, y4, bz + 2));
-        // remaining L4 ring cells are EV casings: (bx+1,y4,bz) and side middles + far corners.
-        helper.setBlock(new BlockPos(bx + 1, y4, bz), GTBlocks.MACHINE_CASING_EV.get().defaultBlockState());
-        helper.setBlock(new BlockPos(bx, y4, bz + 1), GTBlocks.MACHINE_CASING_EV.get().defaultBlockState());
-        helper.setBlock(new BlockPos(bx + 2, y4, bz + 1), GTBlocks.MACHINE_CASING_EV.get().defaultBlockState());
-        // (bx+2..) note: diagonal pairs already placed above; ensure all 8 ring cells set:
-        // ring = corners(4) + side middles(4): corners (0,0),(2,0),(0,2),(2,2) done (4 hatches/maint) — all set.
 
-        // L5: top layer "XSX","XXX","XXX" — controller at (bx+1, by+4, bz), ring is casing.
-        int y5 = by + 4;
-        for (int x = 0; x < 3; x++) {
-            for (int z = 0; z < 3; z++) {
-                if (x == 1 && z == 0) continue; // controller slot
-                helper.setBlock(new BlockPos(bx + x, y5, bz + z),
-                        GTBlocks.MACHINE_CASING_EV.get().defaultBlockState());
+        // y=7..8: the flared heat cap — a grate vent ring around an EV casing core, flipped on
+        // the top layer.
+        for (int x = 0; x < 5; x++) {
+            for (int z = 0; z < 5; z++) {
+                boolean perimeter = x == 0 || x == 4 || z == 0 || z == 4;
+                helper.setBlock(new BlockPos(bx + x, by + 7, bz + z),
+                        perimeter ? GTBlocks.CASING_GRATE.get().defaultBlockState() :
+                                GTBlocks.MACHINE_CASING_EV.get().defaultBlockState());
+                helper.setBlock(new BlockPos(bx + x, by + 8, bz + z),
+                        perimeter ? GTBlocks.MACHINE_CASING_EV.get().defaultBlockState() :
+                                GTBlocks.CASING_GRATE.get().defaultBlockState());
             }
         }
-        helper.setBlock(new BlockPos(bx + 1, y5, bz),
+
+        helper.setBlock(new BlockPos(bx + 2, by + 1, bz),
                 HyperClusterMachines.DATA_SCRUBBING_TOWER.getBlock().defaultBlockState());
         WorkableElectricMultiblockMachine controller = (WorkableElectricMultiblockMachine) metaMachine(helper,
-                new BlockPos(bx + 1, y5, bz));
+                new BlockPos(bx + 2, by + 1, bz));
         helper.assertTrue(controller != null, "tower controller must exist after placement");
+        ItemBusPartMachine importBus = (ItemBusPartMachine) metaMachine(helper, new BlockPos(bx, by, bz));
+        ItemBusPartMachine exportBus = (ItemBusPartMachine) metaMachine(helper, new BlockPos(bx + 4, by, bz));
+        FluidHatchPartMachine fluidHatch = (FluidHatchPartMachine) metaMachine(helper,
+                new BlockPos(bx, by, bz + 4));
+        EnergyHatchPartMachine energyHatch = (EnergyHatchPartMachine) metaMachine(helper,
+                new BlockPos(bx + 4, by, bz + 4));
         return new TowerParts(controller, importBus, exportBus, fluidHatch, energyHatch);
     }
 

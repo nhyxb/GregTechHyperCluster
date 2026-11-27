@@ -6,22 +6,23 @@ import com.gregtechceu.gtceu.api.machine.MachineDefinition;
 import com.gregtechceu.gtceu.api.machine.MultiblockMachineDefinition;
 import com.gregtechceu.gtceu.api.machine.SimpleTieredMachine;
 import com.gregtechceu.gtceu.api.machine.multiblock.PartAbility;
-import com.gregtechceu.gtceu.api.machine.multiblock.WorkableElectricMultiblockMachine;
 import com.gregtechceu.gtceu.api.machine.property.GTMachineModelProperties;
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
 import com.gregtechceu.gtceu.api.pattern.FactoryBlockPattern;
 import com.gregtechceu.gtceu.api.pattern.Predicates;
 import com.gregtechceu.gtceu.common.data.GTBlocks;
 import com.gregtechceu.gtceu.common.data.GTMachines;
+import com.gregtechceu.gtceu.common.data.GTMaterials;
 import com.gregtechceu.gtceu.common.data.GTRecipeModifiers;
 import com.gregtechceu.gtceu.common.data.GTRecipeTypes;
 import com.gregtechceu.gtceu.common.data.machines.GTMachineUtils;
 
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.level.block.Blocks;
 
 import dev.hypercluster.HyperCluster;
+import dev.hypercluster.common.machine.DataScrubbingTowerMachine;
+import dev.hypercluster.common.machine.LoraEngravingChamberMachine;
+import dev.hypercluster.common.machine.RedTeamSandboxMachine;
 import dev.hypercluster.common.machine.TelemetryChemicalReactorMachine;
 import dev.hypercluster.common.machine.TelemetryOreWasherMachine;
 import dev.hypercluster.common.machine.cloud.ApiSatelliteStationMachine;
@@ -49,10 +50,11 @@ import static com.gregtechceu.gtceu.common.data.machines.GTMachineUtils.defaultT
  * Reactor. Same settlement architecture, chemical domain: every settled batch of the mirrored
  * {@code gtceu:chemical_reactor/indium_concentrate_separation} recipe (circuit #1) or its
  * chip-enhanced counterpart deposits one chemical telemetry log.</li>
- * <li>{@code hypercluster:data_scrubbing_tower} (0.2) — the EV Data Scrubbing Tower: a fixed
- * 3×5×3 GT-style multiblock (EV titanium casing + glass + standard hatches) fractionating raw
- * telemetry logs into high-purity domain datasets, clean datasets and corrupted noise, and
- * recycling corrupted noise into raw silicon.</li>
+ * <li>{@code hypercluster:data_scrubbing_tower} (0.2) — the EV Data Scrubbing Tower: since 0.5 a
+ * large 5×9×5 tiered non-matchbox multiblock (clean-stainless pedestal, cleanroom-glass
+ * fractionating body around a titanium pipe core with free-standing corner frame columns,
+ * grated heat cap) fractionating raw telemetry logs into high-purity domain datasets, clean
+ * datasets and corrupted noise, and recycling corrupted noise into raw silicon.</li>
  * </ul>
  */
 public final class HyperClusterMachines {
@@ -241,7 +243,6 @@ public final class HyperClusterMachines {
                 .workableTieredHullModel(HyperCluster.id("block/machines/micro_burner"))
                 .tooltips(GTMachineUtils.workableTiered(GTValues.HV, GTValues.V[GTValues.HV],
                         GTValues.V[GTValues.HV] * 64L, HyperClusterRecipeTypes.MICRO_BURNER_RECIPES, 0L, true))
-                .tooltips(Component.translatable("hypercluster.machine.hv_micro_burner.tooltip"))
                 .register();
 
         // P04 — own HV Telemetry Ore Washer with precise settlement + log buffer.
@@ -260,7 +261,6 @@ public final class HyperClusterMachines {
                 .tooltips(GTMachineUtils.workableTiered(GTValues.HV, GTValues.V[GTValues.HV],
                         GTValues.V[GTValues.HV] * 64L, HyperClusterRecipeTypes.TELEMETRY_ORE_WASHING_RECIPES,
                         defaultTankSizeFunction.applyAsInt(GTValues.HV), true))
-                .tooltips(Component.translatable("hypercluster.machine.hv_telemetry_ore_washer.tooltip"))
                 .register();
 
         // 0.2 — own EV Telemetry Chemical Reactor: same settlement architecture, chemical domain.
@@ -282,85 +282,163 @@ public final class HyperClusterMachines {
                 .tooltips(GTMachineUtils.workableTiered(GTValues.EV, GTValues.V[GTValues.EV],
                         GTValues.V[GTValues.EV] * 64L, HyperClusterRecipeTypes.TELEMETRY_CHEMICAL_PROCESSING_RECIPES,
                         defaultTankSizeFunction.applyAsInt(GTValues.EV), true))
-                .tooltips(Component.translatable("hypercluster.machine.ev_telemetry_chemical_reactor.tooltip"))
                 .register();
 
-        // 0.2 — EV Data Scrubbing Tower: a fixed 3×5×3 GT-style multiblock.
+        // 0.2 (0.5 reshape) — EV Data Scrubbing Tower: a large 5×9×5 tiered non-matchbox tower.
+        // Bottom 5×2×5 clean-stainless pedestal (controller at layer-2 front, eye height; the
+        // standard hatches ride the base), middle 3×5×3 cleanroom-glass fractionating body
+        // around a 1×5×1 titanium pipe core with titanium ring beams and four free-standing
+        // corner frame columns, top 5×2×5 flared heat cap with grate vents.
         DATA_SCRUBBING_TOWER = HyperCluster.REGISTRATE
-                .multiblock("data_scrubbing_tower",
-                        holder -> new WorkableElectricMultiblockMachine(holder))
+                .multiblock("data_scrubbing_tower", DataScrubbingTowerMachine::new)
                 .langValue("Data Scrubbing Tower")
                 .rotationState(RotationState.NON_Y_AXIS)
                 .recipeType(HyperClusterRecipeTypes.DATA_SCRUBBING_RECIPES)
                 .recipeModifier(GTRecipeModifiers.OC_NON_PERFECT)
-                .appearanceBlock(GTBlocks.MACHINE_CASING_EV)
+                .appearanceBlock(GTBlocks.CASING_STAINLESS_CLEAN)
                 .pattern(definition -> FactoryBlockPattern.start(RIGHT, BACK, UP)
-                        .aisle("XXX", "XXX", "XXX")
-                        .aisle("XGX", "X#X", "XGX")
-                        .aisle("XGX", "X#X", "XGX")
-                        .aisle("XXX", "X#X", "XXX")
-                        .aisle("XSX", "XXX", "XXX")
+                        // y=0..1: the clean-stainless pedestal; 'S' = controller at (2,1,0).
+                        .aisle("CCCCC", "CCCCC", "CCCCC", "CCCCC", "CCCCC")
+                        .aisle("CCSCC", "CCCCC", "CCCCC", "CCCCC", "CCCCC")
+                        // y=2..6: glass body around the titanium pipe core ('T'), ring beams
+                        // at the section base/top, free-standing corner columns mid-section.
+                        .aisle("FFFFF", "FGGGF", "FGTGF", "FGGGF", "FFFFF")
+                        .aisle("F###F", "#GGG#", "#GTG#", "#GGG#", "F###F")
+                        .aisle("F###F", "#GGG#", "#GTG#", "#GGG#", "F###F")
+                        .aisle("F###F", "#GGG#", "#GTG#", "#GGG#", "F###F")
+                        .aisle("FFFFF", "FGGGF", "FGTGF", "FGGGF", "FFFFF")
+                        // y=7..8: the flared heat cap — grate vents ring the casing core, then flip.
+                        .aisle("RRRRR", "REEER", "REEER", "REEER", "RRRRR")
+                        .aisle("EEEEE", "ERRRE", "ERRRE", "ERRRE", "EEEEE")
                         .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
-                        .where('X', Predicates.blocks(GTBlocks.MACHINE_CASING_EV.get())
-                                .or(Predicates
-                                        .abilities(
-                                                com.gregtechceu.gtceu.api.machine.multiblock.PartAbility.IMPORT_ITEMS)
+                        .where('C', Predicates.blocks(GTBlocks.CASING_STAINLESS_CLEAN.get())
+                                .or(Predicates.abilities(PartAbility.IMPORT_ITEMS)
                                         .setMinGlobalLimited(1).setMaxGlobalLimited(2))
-                                .or(Predicates.abilities(
-                                        com.gregtechceu.gtceu.api.machine.multiblock.PartAbility.IMPORT_FLUIDS)
+                                .or(Predicates.abilities(PartAbility.IMPORT_FLUIDS)
                                         .setMinGlobalLimited(1).setMaxGlobalLimited(2))
-                                .or(Predicates.abilities(
-                                        com.gregtechceu.gtceu.api.machine.multiblock.PartAbility.EXPORT_ITEMS)
+                                .or(Predicates.abilities(PartAbility.EXPORT_ITEMS)
                                         .setMinGlobalLimited(1).setMaxGlobalLimited(2))
-                                .or(Predicates.abilities(
-                                        com.gregtechceu.gtceu.api.machine.multiblock.PartAbility.INPUT_ENERGY)
+                                .or(Predicates.abilities(PartAbility.INPUT_ENERGY)
                                         .setMinGlobalLimited(1).setMaxGlobalLimited(2))
                                 .or(Predicates.abilities(
                                         HyperClusterPartAbilities.INFERENCE_COMPUTATION)
                                         .setMinGlobalLimited(0).setMaxGlobalLimited(1))
                                 .or(Predicates.autoAbilities(true, false, false)))
-                        .where('G', Predicates.blocks(Blocks.GLASS))
+                        .where('T', Predicates.blocks(GTBlocks.CASING_TITANIUM_PIPE.get()))
+                        .where('F', Predicates.frames(GTMaterials.Titanium))
+                        .where('G', Predicates.blocks(GTBlocks.CLEANROOM_GLASS.get()))
+                        .where('R', Predicates.blocks(GTBlocks.CASING_GRATE.get()))
+                        .where('E', Predicates.blocks(GTBlocks.MACHINE_CASING_EV.get()))
                         .where('#', Predicates.air())
                         .build())
                 .allowExtendedFacing(false)
-                .workableCasingModel(new ResourceLocation("gtceu", "block/casings/voltage/ev/side"),
+                .workableCasingModel(new ResourceLocation("gtceu",
+                        "block/casings/solid/machine_casing_clean_stainless_steel"),
                         HyperCluster.id("block/machines/data_scrubbing_tower"))
-                .tooltips(Component.translatable("hypercluster.machine.data_scrubbing_tower.tooltip"))
                 .register();
 
-        // 0.2.1 — LoRA Engraving Chamber: a fixed 3×3×3 EV multiblock turning high-purity
-        // datasets + golden samples on blank carriers into domain LoRA cards. Same shape as the
-        // red-team sandbox (verified placement semantics of the 3×5×3 tower aisle order).
+        // 0.2.1 (0.5 reshape) — LoRA Engraving Chamber: a wide 7×5×5 gantry optical cleanroom.
+        // A white plascrete platform with a filter-casing engraving stage in its centre, large
+        // cleanroom-glass front/back windows, and an exposed titanium gantry beam at the top
+        // carrying the controller as the suspended engraving column. The plascrete walls host
+        // the standard hatches.
         LORA_ENGRAVING_CHAMBER = HyperCluster.REGISTRATE
-                .multiblock("lora_engraving_chamber",
-                        holder -> new WorkableElectricMultiblockMachine(holder))
+                .multiblock("lora_engraving_chamber", LoraEngravingChamberMachine::new)
                 .langValue("LoRA Engraving Chamber")
                 .rotationState(RotationState.NON_Y_AXIS)
                 .recipeType(HyperClusterRecipeTypes.LORA_ENGRAVING_RECIPES)
                 .recipeModifier(GTRecipeModifiers.OC_NON_PERFECT)
-                .appearanceBlock(GTBlocks.MACHINE_CASING_EV)
-                .pattern(definition -> chamberPattern(definition))
+                .appearanceBlock(GTBlocks.PLASTCRETE)
+                .pattern(definition -> FactoryBlockPattern.start(RIGHT, BACK, UP)
+                        // y=0: the 7×1×5 plascrete platform; 'F' = filter-casing stage at (3,0,2).
+                        .aisle("PPPPPPP", "PPPPPPP", "PPPFPPP", "PPPPPPP", "PPPPPPP")
+                        // y=1..3: the optical cleanroom — glass front/back, plascrete walls, air core.
+                        .aisle("PGGGGGP", "P#####P", "P#####P", "P#####P", "PGGGGGP")
+                        .aisle("PGGGGGP", "P#####P", "P#####P", "P#####P", "PGGGGGP")
+                        .aisle("PGGGGGP", "P#####P", "P##S##P", "P#####P", "PGGGGGP")
+                        // y=4: the exposed titanium gantry — perimeter ring plus central crossbeam.
+                        .aisle("TTTTTTT", "T#####T", "TTTTTTT", "T#####T", "TTTTTTT")
+                        .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                        .where('P', Predicates.blocks(GTBlocks.PLASTCRETE.get())
+                                .or(Predicates.abilities(PartAbility.IMPORT_ITEMS)
+                                        .setMinGlobalLimited(1).setMaxGlobalLimited(2))
+                                .or(Predicates.abilities(PartAbility.IMPORT_FLUIDS)
+                                        .setMinGlobalLimited(1).setMaxGlobalLimited(2))
+                                .or(Predicates.abilities(PartAbility.EXPORT_ITEMS)
+                                        .setMinGlobalLimited(1).setMaxGlobalLimited(2))
+                                .or(Predicates.abilities(PartAbility.INPUT_ENERGY)
+                                        .setMinGlobalLimited(1).setMaxGlobalLimited(2))
+                                .or(Predicates.autoAbilities(true, false, false)))
+                        .where('F', Predicates.blocks(GTBlocks.FILTER_CASING.get()))
+                        .where('G', Predicates.blocks(GTBlocks.CLEANROOM_GLASS.get()))
+                        .where('T', Predicates.frames(GTMaterials.Titanium))
+                        .where('#', Predicates.air())
+                        .build())
                 .allowExtendedFacing(false)
-                .workableCasingModel(new ResourceLocation("gtceu", "block/casings/voltage/ev/side"),
+                .workableCasingModel(new ResourceLocation("gtceu", "block/casings/cleanroom/plascrete"),
                         HyperCluster.id("block/machines/lora_engraving_chamber"))
-                .tooltips(Component.translatable("hypercluster.machine.lora_engraving_chamber.tooltip"))
                 .register();
 
-        // 0.2.1 — Red-Team Sandbox: a fixed 3×3×3 EV multiblock validating ordinary edge chips
-        // against corrupted noise into aligned ones.
+        // 0.2.1 (0.5 reshape) — Red-Team Sandbox: a 7×6×7 octagonal blast dome. Cut corners give
+        // the eight-sided outline; the shell is dark solid steel and sturdy HSSE casings with
+        // exposed steel-frame collision ribs, 3×2 tempered-glass observation windows on all four
+        // faces, one isolated sturdy test pedestal on a hollow interior, and a stepped-in roof.
         RED_TEAM_SANDBOX = HyperCluster.REGISTRATE
-                .multiblock("red_team_sandbox",
-                        holder -> new WorkableElectricMultiblockMachine(holder))
+                .multiblock("red_team_sandbox", RedTeamSandboxMachine::new)
                 .langValue("Red-Team Sandbox")
                 .rotationState(RotationState.NON_Y_AXIS)
                 .recipeType(HyperClusterRecipeTypes.RED_TEAM_TESTING_RECIPES)
                 .recipeModifier(GTRecipeModifiers.OC_NON_PERFECT)
-                .appearanceBlock(GTBlocks.MACHINE_CASING_EV)
-                .pattern(definition -> chamberPattern(definition))
+                .appearanceBlock(GTBlocks.CASING_STEEL_SOLID)
+                .pattern(definition -> FactoryBlockPattern.start(RIGHT, BACK, UP)
+                        // y=0: octagonal floor of dark solid steel; 'S' = console at (3,0,0).
+                        .aisle("#DDSDD#", "DDDDDDD", "DDDDDDD", "DDDDDDD", "DDDDDDD", "DDDDDDD",
+                                "#DDDDD#")
+                        // y=1: wall base ring; 'P' = the isolated sturdy pedestal at (3,1,3).
+                        .aisle("#DDDDD#", "D#####D", "D#####D", "D##P##D", "D#####D", "D#####D",
+                                "#DDDDD#")
+                        // y=2..3: the 3×2 tempered-glass observation windows with steel-frame ribs.
+                        .aisle("#IWWWI#", "I#####I", "W#####W", "W##P##W", "W#####W", "I#####I",
+                                "#IWWWI#")
+                        .aisle("#IWWWI#", "I#####I", "W#####W", "W#####W", "W#####W", "I#####I",
+                                "#IWWWI#")
+                        // y=4: the sturdy upper belt; y=5: the stepped-in roof plate.
+                        .aisle("#UUUUU#", "U#####U", "U#####U", "U#####U", "U#####U", "U#####U",
+                                "#UUUUU#")
+                        .aisle("#######", "#DDDDD#", "#DDDDD#", "#DDDDD#", "#DDDDD#", "#DDDDD#",
+                                "#######")
+                        .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                        .where('D', Predicates.blocks(GTBlocks.CASING_STEEL_SOLID.get())
+                                .or(Predicates.abilities(PartAbility.IMPORT_ITEMS)
+                                        .setMinGlobalLimited(1).setMaxGlobalLimited(2))
+                                .or(Predicates.abilities(PartAbility.IMPORT_FLUIDS)
+                                        .setMinGlobalLimited(0).setMaxGlobalLimited(2))
+                                .or(Predicates.abilities(PartAbility.EXPORT_ITEMS)
+                                        .setMinGlobalLimited(1).setMaxGlobalLimited(2))
+                                .or(Predicates.abilities(PartAbility.INPUT_ENERGY)
+                                        .setMinGlobalLimited(1).setMaxGlobalLimited(2))
+                                .or(Predicates.autoAbilities(true, false, false)))
+                        // The upper belt accepts hatches as optional spots only: per-char ability
+                        // predicates each count their OWN branch totals, so minimums may live on
+                        // exactly one char ('D' here) or the other branch's validation fails.
+                        .where('U', Predicates.blocks(GTBlocks.CASING_HSSE_STURDY.get())
+                                .or(Predicates.abilities(PartAbility.IMPORT_ITEMS)
+                                        .setMaxGlobalLimited(2))
+                                .or(Predicates.abilities(PartAbility.IMPORT_FLUIDS)
+                                        .setMaxGlobalLimited(2))
+                                .or(Predicates.abilities(PartAbility.EXPORT_ITEMS)
+                                        .setMaxGlobalLimited(2))
+                                .or(Predicates.abilities(PartAbility.INPUT_ENERGY)
+                                        .setMaxGlobalLimited(2)))
+                        .where('P', Predicates.blocks(GTBlocks.CASING_HSSE_STURDY.get()))
+                        .where('I', Predicates.frames(GTMaterials.Steel))
+                        .where('W', Predicates.blocks(GTBlocks.CASING_TEMPERED_GLASS.get()))
+                        .where('#', Predicates.air())
+                        .build())
                 .allowExtendedFacing(false)
-                .workableCasingModel(new ResourceLocation("gtceu", "block/casings/voltage/ev/side"),
+                .workableCasingModel(new ResourceLocation("gtceu",
+                        "block/casings/solid/machine_casing_solid_steel"),
                         HyperCluster.id("block/machines/red_team_sandbox"))
-                .tooltips(Component.translatable("hypercluster.machine.red_team_sandbox.tooltip"))
                 .register();
 
         // 0.3 — Tier I air-cooled compute rack: a fixed 3×5×2 IV multiblock (intake wall in
@@ -390,7 +468,6 @@ public final class HyperClusterMachines {
                 .allowExtendedFacing(false)
                 .workableCasingModel(HyperCluster.id("block/datacenter/rack_casing_front_intake"),
                         HyperCluster.id("block/machines/air_cooled_compute_rack"))
-                .tooltips(Component.translatable("hypercluster.machine.air_cooled_compute_rack.tooltip"))
                 .register();
 
         // 0.3 — Tier II precision CRAC: a compact 3×3×1 IV blower unit whose running presence
@@ -412,7 +489,6 @@ public final class HyperClusterMachines {
                 .allowExtendedFacing(false)
                 .workableCasingModel(new ResourceLocation("gtceu", "block/casings/voltage/iv/side"),
                         HyperCluster.id("block/machines/precision_crac"))
-                .tooltips(Component.translatable("hypercluster.machine.precision_crac.tooltip"))
                 .register();
 
         // 0.3 — IV inference coprocessor hatch: an optical computation receiver part with an
@@ -426,23 +502,30 @@ public final class HyperClusterMachines {
                 .modelProperty(GTMachineModelProperties.IS_FORMED, false)
                 .modelProperty(GTMachineModelProperties.RECIPE_LOGIC_STATUS, RecipeLogic.Status.IDLE)
                 .workableTieredHullModel(HyperCluster.id("block/machines/inference_hatch"))
-                .tooltips(Component.translatable("hypercluster.machine.iv_inference_hatch.tooltip"))
                 .register();
 
-        // 0.4 — the API satellite ground station: a fixed 3×3×3 IV multiblock running the local
-        // closed-source cloud simulation. LV or MV energy suffices (light-asset uplink); the
-        // feed horn on top must see open sky. At most one local fallback gateway part attaches
-        // to the frame as the degraded-speed escape hatch.
+        // 0.4 (0.5 reshape) — the API satellite ground station: a 5×6×5 lattice tower with a
+        // 5×5 parabolic dish. The 3×3 satellite-frame base at the bottom carries the
+        // controller (front-centre) plus the LV/MV energy and maintenance hatches; above it the
+        // satellite-panel dish opens in a stepped concave bowl (5×5 rim, 3×3 ring, bowl bottom)
+        // and the feed horn rises two blocks from the bowl bottom — the horn top must see open
+        // sky. At most one local fallback gateway part attaches to the frame base.
         API_SATELLITE_STATION = HyperCluster.REGISTRATE
                 .multiblock("api_satellite_station", ApiSatelliteStationMachine::new)
                 .langValue("API Satellite Station")
                 .rotationState(RotationState.NON_Y_AXIS)
                 .recipeType(GTRecipeTypes.DUMMY_RECIPES)
                 .appearanceBlock(HyperClusterBlocks.SATELLITE_DISH_FRAME)
-                .pattern(definition -> FactoryBlockPattern.start(RIGHT, UP, BACK)
-                        .aisle("FSF", "FPF", "F#F")
-                        .aisle("FPF", "PPP", "FHF")
-                        .aisle("FFF", "FPF", "FFF")
+                .pattern(definition -> FactoryBlockPattern.start(RIGHT, BACK, UP)
+                        // y=0: 3×3 hatch platform. The 'T' truss above it is structural frame only.
+                        .aisle("#####", "#FSF#", "#FFF#", "#FFF#", "#####")
+                        .aisle("#####", "##T##", "#TTT#", "##T##", "#####")
+                        // y=2..4: the reflector opens upward. Four radial arms support its steps.
+                        .aisle("#####", "##T##", "#TPT#", "##T##", "#####")
+                        .aisle("##T##", "#PPP#", "TPTPT", "#PPP#", "##T##")
+                        .aisle("PPPPP", "P###P", "P#H#P", "P###P", "PPPPP")
+                        .aisle("#####", "#####", "##H##", "#####", "#####")
+                        .where('T', Predicates.blocks(HyperClusterBlocks.SATELLITE_DISH_FRAME.get()))
                         .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
                         .where('F', Predicates.blocks(HyperClusterBlocks.SATELLITE_DISH_FRAME.get())
                                 .or(Predicates.abilities(PartAbility.INPUT_ENERGY)
@@ -458,7 +541,6 @@ public final class HyperClusterMachines {
                 .allowExtendedFacing(false)
                 .workableCasingModel(HyperCluster.id("block/cloud/satellite_dish_frame"),
                         HyperCluster.id("block/machines/api_satellite_station"))
-                .tooltips(Component.translatable("hypercluster.machine.api_satellite_station.tooltip"))
                 .register();
 
         // 0.4 — the IV local fallback gateway: a passive part of the satellite station that
@@ -472,38 +554,7 @@ public final class HyperClusterMachines {
                 .modelProperty(GTMachineModelProperties.IS_FORMED, false)
                 .modelProperty(GTMachineModelProperties.RECIPE_LOGIC_STATUS, RecipeLogic.Status.IDLE)
                 .workableTieredHullModel(HyperCluster.id("block/machines/local_fallback_gateway"))
-                .tooltips(Component.translatable("hypercluster.machine.local_fallback_gateway.tooltip"))
                 .register();
-    }
-
-    /**
-     * The shared 3×3×3 chamber shape of the 0.2.1 multiblocks: bottom layer
-     * {@code "XSX","XXX","XXX"} (controller at local (1,0,0), hatches on the bottom ring), middle
-     * layer {@code "XGX","X#X","XGX"} (glass windows around an air core), solid casing cap on top.
-     */
-    private static com.gregtechceu.gtceu.api.pattern.BlockPattern chamberPattern(
-                                                                                 MultiblockMachineDefinition definition) {
-        return FactoryBlockPattern.start(RIGHT, BACK, UP)
-                .aisle("XSX", "XXX", "XXX")
-                .aisle("XGX", "X#X", "XGX")
-                .aisle("XXX", "XXX", "XXX")
-                .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
-                .where('X', Predicates.blocks(GTBlocks.MACHINE_CASING_EV.get())
-                        .or(Predicates.abilities(com.gregtechceu.gtceu.api.machine.multiblock.PartAbility.IMPORT_ITEMS)
-                                .setMinGlobalLimited(1).setMaxGlobalLimited(2))
-                        .or(Predicates.abilities(
-                                com.gregtechceu.gtceu.api.machine.multiblock.PartAbility.IMPORT_FLUIDS)
-                                .setMinGlobalLimited(1).setMaxGlobalLimited(2))
-                        .or(Predicates.abilities(
-                                com.gregtechceu.gtceu.api.machine.multiblock.PartAbility.EXPORT_ITEMS)
-                                .setMinGlobalLimited(1).setMaxGlobalLimited(2))
-                        .or(Predicates.abilities(
-                                com.gregtechceu.gtceu.api.machine.multiblock.PartAbility.INPUT_ENERGY)
-                                .setMinGlobalLimited(1).setMaxGlobalLimited(2))
-                        .or(Predicates.autoAbilities(true, false, false)))
-                .where('G', Predicates.blocks(Blocks.GLASS))
-                .where('#', Predicates.air())
-                .build();
     }
 
     /** Mirrors GTMachines.init(): GTCEu 7.4.0 registers render states of its own machines only. */

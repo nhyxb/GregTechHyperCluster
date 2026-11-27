@@ -25,6 +25,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 import dev.hypercluster.common.item.HyperClusterItems;
@@ -524,5 +525,19 @@ public class AirCooledComputeRackMachine extends WorkableElectricMultiblockMachi
                     }
                 })
                 .addWorkingStatusLine();
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // Client-side WORKING ambience //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    @Override
+    public void animateTick(RandomSource random) {
+        super.animateTick(random);
+        if (getRenderState().getValue(GTMachineModelProperties.RECIPE_LOGIC_STATUS) != RecipeLogic.Status.WORKING) {
+            return;
+        }
+        Direction exhaust = getFrontFacing().getOpposite();
+        VentParticles.emit(getLevel(), random, getPos().relative(exhaust), exhaust, 2.0, 3);
     }
 }

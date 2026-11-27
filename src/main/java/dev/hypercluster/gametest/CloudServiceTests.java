@@ -187,8 +187,8 @@ public class CloudServiceTests {
 
     @GameTest(template = "hc_field", batch = CLOUD_BATCH + "_02_welcome", timeoutTicks = 400)
     public static void welcomeBonusOnceAcrossStations(GameTestHelper helper) {
-        StationParts a = placeStation(helper, 1, 1, 1, false, GTValues.LV);
-        StationParts b = placeStation(helper, 7, 1, 7, false, GTValues.LV);
+        StationParts a = placeStation(helper, 1, 2, 1, false, GTValues.LV);
+        StationParts b = placeStation(helper, 7, 2, 7, false, GTValues.LV);
         primeStationEnergy(a, helper, 1, 20, 350);
         primeStationEnergy(b, helper, 1, 20, 350);
         CloudTokenLedger ledger = CloudTokenLedger.getOrCreate(helper.getLevel());
@@ -240,7 +240,7 @@ public class CloudServiceTests {
 
     @GameTest(template = "hc_field", batch = CLOUD_BATCH + "_03_sale", timeoutTicks = 500)
     public static void datasetSaleAndTokenCardFlows(GameTestHelper helper) {
-        StationParts a = placeStation(helper, 1, 1, 1, false, GTValues.LV);
+        StationParts a = placeStation(helper, 1, 2, 1, false, GTValues.LV);
         primeStationEnergy(a, helper, 1, 20, 450);
         CloudTokenLedger ledger = CloudTokenLedger.getOrCreate(helper.getLevel());
         UUID player = UUID.randomUUID();
@@ -303,7 +303,7 @@ public class CloudServiceTests {
 
     @GameTest(template = "hc_field", batch = CLOUD_BATCH + "_04_uplink", timeoutTicks = 900)
     public static void lvPowerDrivesRoundsAndSkyCheck(GameTestHelper helper) {
-        StationParts a = placeStation(helper, 1, 1, 1, false, GTValues.LV);
+        StationParts a = placeStation(helper, 1, 2, 1, false, GTValues.LV);
         primeStationEnergy(a, helper, 1, 20, 850);
         CloudTokenLedger ledger = CloudTokenLedger.getOrCreate(helper.getLevel());
         UUID player = UUID.randomUUID();
@@ -391,7 +391,7 @@ public class CloudServiceTests {
 
     @GameTest(template = "hc_field", batch = CLOUD_BATCH + "_05_billing", timeoutTicks = 900)
     public static void insufficientBalanceRefusesAndCancelRefunds(GameTestHelper helper) {
-        StationParts a = placeStation(helper, 1, 1, 1, false, GTValues.LV);
+        StationParts a = placeStation(helper, 1, 2, 1, false, GTValues.LV);
         primeStationEnergy(a, helper, 1, 20, 850);
         CloudTokenLedger ledger = CloudTokenLedger.getOrCreate(helper.getLevel());
         UUID player = UUID.randomUUID();
@@ -479,8 +479,8 @@ public class CloudServiceTests {
 
     @GameTest(template = "hc_field", batch = CLOUD_BATCH + "_06_cache", timeoutTicks = 900)
     public static void promptCacheDiscountAndKeyChange(GameTestHelper helper) {
-        StationParts a = placeStation(helper, 1, 1, 1, false, GTValues.LV);
-        StationParts b = placeStation(helper, 7, 1, 7, false, GTValues.LV);
+        StationParts a = placeStation(helper, 1, 2, 1, false, GTValues.LV);
+        StationParts b = placeStation(helper, 7, 2, 7, false, GTValues.LV);
         primeStationEnergy(a, helper, 1, 20, 850);
         primeStationEnergy(b, helper, 1, 20, 850);
         CloudTokenLedger ledger = CloudTokenLedger.getOrCreate(helper.getLevel());
@@ -539,7 +539,7 @@ public class CloudServiceTests {
 
     @GameTest(template = "hc_field", batch = CLOUD_BATCH + "_07_batch", timeoutTicks = 700)
     public static void batchModeHalfBillAndStacking(GameTestHelper helper) {
-        StationParts a = placeStation(helper, 1, 1, 1, false, GTValues.LV);
+        StationParts a = placeStation(helper, 1, 2, 1, false, GTValues.LV);
         primeStationEnergy(a, helper, 1, 20, 650);
         CloudTokenLedger ledger = CloudTokenLedger.getOrCreate(helper.getLevel());
         UUID player = UUID.randomUUID();
@@ -585,8 +585,8 @@ public class CloudServiceTests {
 
     @GameTest(template = "hc_field", batch = CLOUD_BATCH + "_08_429", timeoutTicks = 700)
     public static void concurrency429AcrossStations(GameTestHelper helper) {
-        StationParts a = placeStation(helper, 1, 1, 1, false, GTValues.LV);
-        StationParts b = placeStation(helper, 7, 1, 7, false, GTValues.LV);
+        StationParts a = placeStation(helper, 1, 2, 1, false, GTValues.LV);
+        StationParts b = placeStation(helper, 7, 2, 7, false, GTValues.LV);
         primeStationEnergy(a, helper, 1, 20, 650);
         primeStationEnergy(b, helper, 1, 20, 650);
         CloudTokenLedger ledger = CloudTokenLedger.getOrCreate(helper.getLevel());
@@ -633,7 +633,7 @@ public class CloudServiceTests {
 
     @GameTest(template = "hc_field", batch = CLOUD_BATCH + "_09_lifecycle", timeoutTicks = 900)
     public static void leavingSoonExpiryBlocksCloud(GameTestHelper helper) {
-        StationParts a = placeStation(helper, 1, 1, 1, false, GTValues.LV);
+        StationParts a = placeStation(helper, 1, 2, 1, false, GTValues.LV);
         primeStationEnergy(a, helper, 1, 20, 850);
         CloudTokenLedger ledger = CloudTokenLedger.getOrCreate(helper.getLevel());
         UUID player = UUID.randomUUID();
@@ -698,7 +698,7 @@ public class CloudServiceTests {
     @GameTest(template = "hc_field", batch = CLOUD_BATCH + "_10_fallback", timeoutTicks = 1100)
     public static void fallbackGatewayTakesOverBlockedRounds(GameTestHelper helper) {
         // Station with an MV hatch and the fallback gateway attached to its frame.
-        StationParts a = placeStation(helper, 1, 1, 1, true, GTValues.MV);
+        StationParts a = placeStation(helper, 1, 2, 1, true, GTValues.MV);
         primeStationEnergy(a, helper, 1, 20, 1050);
         CloudTokenLedger ledger = CloudTokenLedger.getOrCreate(helper.getLevel());
         UUID player = UUID.randomUUID();
@@ -747,7 +747,7 @@ public class CloudServiceTests {
 
     @GameTest(template = "hc_field", batch = CLOUD_BATCH + "_11_dedup", timeoutTicks = 700)
     public static void orderDedupResumeAcrossSaveLoad(GameTestHelper helper) {
-        StationParts a = placeStation(helper, 1, 1, 1, false, GTValues.LV);
+        StationParts a = placeStation(helper, 1, 2, 1, false, GTValues.LV);
         primeStationEnergy(a, helper, 1, 20, 650);
         CloudTokenLedger ledger = CloudTokenLedger.getOrCreate(helper.getLevel());
         UUID player = UUID.randomUUID();
@@ -819,69 +819,61 @@ public class CloudServiceTests {
     }
 
     /**
-     * Places the 3×3×3 station facing north, mirroring the registered pattern exactly
-     * (start(RIGHT, UP, BACK): aisle walks BACK=z, string walks UP=y, char walks RIGHT=x):
-     *
-     * <pre>
-     * aisle 0 (front, z=bz):   "FSF" / "FPF" / "F#F"
-     * aisle 1 (middle, z=bz+1): "FPF" / "PPP" / "FHF"
-     * aisle 2 (back,   z=bz+2): "FFF" / "FPF" / "FFF"
-     * </pre>
-     *
-     * <p>
-     * The controller sits at ({@code bx+1}, {@code by}, {@code bz}); the energy hatch (LV/MV)
-     * and the maintenance hatch take back-aisle frame cells, and the optional local fallback
-     * gateway takes the back-aisle middle-row frame cell. The feed horn sits at
-     * ({@code bx+1}, {@code by+2}, {@code bz+1}).
+     * Places the 5×6×5 lattice-tower station: the 3×3 satellite-frame base at the bottom (the
+     * controller at ({@code bx+2}, {@code by}, {@code bz+1}, the LV/MV energy hatch and the
+     * maintenance hatch on the base cells, the optional local fallback gateway one cell back),
+     * above it the stepped concave 5×5 dish (rim, 3×3 ring, bowl bottom) and the two-block feed
+     * horn column at ({@code bx+2}, {@code by+4..5}, {@code bz+2}).
      */
     private static StationParts placeStation(GameTestHelper helper, int bx, int by, int bz,
                                              boolean withGateway, int energyTier) {
         net.minecraft.world.level.block.Block frame = HyperClusterBlocks.SATELLITE_DISH_FRAME.get();
         net.minecraft.world.level.block.Block panel = HyperClusterBlocks.SATELLITE_DISH_PANEL.get();
-        // Aisle 0 (front): "FSF" / "FPF" / "F#F".
-        setCell(helper, bx, by, bz, frame);
-        helper.setBlock(new BlockPos(bx + 1, by, bz), HyperClusterMachines.API_SATELLITE_STATION
-                .getBlock().defaultBlockState());
-        setCell(helper, bx + 2, by, bz, frame);
-        setCell(helper, bx, by + 1, bz, frame);
-        setCell(helper, bx + 1, by + 1, bz, panel);
-        setCell(helper, bx + 2, by + 1, bz, frame);
-        setCell(helper, bx, by + 2, bz, frame);
-        setCell(helper, bx + 2, by + 2, bz, frame); // (bx+1, by+2, bz) stays air: the '#' cell
-        // Aisle 1 (middle): "FPF" / "PPP" / "FHF".
-        setCell(helper, bx, by, bz + 1, frame);
-        setCell(helper, bx + 1, by, bz + 1, panel);
-        setCell(helper, bx + 2, by, bz + 1, frame);
-        setCell(helper, bx, by + 1, bz + 1, panel);
-        setCell(helper, bx + 1, by + 1, bz + 1, panel);
-        setCell(helper, bx + 2, by + 1, bz + 1, panel);
-        setCell(helper, bx, by + 2, bz + 1, frame);
-        setCell(helper, bx + 1, by + 2, bz + 1, HyperClusterBlocks.SATELLITE_FEED_HORN.get());
-        setCell(helper, bx + 2, by + 2, bz + 1, frame);
-        // Aisle 2 (back): "FFF" / "FPF" / "FFF" — the frame cells host the hatches.
-        helper.setBlock(new BlockPos(bx, by, bz + 2),
+        net.minecraft.world.level.block.Block horn = HyperClusterBlocks.SATELLITE_FEED_HORN.get();
+        // y=0: the 3×3 steel-frame base; the controller sits front-centre, the energy and
+        // maintenance hatches flank it, the optional gateway takes the back-left cell.
+        for (int x = 1; x <= 3; x++) {
+            for (int z = 1; z <= 3; z++) {
+                helper.setBlock(new BlockPos(bx + x, by, bz + z), frame.defaultBlockState());
+            }
+        }
+        helper.setBlock(new BlockPos(bx + 2, by, bz + 1),
+                HyperClusterMachines.API_SATELLITE_STATION.getBlock().defaultBlockState());
+        helper.setBlock(new BlockPos(bx + 1, by, bz + 1),
                 GTMachines.ENERGY_INPUT_HATCH[energyTier].getBlock().defaultBlockState());
-        setCell(helper, bx + 1, by, bz + 2, frame);
-        helper.setBlock(new BlockPos(bx + 2, by, bz + 2), GTMachines.MAINTENANCE_HATCH.getBlock()
+        helper.setBlock(new BlockPos(bx + 3, by, bz + 1), GTMachines.MAINTENANCE_HATCH.getBlock()
                 .defaultBlockState());
-        setCell(helper, bx, by + 1, bz + 2, withGateway ?
-                HyperClusterMachines.LOCAL_FALLBACK_GATEWAY.getBlock() : frame);
-        setCell(helper, bx + 1, by + 1, bz + 2, panel);
-        setCell(helper, bx + 2, by + 1, bz + 2, frame);
-        setCell(helper, bx, by + 2, bz + 2, frame);
-        setCell(helper, bx + 1, by + 2, bz + 2, frame);
-        setCell(helper, bx + 2, by + 2, bz + 2, frame);
-
-        BlockPos controllerPos = new BlockPos(bx + 1, by, bz);
-        ApiSatelliteStationMachine station = station(helper, controllerPos);
-        ((MaintenanceHatchPartMachine) metaMachine(helper, new BlockPos(bx + 2, by, bz + 2)))
+        // GTCEu convention: a fresh maintenance hatch starts with ALL problems; fix like a player.
+        ((MaintenanceHatchPartMachine) metaMachine(helper, new BlockPos(bx + 3, by, bz + 1)))
                 .fixAllMaintenanceProblems();
+        helper.setBlock(new BlockPos(bx + 1, by, bz + 3), withGateway ?
+                HyperClusterMachines.LOCAL_FALLBACK_GATEWAY.getBlock().defaultBlockState() : frame.defaultBlockState());
+        // Build the rising dish independently of the production pattern. Its center panel
+        // sits two layers below its outer rim, and a frame mast connects it to the horn.
+        for (int dx = -2; dx <= 2; dx++) {
+            for (int dz = -2; dz <= 2; dz++) {
+                int radius = Math.max(Math.abs(dx), Math.abs(dz));
+                int x = bx + 2 + dx;
+                int z = bz + 2 + dz;
+                setCell(helper, x, by + 2 + radius, z, panel);
+                if (dx == 0 || dz == 0) {
+                    setCell(helper, x, by + 1 + radius, z, frame);
+                    if (radius == 1) setCell(helper, x, by + 1, z, frame);
+                }
+            }
+        }
+        setCell(helper, bx + 2, by + 3, bz + 2, frame);
+        setCell(helper, bx + 2, by + 4, bz + 2, horn);
+        setCell(helper, bx + 2, by + 5, bz + 2, horn);
+
+        BlockPos controllerPos = new BlockPos(bx + 2, by, bz + 1);
+        ApiSatelliteStationMachine station = station(helper, controllerPos);
         EnergyHatchPartMachine energy = (EnergyHatchPartMachine) metaMachine(helper,
-                new BlockPos(bx, by, bz + 2));
+                new BlockPos(bx + 1, by, bz + 1));
         LocalFallbackGatewayMachine gateway = null;
         if (withGateway) {
             gateway = (LocalFallbackGatewayMachine) metaMachine(helper,
-                    new BlockPos(bx, by + 1, bz + 2));
+                    new BlockPos(bx + 1, by, bz + 3));
         }
         return new StationParts(station, controllerPos, energy, gateway);
     }

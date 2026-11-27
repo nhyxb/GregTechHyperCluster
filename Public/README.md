@@ -1,9 +1,10 @@
 # GregTech HyperCluster 0.1 + 0.2 + 0.2.1 + 0.3 + 0.4 贴图与 Aseprite 源文件清单
 
-本目录存放 **0.1（HV 首发闭环）**、**0.2（EV 数据工坊）**、**0.2.1（EV 数据工坊扩展）**、**0.3（IV 自建算力 / 智算机房 Tier I–II）** 与 **0.4（IV 闭源云 / API 卫星地面站与 Token 计费）** 的全部 **47 张 `16×16` RGBA 基础贴图**、**5 张 `32×32` RGBA LDLib 2×2 CTM 衔接图集**（合计 **52 张贴图**）与对应的 **41 个分层 `.aseprite` 源文件**（36 个 `16×16` + 5 个 `32×32`），供工程拷贝进 `src/main/resources/assets/hypercluster/textures/`。
+本目录存放 **0.1（HV 首发闭环）**、**0.2（EV 数据工坊）**、**0.2.1（EV 数据工坊扩展）**、**0.3（IV 自建算力 / 智算机房 Tier I–II）** 与 **0.4（IV 闭源云 / API 卫星地面站与 Token 计费）** 的全部 **47 张基础/运行态贴图**（含 6 组多方块主控竖排多帧动画精灵表及配套 `.png.mcmeta`）、**5 张 `32×32` RGBA LDLib 2×2 CTM 衔接图集**（合计 **52 张贴图**）与对应的 **41 个分层 `.aseprite` 源文件**（36 个主资产 + 5 个 `32×32` CTM），供工程拷贝进 `src/main/resources/assets/hypercluster/textures/`。
 
 - 基础贴图全量总览（18 件物品 `4x / 2x / 1x` 槽位对比 + 0.1–0.4 全部机器叠加 HV 橙金 / EV 钛紫 / IV 蓝机壳对比 + 架空地板/机柜冷热面 + 0.4 卫星站钢架/反射面板/馈源接收头预览）见 [contact_sheet.png](textures/previews/contact_sheet.png)。
 - 5 个结构方块的 **LDLib 2×2 CTM 衔接图集与 3×3 / T 型 / L 型 / 多方块立面实测拼接预览**见 [ctm_preview.png](textures/previews/ctm_preview.png)。
+- 6 台多方块主控的 **运行态多帧动画逐帧展开与无缝循环检视表**见 [active_animations_sheet.png](textures/previews/active_animations_sheet.png)。
 
 ---
 
@@ -44,9 +45,9 @@
 | 0.4 IV | 抛物面天线反射面板 | `textures/block/cloud/satellite_dish_panel.png` | `textures/source/satellite_dish_panel.aseprite` | `assets/hypercluster/textures/block/cloud/satellite_dish_panel.png` |
 | 0.4 IV | 高频馈源接收头 | `textures/block/cloud/satellite_feed_horn.png` | `textures/source/satellite_feed_horn.aseprite` | `assets/hypercluster/textures/block/cloud/satellite_feed_horn.png` |
 
-### 三、机器与仓室正面透明贴图（22 张 `16×16 RGBA`，外围 2px 全透明）
+### 三、机器与仓室正面透明贴图（22 张 RGBA，外围 2px 全透明；其中 6 台多方块主控运行态为竖排多帧动画 + `.png.mcmeta`）
 
-| 阶段 | 机器 / 仓室与状态 | 导出贴图（`16×16 RGBA`） | 分层源文件（`.aseprite`） | 目标资源路径（`modid = hypercluster`） |
+| 阶段 | 机器 / 仓室与状态 | 导出贴图（含动画帧规） | 分层源文件（`.aseprite`） | 目标资源路径（`modid = hypercluster`） |
 | :---: | --- | --- | --- | --- |
 | 0.1 HV | 微型烧录台（待机） | `textures/block/machines/micro_burner/overlay_front.png` | `textures/source/micro_burner_front.aseprite`（`idle`） | `assets/hypercluster/textures/block/machines/micro_burner/overlay_front.png` |
 | 0.1 HV | 微型烧录台（运行） | `textures/block/machines/micro_burner/overlay_front_active.png` | `textures/source/micro_burner_front.aseprite`（`active`） | `assets/hypercluster/textures/block/machines/micro_burner/overlay_front_active.png` |
@@ -55,19 +56,19 @@
 | 0.2 EV | 遥测化学反应釜（待机） | `textures/block/machines/telemetry_chemical_reactor/overlay_front.png` | `textures/source/telemetry_chemical_reactor_front.aseprite`（`idle`） | `assets/hypercluster/textures/block/machines/telemetry_chemical_reactor/overlay_front.png` |
 | 0.2 EV | 遥测化学反应釜（运行） | `textures/block/machines/telemetry_chemical_reactor/overlay_front_active.png` | `textures/source/telemetry_chemical_reactor_front.aseprite`（`active`） | `assets/hypercluster/textures/block/machines/telemetry_chemical_reactor/overlay_front_active.png` |
 | 0.2 EV | 数据清洗塔主控（待机） | `textures/block/machines/data_scrubbing_tower/overlay_front.png` | `textures/source/data_scrubbing_tower_front.aseprite`（`idle`） | `assets/hypercluster/textures/block/machines/data_scrubbing_tower/overlay_front.png` |
-| 0.2 EV | 数据清洗塔主控（运行） | `textures/block/machines/data_scrubbing_tower/overlay_front_active.png` | `textures/source/data_scrubbing_tower_front.aseprite`（`active`） | `assets/hypercluster/textures/block/machines/data_scrubbing_tower/overlay_front_active.png` |
+| 0.2 EV | 数据清洗塔主控（运行动画） | `textures/block/machines/data_scrubbing_tower/overlay_front_active.png`（`16×96` 6 帧 + `.mcmeta`） | `textures/source/data_scrubbing_tower_front.aseprite`（`active` `2..7`） | `assets/hypercluster/textures/block/machines/data_scrubbing_tower/overlay_front_active.png`（+ `.mcmeta`） |
 | 0.2.1 EV | 神经微调刻录舱主控（待机） | `textures/block/machines/lora_engraving_chamber/overlay_front.png` | `textures/source/lora_engraving_chamber_front.aseprite`（`idle`） | `assets/hypercluster/textures/block/machines/lora_engraving_chamber/overlay_front.png` |
-| 0.2.1 EV | 神经微调刻录舱主控（运行） | `textures/block/machines/lora_engraving_chamber/overlay_front_active.png` | `textures/source/lora_engraving_chamber_front.aseprite`（`active`） | `assets/hypercluster/textures/block/machines/lora_engraving_chamber/overlay_front_active.png` |
+| 0.2.1 EV | 神经微调刻录舱主控（运行动画） | `textures/block/machines/lora_engraving_chamber/overlay_front_active.png`（`16×96` 6 帧 + `.mcmeta`） | `textures/source/lora_engraving_chamber_front.aseprite`（`active` `2..7`） | `assets/hypercluster/textures/block/machines/lora_engraving_chamber/overlay_front_active.png`（+ `.mcmeta`） |
 | 0.2.1 EV | 沙盒红队测试舱主控（待机） | `textures/block/machines/red_team_sandbox/overlay_front.png` | `textures/source/red_team_sandbox_front.aseprite`（`idle`） | `assets/hypercluster/textures/block/machines/red_team_sandbox/overlay_front.png` |
-| 0.2.1 EV | 沙盒红队测试舱主控（运行） | `textures/block/machines/red_team_sandbox/overlay_front_active.png` | `textures/source/red_team_sandbox_front.aseprite`（`active`） | `assets/hypercluster/textures/block/machines/red_team_sandbox/overlay_front_active.png` |
+| 0.2.1 EV | 沙盒红队测试舱主控（运行动画） | `textures/block/machines/red_team_sandbox/overlay_front_active.png`（`16×96` 6 帧 + `.mcmeta`） | `textures/source/red_team_sandbox_front.aseprite`（`active` `2..7`） | `assets/hypercluster/textures/block/machines/red_team_sandbox/overlay_front_active.png`（+ `.mcmeta`） |
 | 0.3 IV | 风冷算力机柜主控（待机） | `textures/block/machines/air_cooled_compute_rack/overlay_front.png` | `textures/source/air_cooled_compute_rack_front.aseprite`（`idle`） | `assets/hypercluster/textures/block/machines/air_cooled_compute_rack/overlay_front.png` |
-| 0.3 IV | 风冷算力机柜主控（运行） | `textures/block/machines/air_cooled_compute_rack/overlay_front_active.png` | `textures/source/air_cooled_compute_rack_front.aseprite`（`active`） | `assets/hypercluster/textures/block/machines/air_cooled_compute_rack/overlay_front_active.png` |
+| 0.3 IV | 风冷算力机柜主控（运行动画） | `textures/block/machines/air_cooled_compute_rack/overlay_front_active.png`（`16×64` 4 帧 + `.mcmeta`） | `textures/source/air_cooled_compute_rack_front.aseprite`（`active` `2..5`） | `assets/hypercluster/textures/block/machines/air_cooled_compute_rack/overlay_front_active.png`（+ `.mcmeta`） |
 | 0.3 IV | 推理协处理器仓（待机） | `textures/block/machines/inference_hatch/overlay_front.png` | `textures/source/inference_hatch_front.aseprite`（`idle`） | `assets/hypercluster/textures/block/machines/inference_hatch/overlay_front.png` |
 | 0.3 IV | 推理协处理器仓（运行） | `textures/block/machines/inference_hatch/overlay_front_active.png` | `textures/source/inference_hatch_front.aseprite`（`active`） | `assets/hypercluster/textures/block/machines/inference_hatch/overlay_front_active.png` |
 | 0.3 IV | 机房精密空调主控（待机） | `textures/block/machines/precision_crac/overlay_front.png` | `textures/source/precision_crac_front.aseprite`（`idle`） | `assets/hypercluster/textures/block/machines/precision_crac/overlay_front.png` |
-| 0.3 IV | 机房精密空调主控（运行） | `textures/block/machines/precision_crac/overlay_front_active.png` | `textures/source/precision_crac_front.aseprite`（`active`） | `assets/hypercluster/textures/block/machines/precision_crac/overlay_front_active.png` |
+| 0.3 IV | 机房精密空调主控（运行动画） | `textures/block/machines/precision_crac/overlay_front_active.png`（`16×64` 4 帧 + `.mcmeta`） | `textures/source/precision_crac_front.aseprite`（`active` `2..5`） | `assets/hypercluster/textures/block/machines/precision_crac/overlay_front_active.png`（+ `.mcmeta`） |
 | 0.4 IV | API 卫星地面站主控（待机） | `textures/block/machines/api_satellite_station/overlay_front.png` | `textures/source/api_satellite_station_front.aseprite`（`idle`） | `assets/hypercluster/textures/block/machines/api_satellite_station/overlay_front.png` |
-| 0.4 IV | API 卫星地面站主控（运行） | `textures/block/machines/api_satellite_station/overlay_front_active.png` | `textures/source/api_satellite_station_front.aseprite`（`active`） | `assets/hypercluster/textures/block/machines/api_satellite_station/overlay_front_active.png` |
+| 0.4 IV | API 卫星地面站主控（运行动画） | `textures/block/machines/api_satellite_station/overlay_front_active.png`（`16×96` 6 帧 + `.mcmeta`） | `textures/source/api_satellite_station_front.aseprite`（`active` `2..7`） | `assets/hypercluster/textures/block/machines/api_satellite_station/overlay_front_active.png`（+ `.mcmeta`） |
 | 0.4 IV | 本地 Fallback 兜底网关（待机） | `textures/block/machines/local_fallback_gateway/overlay_front.png` | `textures/source/local_fallback_gateway_front.aseprite`（`idle`） | `assets/hypercluster/textures/block/machines/local_fallback_gateway/overlay_front.png` |
 | 0.4 IV | 本地 Fallback 兜底网关（运行） | `textures/block/machines/local_fallback_gateway/overlay_front_active.png` | `textures/source/local_fallback_gateway_front.aseprite`（`active`） | `assets/hypercluster/textures/block/machines/local_fallback_gateway/overlay_front_active.png` |
 
@@ -141,3 +142,13 @@
   - `satellite_dish_frame_ctm`（3 图层，9 色）：外缘保留完整 2px 钨钢主梁边框，内部去除重复粗边，45° 交叉斜撑自然延伸并在四块交汇处组成与中心完全同构的 4×4 螺栓节点板，拼出连续航天钻石桁架。
   - `satellite_dish_panel_ctm`（3 图层，9 色 ⊆ 基础 10 色）：内部连成极简纯净冷白反射面板、无断层淡青细格线与对齐的微弱同心校准弧，外缘统一收出 2px 冷钢金属框线。
 - 接入工程时只需为对应的基础 `16×16` 贴图配置标准 `.png.mcmeta`（`{"ldlib": {"connection": "hypercluster:block/<dir>/<name>_ctm"}}`）即可与 LDLib 渲染管线原生联动；完整 3×3 / T 型 / L 型 / 条带 / 多方块立面效果见 [ctm_preview.png](textures/previews/ctm_preview.png)。
+
+### 6. 多方块主控运行态竖排多帧动画规范（6 组 `.png` + `.png.mcmeta`）
+6 台多方块主控的运行态正面贴图已升级为标准 Minecraft 竖排多帧动画精灵表（`16 × (16×N)` RGBA），所有帧均严格复用原机色板（≤16 色）、保持外围 2px 100% 透明且 Alpha 外轮廓与对应 `overlay_front.png` 逐像素一致；配套 `.aseprite` 源文件均包含 `idle`（第 1 帧，与 `overlay_front.png` 完全一致）与 `active`（第 `2..N+1` 帧，帧时长与 `frametime × 50ms` 同步）双标签，可通过 `aseprite -b --frame-tag active <src>.aseprite --sheet-type vertical --sheet <out>.png` 复现导出：
+- **`data_scrubbing_tower`（6 帧，`16×96`，`frametime = 2`，600ms 循环）**：中央 2px 宽青蓝数据流以 6 行周期逐帧向上无缝滚动冲洗，两侧 4 排格栅内沿同步反射数据波峰微光。
+- **`lora_engraving_chamber`（6 帧，`16×96`，`frametime = 2`，600ms 循环）**：青/金色聚焦激光束在晶圆载台上方按「中 → 右 → 右灼烧峰值 → 中高能脉冲 → 左 → 左灼烧峰值」往返扫描，透镜高光、焦斑火花与顶部双灯呼应闪烁。
+- **`red_team_sandbox`（6 帧，`16×96`，`frametime = 2`，600ms 循环）**：防爆观察窗内锐利紫红锯齿对抗波形以 6 列周期逐帧向左实时滚动，顶部翠绿校验灯平滑呼吸明暗。
+- **`air_cooled_compute_rack`（4 帧，`16×64`，`frametime = 3`，600ms 循环）**：4 层风冷计算刀片 LED 与进风槽按「峰值高亮 → 蓝光余韵 → 暗态待机 → 瞬熄」依次向下跑马灯交替轮转，底部青色 `CWU/t` 算力条呈现双波峰微幅右移波动。
+- **`precision_crac`（4 帧，`16×64`，`frametime = 2`，400ms 循环）**：大口径圆形 4 叶工业风机按 `0° → 22.5° → 45° → 67.5°` 顺时针均亮旋转，顶部数字温控屏冰蓝冷风高光与状态灯同步脉动。
+- **`api_satellite_station`（6 帧，`16×96`，`frametime = 3`，900ms 循环）**：琥珀金射频脉冲自碟形天线焦点点火，由内弧向外弧清晰脱离扩散并渐隐循环；右侧青绿信号格第 3 格在 5px/4px 间微幅跳动，底部 Token 读卡口琥珀金微光呼吸呼应。
+- 全部 6 组动画的逐帧展开与首尾衔接检视见 [active_animations_sheet.png](textures/previews/active_animations_sheet.png)。

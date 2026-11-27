@@ -17,6 +17,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 import java.util.List;
@@ -200,5 +201,18 @@ public class PrecisionCracMachine extends WorkableElectricMultiblockMachine {
                     }
                 })
                 .addWorkingStatusLine();
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // Client-side WORKING ambience //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    @Override
+    public void animateTick(RandomSource random) {
+        super.animateTick(random);
+        if (getRenderState().getValue(GTMachineModelProperties.RECIPE_LOGIC_STATUS) != RecipeLogic.Status.WORKING) {
+            return;
+        }
+        VentParticles.emit(getLevel(), random, getPos(), getFrontFacing(), 1.15, 2);
     }
 }

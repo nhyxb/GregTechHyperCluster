@@ -20,7 +20,6 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 import dev.hypercluster.HyperCluster;
@@ -40,9 +39,10 @@ import static com.gregtechceu.gtceu.api.GTValues.EV;
  * chip recipe conserves aluminium (covered by DataWorkshopTests.chipChemicalRecipeSavesAluminium,
  * now asserting 2 sulfite out for 2 dust in);</li>
  * <li>golden labelled samples: 10% of both scrub recipes, asserted from the recipe contents;</li>
- * <li>the LoRA engraving chamber (3×3×3 fixed multiblock) engraves both domain LoRA cards;</li>
- * <li>the red-team sandbox (3×3×3 fixed multiblock) upgrades both edge chips to their aligned
- * forms by burning corrupted noise;</li>
+ * <li>the LoRA engraving chamber (7×5×5 gantry cleanroom multiblock) engraves both domain
+ * LoRA cards;</li>
+ * <li>the red-team sandbox (7×6×7 octagonal blast dome multiblock) upgrades both edge chips to
+ * their aligned forms by burning corrupted noise;</li>
  * <li>circuit #3 LoRA recipes: the chemical reactor doubles the small indium yield; the washer
  * raises the cobalt by-product chance from 1/3 to 2/3;</li>
  * <li>circuit #4 aligned-chip recipes run at 75% of the base energy.</li>
@@ -60,7 +60,7 @@ public class FinetuningTests {
 
     @GameTest(template = "hc_field", batch = FINETUNING_BATCH, timeoutTicks = 1600)
     public static void loraChamberEngravesBothCards(GameTestHelper helper) {
-        ChamberParts parts = placeChamber(helper, HyperClusterMachines.LORA_ENGRAVING_CHAMBER);
+        ChamberParts parts = placeLoraChamber(helper);
         primeChamberEnergy(parts, helper, 40, 20, 1400);
 
         helper.runAtTickTime(60, () -> {
@@ -100,11 +100,20 @@ public class FinetuningTests {
 
     @GameTest(template = "hc_field", batch = FINETUNING_BATCH, timeoutTicks = 1200)
     public static void redTeamSandboxAlignsBothChips(GameTestHelper helper) {
-        ChamberParts parts = placeChamber(helper, HyperClusterMachines.RED_TEAM_SANDBOX);
+        ChamberParts parts = placeSandbox(helper);
         primeChamberEnergy(parts, helper, 40, 20, 1000);
 
         helper.runAtTickTime(60, () -> {
             DataWorkshopTests.ensureTowerFormed(parts.controller());
+            if (!parts.controller().isFormed()) {
+                var state = parts.controller().getMultiblockState();
+                System.out.printf("[HC-021-DIAG] sandbox not formed: origin=%s failPos=%s failRel=%s found=%s err=%s%n",
+                        helper.absolutePos(net.minecraft.core.BlockPos.ZERO), state.getPos(),
+                        state.getPos() == null ? null :
+                                state.getPos().subtract(helper.absolutePos(net.minecraft.core.BlockPos.ZERO)),
+                        state.getPos() == null ? null : helper.getLevel().getBlockState(state.getPos()),
+                        state.error == null ? "none" : state.error.getErrorInfo().getString());
+            }
             helper.assertTrue(parts.controller().isFormed(), "red-team sandbox must form before validating");
         });
 
@@ -287,58 +296,169 @@ public class FinetuningTests {
                                 EnergyHatchPartMachine energyHatch) {}
 
     /**
-     * Places the shared 3×3×3 chamber of the 0.2.1 multiblocks. Bottom corner at (4, 1, 4):
-     * L1 {@code "XSX","XXX","XXX"} (controller at (5,1,4); hatch ring), L2
-     * {@code "XGX","X#X","XGX"} (glass windows, air core), L3 solid casing cap.
+     * Places the 7×5×5 gantry cleanroom of the LoRA engraving chamber. Bottom corner at
+     * (4, 1, 4): y=0 the plascrete platform with the filter-casing stage at local (3,2);
+     * y=1..3 cleanroom-glass front/back windows between plascrete posts, the plascrete side
+     * walls hosting the hatches, and the controller as the suspended engraving column at local
+     * (3,3,2); y=4 the exposed titanium gantry ring with its central crossbeam.
      */
-    private static ChamberParts placeChamber(GameTestHelper helper,
-                                             com.gregtechceu.gtceu.api.machine.MultiblockMachineDefinition definition) {
+    private static ChamberParts placeLoraChamber(GameTestHelper helper) {
         int bx = 4, by = 1, bz = 4;
-        // L1: controller + hatches. Local ring: fluid (0,0,0), controller (1,0,0), energy (2,0,0),
-        // casing (0,0,1), maintenance (1,0,1), casing (2,0,1), import bus (0,0,2), casing (1,0,2),
-        // export bus (2,0,2).
-        helper.setBlock(new BlockPos(bx, by, bz), GTMachines.FLUID_IMPORT_HATCH[EV].getBlock().defaultBlockState());
-        helper.setBlock(new BlockPos(bx + 1, by, bz), definition.getBlock().defaultBlockState());
-        helper.setBlock(new BlockPos(bx + 2, by, bz), GTMachines.ENERGY_INPUT_HATCH[EV].getBlock()
+        // y=0: the 7×1×5 white plascrete platform; the filter-casing engraving stage embeds in
+        // its centre.
+        for (int x = 0; x < 7; x++) {
+            for (int z = 0; z < 5; z++) {
+                helper.setBlock(new BlockPos(bx + x, by, bz + z),
+                        x == 3 && z == 2 ? GTBlocks.FILTER_CASING.get().defaultBlockState() :
+                                GTBlocks.PLASTCRETE.get().defaultBlockState());
+            }
+        }
+        // y=1..3: the optical cleanroom — glass front/back walls between plascrete posts, the
+        // plascrete side walls carrying the hatches, open air core.
+        for (int dy = 1; dy <= 3; dy++) {
+            int y = by + dy;
+            for (int x = 0; x < 7; x++) {
+                for (int z = 0; z < 5; z++) {
+                    boolean frontBack = z == 0 || z == 4;
+                    boolean post = x == 0 || x == 6;
+                    if (frontBack && !post) {
+                        helper.setBlock(new BlockPos(bx + x, y, bz + z),
+                                GTBlocks.CLEANROOM_GLASS.get().defaultBlockState());
+                    } else if (post) {
+                        helper.setBlock(new BlockPos(bx + x, y, bz + z),
+                                GTBlocks.PLASTCRETE.get().defaultBlockState());
+                    }
+                    // interior (and the controller slot at (3,3,2)) stays air here
+                }
+            }
+        }
+        // The hatches ride the left/right plascrete walls of the first room layer.
+        helper.setBlock(new BlockPos(bx, by + 1, bz + 1),
+                GTMachines.ITEM_IMPORT_BUS[EV].getBlock().defaultBlockState());
+        helper.setBlock(new BlockPos(bx + 6, by + 1, bz + 1),
+                GTMachines.ITEM_EXPORT_BUS[EV].getBlock().defaultBlockState());
+        helper.setBlock(new BlockPos(bx, by + 1, bz + 2), GTMachines.FLUID_IMPORT_HATCH[EV].getBlock()
                 .defaultBlockState());
-        helper.setBlock(new BlockPos(bx, by, bz + 1), GTBlocks.MACHINE_CASING_EV.get().defaultBlockState());
-        helper.setBlock(new BlockPos(bx + 1, by, bz + 1), GTMachines.MAINTENANCE_HATCH.getBlock()
+        helper.setBlock(new BlockPos(bx + 6, by + 1, bz + 2), GTMachines.ENERGY_INPUT_HATCH[EV].getBlock()
+                .defaultBlockState());
+        helper.setBlock(new BlockPos(bx, by + 1, bz + 3), GTMachines.MAINTENANCE_HATCH.getBlock()
                 .defaultBlockState());
         // GTCEu convention: a fresh maintenance hatch starts with ALL problems; fix like a player.
-        ((MaintenanceHatchPartMachine) metaMachine(helper, new BlockPos(bx + 1, by, bz + 1)))
+        ((MaintenanceHatchPartMachine) metaMachine(helper, new BlockPos(bx, by + 1, bz + 3)))
                 .fixAllMaintenanceProblems();
-        helper.setBlock(new BlockPos(bx + 2, by, bz + 1), GTBlocks.MACHINE_CASING_EV.get().defaultBlockState());
-        helper.setBlock(new BlockPos(bx, by, bz + 2), GTMachines.ITEM_IMPORT_BUS[EV].getBlock().defaultBlockState());
-        helper.setBlock(new BlockPos(bx + 1, by, bz + 2), GTBlocks.MACHINE_CASING_EV.get().defaultBlockState());
-        helper.setBlock(new BlockPos(bx + 2, by, bz + 2), GTMachines.ITEM_EXPORT_BUS[EV].getBlock()
-                .defaultBlockState());
-
-        // L2: glass windows ("XGX","X#X","XGX"), center stays air.
-        for (int x = 0; x < 3; x++) {
-            for (int z = 0; z < 3; z++) {
-                if (x == 1 && z == 1) continue;
-                BlockPos pos = new BlockPos(bx + x, by + 1, bz + z);
-                boolean glass = x == 1 && (z == 0 || z == 2);
-                helper.setBlock(pos, glass ? Blocks.GLASS.defaultBlockState() :
-                        GTBlocks.MACHINE_CASING_EV.get().defaultBlockState());
+        // y=4: the exposed titanium gantry — perimeter ring plus the central crossbeam row.
+        for (int x = 0; x < 7; x++) {
+            for (int z = 0; z < 5; z++) {
+                boolean perimeter = x == 0 || x == 6 || z == 0 || z == 4;
+                boolean beam = z == 2;
+                if (perimeter || beam) {
+                    helper.setBlock(new BlockPos(bx + x, by + 4, bz + z),
+                            ChemicalHelper.getBlock(TagPrefix.frameGt, GTMaterials.Titanium).defaultBlockState());
+                }
             }
         }
-
-        // L3: solid casing cap.
-        for (int x = 0; x < 3; x++) {
-            for (int z = 0; z < 3; z++) {
-                helper.setBlock(new BlockPos(bx + x, by + 2, bz + z),
-                        GTBlocks.MACHINE_CASING_EV.get().defaultBlockState());
-            }
-        }
-
+        // The controller: the suspended engraving column hanging from the beam centre.
+        helper.setBlock(new BlockPos(bx + 3, by + 3, bz + 2),
+                HyperClusterMachines.LORA_ENGRAVING_CHAMBER.getBlock().defaultBlockState());
         WorkableElectricMultiblockMachine controller = (WorkableElectricMultiblockMachine) metaMachine(helper,
-                new BlockPos(bx + 1, by, bz));
-        ItemBusPartMachine importBus = (ItemBusPartMachine) metaMachine(helper, new BlockPos(bx, by, bz + 2));
-        ItemBusPartMachine exportBus = (ItemBusPartMachine) metaMachine(helper, new BlockPos(bx + 2, by, bz + 2));
-        FluidHatchPartMachine fluidHatch = (FluidHatchPartMachine) metaMachine(helper, new BlockPos(bx, by, bz));
+                new BlockPos(bx + 3, by + 3, bz + 2));
+        ItemBusPartMachine importBus = (ItemBusPartMachine) metaMachine(helper,
+                new BlockPos(bx, by + 1, bz + 1));
+        ItemBusPartMachine exportBus = (ItemBusPartMachine) metaMachine(helper,
+                new BlockPos(bx + 6, by + 1, bz + 1));
+        FluidHatchPartMachine fluidHatch = (FluidHatchPartMachine) metaMachine(helper,
+                new BlockPos(bx, by + 1, bz + 2));
         EnergyHatchPartMachine energyHatch = (EnergyHatchPartMachine) metaMachine(helper,
-                new BlockPos(bx + 2, by, bz));
+                new BlockPos(bx + 6, by + 1, bz + 2));
+        return new ChamberParts(controller, importBus, exportBus, fluidHatch, energyHatch);
+    }
+
+    /**
+     * Places the 7×6×7 octagonal blast dome of the red-team sandbox. Bottom corner at
+     * (4, 2, 4): y=0 the octagonal solid-steel floor with the controller console at local
+     * (3,0,0) and the hatches beside it; y=1 the wall base ring around the isolated sturdy
+     * pedestal at local (3,1..2,3); y=2..3 the 3×2 tempered-glass windows with steel-frame ribs;
+     * y=4 the sturdy upper belt; y=5 the stepped-in roof plate.
+     */
+    private static ChamberParts placeSandbox(GameTestHelper helper) {
+        // by=2: the cut-corner air cells of the octagon floor must hover one above the bedrock.
+        int bx = 4, by = 2, bz = 4;
+        boolean[][] octagon = new boolean[7][7];
+        for (int x = 0; x < 7; x++) {
+            for (int z = 0; z < 7; z++) {
+                boolean cornerCut = (x == 0 || x == 6) && (z == 0 || z == 6);
+                octagon[x][z] = !cornerCut;
+            }
+        }
+        // y=0: the octagonal floor; the controller console and its hatch row sit on the front.
+        for (int x = 0; x < 7; x++) {
+            for (int z = 0; z < 7; z++) {
+                if (octagon[x][z] && !(x == 3 && z == 0) && !(x == 1 && z == 0) && !(x == 2 && z == 0) &&
+                        !(x == 4 && z == 0) && !(x == 5 && z == 0) && !(x == 0 && z == 2)) {
+                    helper.setBlock(new BlockPos(bx + x, by, bz + z),
+                            GTBlocks.CASING_STEEL_SOLID.get().defaultBlockState());
+                }
+            }
+        }
+        helper.setBlock(new BlockPos(bx + 3, by, bz),
+                HyperClusterMachines.RED_TEAM_SANDBOX.getBlock().defaultBlockState());
+        helper.setBlock(new BlockPos(bx + 1, by, bz), GTMachines.ITEM_IMPORT_BUS[EV].getBlock()
+                .defaultBlockState());
+        helper.setBlock(new BlockPos(bx + 5, by, bz), GTMachines.ITEM_EXPORT_BUS[EV].getBlock()
+                .defaultBlockState());
+        helper.setBlock(new BlockPos(bx + 4, by, bz), GTMachines.ENERGY_INPUT_HATCH[EV].getBlock()
+                .defaultBlockState());
+        helper.setBlock(new BlockPos(bx + 2, by, bz), GTMachines.MAINTENANCE_HATCH.getBlock()
+                .defaultBlockState());
+        helper.setBlock(new BlockPos(bx, by, bz + 2), GTMachines.FLUID_IMPORT_HATCH[EV].getBlock()
+                .defaultBlockState());
+        // GTCEu convention: a fresh maintenance hatch starts with ALL problems; fix like a player.
+        ((MaintenanceHatchPartMachine) metaMachine(helper, new BlockPos(bx + 2, by, bz)))
+                .fixAllMaintenanceProblems();
+        // y=1..4: the wall ring — solid steel base, the window band with steel-frame ribs, the
+        // sturdy upper belt — around the isolated sturdy pedestal column.
+        for (int dy = 1; dy <= 4; dy++) {
+            int y = by + dy;
+            for (int x = 0; x < 7; x++) {
+                for (int z = 0; z < 7; z++) {
+                    boolean ring = octagon[x][z] && (x == 0 || x == 6 || z == 0 || z == 6);
+                    boolean pedestal = x == 3 && z == 3 && dy <= 2;
+                    boolean windowBand = dy == 2 || dy == 3;
+                    boolean window = windowBand &&
+                            ((z == 0 || z == 6) ? (x >= 2 && x <= 4) : (x == 0 || x == 6) && (z >= 2 && z <= 4));
+                    boolean rib = windowBand && ring && !window;
+                    if (pedestal) {
+                        helper.setBlock(new BlockPos(bx + x, y, bz + z),
+                                GTBlocks.CASING_HSSE_STURDY.get().defaultBlockState());
+                    } else if (window) {
+                        helper.setBlock(new BlockPos(bx + x, y, bz + z),
+                                GTBlocks.CASING_TEMPERED_GLASS.get().defaultBlockState());
+                    } else if (rib) {
+                        helper.setBlock(new BlockPos(bx + x, y, bz + z),
+                                ChemicalHelper.getBlock(TagPrefix.frameGt, GTMaterials.Steel).defaultBlockState());
+                    } else if (ring) {
+                        helper.setBlock(new BlockPos(bx + x, y, bz + z), dy == 4 ?
+                                GTBlocks.CASING_HSSE_STURDY.get().defaultBlockState() :
+                                GTBlocks.CASING_STEEL_SOLID.get().defaultBlockState());
+                    }
+                }
+            }
+        }
+        // y=5: the stepped-in roof plate (5×5 inset by one from the ring).
+        for (int x = 1; x <= 5; x++) {
+            for (int z = 1; z <= 5; z++) {
+                helper.setBlock(new BlockPos(bx + x, by + 5, bz + z),
+                        GTBlocks.CASING_STEEL_SOLID.get().defaultBlockState());
+            }
+        }
+        WorkableElectricMultiblockMachine controller = (WorkableElectricMultiblockMachine) metaMachine(helper,
+                new BlockPos(bx + 3, by, bz));
+        ItemBusPartMachine importBus = (ItemBusPartMachine) metaMachine(helper, new BlockPos(bx + 1, by, bz));
+        ItemBusPartMachine exportBus = (ItemBusPartMachine) metaMachine(helper, new BlockPos(bx + 5, by, bz));
+        FluidHatchPartMachine fluidHatch = (FluidHatchPartMachine) metaMachine(helper,
+                new BlockPos(bx, by, bz + 2));
+        EnergyHatchPartMachine energyHatch = (EnergyHatchPartMachine) metaMachine(helper,
+                new BlockPos(bx + 4, by, bz));
         return new ChamberParts(controller, importBus, exportBus, fluidHatch, energyHatch);
     }
 

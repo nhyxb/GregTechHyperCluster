@@ -24,8 +24,10 @@ import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -51,8 +53,9 @@ import javax.annotation.Nullable;
  * 0.4 · the API satellite ground station ({@code hypercluster:api_satellite_station}).
  *
  * <p>
- * A fixed 3×3×3 IV multiblock (galvanised dish frame + mesh reflector panels + one feed horn
- * on top) that runs the local simulation of a closed-source cloud: it opens per-player-UUID
+ * A fixed 5×6×5 IV lattice-tower multiblock (a 3×3 satellite-frame base carrying the
+ * controller and hatches, a stepped concave 5×5 dish of reflector panels and a two-block feed
+ * horn on top) that runs the local simulation of a closed-source cloud: it opens per-player-UUID
  * cloud accounts in the shared {@link CloudTokenLedger}, buys high-purity datasets for Tokens,
  * lets Token credit cards deposit/withdraw, and runs one billable demo closed-source service:
  * <b>one clean dataset in, one high-purity mining dataset out</b> (recipe id
@@ -225,9 +228,9 @@ public class ApiSatelliteStationMachine extends WorkableElectricMultiblockMachin
         return CredentialCardItem.owner(card);
     }
 
-    /** The world position of the feed horn (structure-relative: 2 up, 1 behind the controller). */
+    /** The world position of the feed horn (structure-relative: 5 up, 1 behind the controller). */
     public BlockPos hornPos() {
-        return getPos().above(2).relative(getFrontFacing().getOpposite(), 1);
+        return getPos().above(5).relative(getFrontFacing().getOpposite(), 1);
     }
 
     /** The current game day of the save (model lifecycles are evaluated against it). */
@@ -890,5 +893,26 @@ public class ApiSatelliteStationMachine extends WorkableElectricMultiblockMachin
                     }
                 })
                 .addWorkingStatusLine();
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // Client-side WORKING ambience //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    @Override
+    public void animateTick(RandomSource random) {
+        super.animateTick(random);
+        if (getRenderState().getValue(GTMachineModelProperties.RECIPE_LOGIC_STATUS) != RecipeLogic.Status.WORKING) {
+            return;
+        }
+        BlockPos horn = hornPos();
+        for (int i = 0; i < 3; i++) {
+            double x = horn.getX() + 0.5 + (random.nextDouble() - 0.5) * 0.4;
+            double y = horn.getY() + 1.05 + random.nextDouble() * 0.3;
+            double z = horn.getZ() + 0.5 + (random.nextDouble() - 0.5) * 0.4;
+            // SCRAPE and WAX_ON convert this to 0.12–0.20 blocks per tick.
+            getLevel().addParticle(random.nextBoolean() ? ParticleTypes.SCRAPE : ParticleTypes.WAX_ON,
+                    x, y, z, 0.0, 12.0 + random.nextDouble() * 8.0, 0.0);
+        }
     }
 }

@@ -59,7 +59,7 @@ source env.fish
 ## 0.2 核心内容（EV 数据工坊）
 
 - **新增物品**（均堆叠 64 + 中英工具提示）：`chemical_telemetry_log` 化工遥测日志、`clean_dataset` 清洁数据集、`high_purity_mining_dataset` / `high_purity_chemical_dataset` 高纯领域数据集、`corrupted_noise` 乱码噪点、`chemical_edge_chip` 化工边缘芯片。
-- **新增机器**：`ev_telemetry_chemical_reactor` EV 遥测示范化学反应釜（SimpleTieredMachine EV，复用基类 `TelemetryMachine` 与 `TelemetryRecipeLogic` 的 IO.OUT 精确结算，禁 Mixin）；`data_scrubbing_tower` 数据清洗塔（GT 固定结构多方块 3×5×3：EV 钛机壳 + 玻璃 + 输入/输出总线、流体输入仓、能源仓、维护仓）。
+- **新增机器**：`ev_telemetry_chemical_reactor` EV 遥测示范化学反应釜（SimpleTieredMachine EV，复用基类 `TelemetryMachine` 与 `TelemetryRecipeLogic` 的 IO.OUT 精确结算，禁 Mixin）；`data_scrubbing_tower` 数据清洗塔（GT 固定结构多方块，0.5 起为 5×9×5 阶梯收腰分馏塔：洁净不锈钢基座 + 洁净玻璃塔身 + 中央钛管道核心柱 + 格栅散热顶帽，输入/输出总线、流体输入仓、能源仓、维护仓置于底座）。
 - **配方**（全部 `hypercluster` 命名空间，JEI 可查）：
   - `telemetry_chemical_processing`：镜像 GTCEu 7.4.0 实配 `chemical_reactor/indium_concentrate_separation`（600 EU/t × 50t，电路#1，4 铝粉 + 1000mB 铟浓缩液 → 小堆铟粉 + 4 亚硫酸铝粉 + 1000mB 铅锌溶液）与芯片版（电路#2 + 芯片不消耗，**辅助铝粉减半 4→2**，产物种类数量不变）；
   - `data_scrubbing`：1 原始日志（矿处/化工）+ 1000mB 蒸馏水 + EV 电力 → 1 高纯领域数据集 + 1 清洁数据集 ± 90% 乱码噪点；乱码噪点 ×4 + 250mB 蒸馏水 → 1 硅粉（所有输出可处理）；
@@ -71,7 +71,7 @@ source env.fish
 
 - **新增物品**（均堆叠 64 + 中英工具提示）：`golden_dataset` 黄金标注样本、`mining_lora_card` / `chemical_lora_card` 领域 LoRA 卡、`aligned_mining_edge_chip` / `aligned_chemical_edge_chip` 已对齐边缘芯片（美术正式贴图已接入）。
 - **清洗塔副产扩展**：两条清洗配方在 9/10 乱码噪点之外，以 **1/10** 追加副产黄金标注样本。
-- **新增机器**（EV 固定多方块，共用 3×3×3 舱室结构：EV 钛机壳 + 玻璃 + 标准 5 类仓室）：
+- **新增机器**（EV 固定多方块，0.2.1 初版共用 3×3×3 舱室，0.5 起分别改为 7×5×5 刻录舱与 7×6×7 红队舱）：
   - `lora_engraving_chamber` 神经微调刻录舱（配方类型 `lora_engraving`）：高纯领域数据集 + 空白载体 + 黄金样本 + 500mB 蒸馏水 + EV 电力 → 对应领域 LoRA 卡；
   - `red_team_sandbox` 沙盒红队测试舱（配方类型 `red_team_testing`）：2× 乱码噪点（对抗样本）+ 普通边缘芯片 → **已对齐边缘芯片**。
 - **电路 `#3` LoRA 专精配方**（不消耗 LoRA 卡，与 `#1/#2` 严格隔离）：洗矿机稀有副产钴粉概率 **1/3 → 2/3**；化反在同量 2 铝粉下**小堆铟粉翻倍**（铝守恒 2→2）。
@@ -94,7 +94,7 @@ source env.fish
 - **新增结构方块**：`satellite_dish_frame` 卫星站钢架、`satellite_dish_panel` 抛物面反射面板、`satellite_feed_horn` 高频馈源接收头。
 - **新增物品**：`api_credential_card` API 凭证卡（对地面站控制器右击绑定玩家 UUID，插入凭据槽开立/操作账户）、`token_credit_card` Token 充值晶卡（NBT 整数余额，站内整额存取）。
 - **服务端 Token 账本 `CloudTokenLedger`**（SavedData，主世界存储、跨站跨维度共享）：按世界存档内玩家 UUID 独立 `long` 账户；首次在任意卫星站开户自动发放**一次性 5,000,000 体验 Token**（跨站/跨维度/跨重启严格一次）；付费调用以**唯一订单 ID** 三态结算（预扣 HELD → 完成 SETTLED / 取消精确退还 REFUNDED），余额不足拒绝启动、失败/取消不吞单不双扣。
-- **API 卫星地面站 `api_satellite_station`**：固定 3×3×3 多方块，**LV/MV 能源仓即可驱动**；馈源须**露天直视天空**（遮挡拒联机，雨 ×1.5 / 雷暴 ×2.0 信号衰减，`Y>120` 小幅延迟/费率优化）；高纯数据集自动出售换整数 Token（50,000/份）。本地模拟闭源服务（1 清洁数据集 → 1 高纯矿处数据集）完整计费：
+- **API 卫星地面站 `api_satellite_station`**：固定多方块（0.5 起 5×6×5 桁架高塔 + 5×5 抛物面大锅），**LV/MV 能源仓即可驱动**；馈源须**露天直视天空**（遮挡拒联机，雨 ×1.5 / 雷暴 ×2.0 信号衰减，`Y>120` 小幅延迟/费率优化）；高纯数据集自动出售换整数 Token（50,000/份）。本地模拟闭源服务（1 清洁数据集 → 1 高纯矿处数据集）完整计费：
   - **Prompt Caching**：键 `(playerUuid, machinePos, recipeId, modelId, tier)`，连续第 2 轮起 Token 费率 **10%**，任一维度变化立即失效重算；
   - **Batch**：耗时 ×2、账单 ×0.5，与缓存**乘法叠加**（缓存 + 批处理 = **5%**）；
   - **档位** Medium（×1 单价 ×1 耗时 30 EU/t）/ Extra High（×2 单价 ×0.5 耗时 120 EU/t）；
@@ -103,6 +103,20 @@ source env.fish
 - **本地 Fallback 兜底网关 `local_fallback_gateway`**：IV 级被动部件；429 / Token 缺额 / 型号下线时自动切换**本地降速兜底**（耗时 ×4、Token 零计费）继续完成任务，产线不硬卡死。
 - **零 HPCA 死锁**：0.4 生存配方 15 种成分全部为 GTCEu 7.4.0 原版 IV 可直接获取（GameTest 断言）。
 - **验收**：`runData` / `build`（`gregtech-hypercluster-0.4.0.jar`）/ `runGametest`（56/56，含 11 个 0.4 云用例 + 生存扩展）全绿，Xvfb 客户端冒烟零内容报错；0.4 正式贴图（`Public/` 9 张 + Aseprite 源）已直接接入；报告见 [docs/reports/0.4_acceptance_report.md](docs/reports/0.4_acceptance_report.md)。
+
+## 0.5 内容（视觉与结构升级：大型非火柴盒多方块 + 运行态粒子 + 动画贴图）
+
+- **修复 Tooltip 重复 Bug**：GTCEu 的 `MetaMachineBlock#appendHoverText` 会自动插入 `<modid>.machine.<name>.tooltip` 描述行；此前注册时又显式 `.tooltips()` 同一 key，导致物品栏 / EMI 悬停中文描述显示两遍。已移除全部 11 台机器的显式重复项（描述仍由 GTCEu 自动插入），并新增 GameTest 回归 `machineDescriptionTooltipsNotDuplicated`（描述恰好出现 1 次 + 全部行无重复）。
+- **4 座多方块重塑为大型非火柴盒异形结构**（全复用 GTCEu 原版方块 + 0.4 CTM 卫星方块，零 Mixin）：
+  - `data_scrubbing_tower` → **5×9×5 阶梯收腰分馏塔**：底部 5×2×5 洁净不锈钢机械方块基座（主控在第 2 层正面人眼高度，标准仓室置于底座）；中段收窄为 3×5×3 四面洁净玻璃塔身，中心贯通 1×5×1 钛管道核心柱，外围四角独立钛框架立柱 + 上下水平环梁；顶部 5×2×5 扩口散热顶帽（格栅环绕）。
+  - `lora_engraving_chamber` → **7×5×5 横向龙门光学洁净间**：底层 7×1×5 纯白无尘室塑凝土平台，中央嵌入过滤格栅刻录载台；前后大面积无尘室玻璃；顶部外露式钛框架龙门横梁，控制器即中央悬空刻录柱。
+  - `red_team_sandbox` → **7×6×7 八边形切角防爆穹顶**：四角切空呈八边形轮廓，深灰固态钢 + 坚固机械方块外壳与外露钢框架防撞肋条；四面 3×2 宽幅强化防爆玻璃观察窗；内部中空，中央孤立一座隔离测试台座（四周留 1 格隔离气隙），顶部阶梯收口。
+  - `api_satellite_station` → **5×6×5 桁架高塔 + 5×5 抛物面大锅**：底部 3×3 钢架底座承载主控、LV/MV 能源仓与维护仓（复用 `satellite_dish_frame` CTM）；上部 5×5 凹面抛物反射锅（`satellite_dish_panel` CTM）阶梯收成碗形；中心高挑立起 `satellite_feed_horn` 馈源（顶部保持 100% 露天校验）。
+- **全部 6 座多方块新增纯客户端 WORKING 粒子反馈**（`animateTick`，仅在客户端且机器处于 WORKING 渲染态时触发，零服务端 TPS 开销）：清洗塔钛管道周围有上升的青色微粒和末地烛光点；刻录舱悬空刻录柱向下射出青/金微粒光束；红队舱隔离台座四周紫红传送门/洋红火花；卫星站馈源向高空发射青/琥珀上升光点脉冲；机柜出风面与 CRAC 冷通道吹出轻量白色/冰蓝气流。
+- **6 组多帧动画 `overlay_front_active.png` + `.png.mcmeta` 正式接入**（Public/ 交付同步至 `src/main/resources`，frametime 2–3）。
+- **GameTest**：结构模板场地扩宽为 15×12×15（容纳 7×6×7 穹顶、双站点并排与 9 层高塔），塔、两舱、卫星站与光学管路均按新结构测试。57 项回归通过，Xvfb 冒烟通过贴图、模型与 CTM 加载检查。[0.5 验收报告](docs/reports/0.5_acceptance_report.md)
+
+升级旧存档后，以上四座机器需要按 0.5 的结构预览重新搭建才能成型。
 
 ## 运行锁定组合（P06 实测）
 

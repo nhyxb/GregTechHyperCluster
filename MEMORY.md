@@ -128,3 +128,12 @@
 - **`CompoundTag.putUUID` 存的是 int 数组**，读回必须 `hasUUID/getUUID`——`getString` 返回空串，UUID.fromString 直接抛异常（0.4 账本订单簿往返曾因此静默丢单）。
 - **`GameTestHelper.setBlock/getBlockEntity` 收 ARENA 相对坐标**；机器 `getPos()/hornPos()` 等是世界绝对坐标，转换用 `pos.subtract(helper.absolutePos(BlockPos.ZERO))`。
 - 测试内多步时序：**机器每 tick 会立刻消费槽位并启动新轮次**（取消退还会被下一 tick 的缓存命中轮次立即再扣走），改账前后必须在同一 tick 回调内完成断言或清槽防重启。
+
+## 视觉与结构长期规范（0.5 起）
+
+- 新增或重塑的大型多方块以用途确定轮廓，优先选择阶梯收腰、切角、桁架或中空结构。0.5 的立柱、龙门和防撞肋复用 GTCEu 的 `Predicates.frames(GTMaterials.Titanium/Steel)`，塔芯单独使用 `CASING_TITANIUM_PIPE`。
+- 每座多方块同时提供运行态粒子与多帧 `overlay_front_active.png`。粒子放在控制器的 `animateTick(RandomSource)`，从同步的 `RECIPE_LOGIC_STATUS` 判断 `WORKING`，并按控制器朝向推算世界坐标。此回调由客户端派发。工作贴图用 16 像素宽的竖向帧条与同名 `.png.mcmeta`；GTCEu 默认模型的 `WAITING` 也可引用工作贴图，粒子只在 `WORKING` 时出现。
+- 自定义结构外壳按上文 0.4.1 的 LDLib 模板提供 CTM，并在 Xvfb 客户端验证图集加载。
+- GTCEu 7.4.0 自动读取机器描述键 `<modid>.machine.<name>.tooltip`。在语言文件保留主描述，注册时仅向 `.tooltips(...)` 添加额外信息。回归入口为 `SurvivalCraftingTests.machineDescriptionTooltipsNotDuplicated`。
+- 0.5 的尺寸、控制器及馈源坐标见 [验收报告](docs/reports/0.5_acceptance_report.md)。`hc_field` 模板为 15×12×15。其基岩地板在 GameTest 相对 y=1，底面含必需空气格的红队舱和卫星站摆在 y=2；要求露天的测试沿用平坦世界。改变场地或大幅改形后，用新的测试世界运行可排除残留方块。
+- GTCEu 的全局能力计数以 `SimplePredicate` 实例为键。若把同一组最低仓室需求分别写到两个字符的独立谓词里，会变成每组都要满足最低数量。红队舱在底座检查最低数量，上层只接受可选仓室。

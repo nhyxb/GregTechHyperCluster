@@ -1,12 +1,16 @@
 package dev.hypercluster.gametest;
 
+import com.gregtechceu.gtceu.api.machine.MachineDefinition;
 import com.gregtechceu.gtceu.common.data.GTMachines;
 
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.locale.Language;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraftforge.gametest.GameTestHolder;
@@ -17,7 +21,9 @@ import dev.hypercluster.common.data.HyperClusterBlocks;
 import dev.hypercluster.common.data.HyperClusterMachines;
 import dev.hypercluster.common.item.HyperClusterItems;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -223,7 +229,7 @@ public class SurvivalCraftingTests {
         // so their MachineRenderStates must be added to MachineDefinition.RENDER_STATE_REGISTRY
         // explicitly, otherwise the render-state payload fails to serialize and clients never
         // switch recipe_logic_status (front overlay stuck on overlay_front).
-        for (com.gregtechceu.gtceu.api.machine.MachineDefinition machine : new com.gregtechceu.gtceu.api.machine.MachineDefinition[] {
+        for (MachineDefinition machine : new MachineDefinition[] {
                 HyperClusterMachines.HV_MICRO_BURNER, HyperClusterMachines.HV_TELEMETRY_ORE_WASHER,
                 HyperClusterMachines.EV_TELEMETRY_CHEMICAL_REACTOR, HyperClusterMachines.DATA_SCRUBBING_TOWER,
                 HyperClusterMachines.LORA_ENGRAVING_CHAMBER, HyperClusterMachines.RED_TEAM_SANDBOX,
@@ -235,7 +241,7 @@ public class SurvivalCraftingTests {
             for (com.gregtechceu.gtceu.client.model.machine.MachineRenderState state : machine
                     .getStateDefinition().getPossibleStates()) {
                 expected++;
-                int id = com.gregtechceu.gtceu.api.machine.MachineDefinition.RENDER_STATE_REGISTRY.getId(state);
+                int id = MachineDefinition.RENDER_STATE_REGISTRY.getId(state);
                 helper.assertTrue(id >= 0, "render state " + state + " of " + machine.getId() +
                         " is missing from RENDER_STATE_REGISTRY — the working overlay would never sync");
                 if (id >= 0) registered++;
@@ -243,6 +249,44 @@ public class SurvivalCraftingTests {
             helper.assertTrue(expected > 0, machine.getId() + " has no render states at all");
             System.out.printf("[HC-RENDER] %s: %d/%d render states registered%s%n", machine.getId(),
                     registered, expected, registered == expected ? " (sync-ready)" : "");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "hc_floor", batch = SURVIVAL_BATCH, timeoutTicks = 100)
+    public static void machineDescriptionTooltipsNotDuplicated(GameTestHelper helper) {
+        // Regression for the doubled-description bug: MetaMachineBlock#appendHoverText and
+        // MetaMachine#onAddFancyInformationTooltip auto-insert the description from the
+        // "<modid>.machine.<name>.tooltip" lang key, so also passing that exact key through an
+        // explicit .tooltips(Component.translatable(...)) rendered the description twice in
+        // inventory and EMI hovers. The machine registrations no longer pass it explicitly;
+        // the description must resolve, appear exactly once, and no two lines may read alike.
+        for (MachineDefinition machine : new MachineDefinition[] {
+                HyperClusterMachines.HV_MICRO_BURNER, HyperClusterMachines.HV_TELEMETRY_ORE_WASHER,
+                HyperClusterMachines.EV_TELEMETRY_CHEMICAL_REACTOR, HyperClusterMachines.DATA_SCRUBBING_TOWER,
+                HyperClusterMachines.LORA_ENGRAVING_CHAMBER, HyperClusterMachines.RED_TEAM_SANDBOX,
+                HyperClusterMachines.AIR_COOLED_COMPUTE_RACK, HyperClusterMachines.PRECISION_CRAC,
+                HyperClusterMachines.IV_INFERENCE_HATCH, HyperClusterMachines.API_SATELLITE_STATION,
+                HyperClusterMachines.LOCAL_FALLBACK_GATEWAY }) {
+            String mainKey = String.format("%s.machine.%s.tooltip", machine.getId().getNamespace(),
+                    machine.getId().getPath());
+            helper.assertTrue(Language.getInstance().has(mainKey),
+                    machine.getId() + " main tooltip key missing from loaded lang: " + mainKey);
+            String description = Component.translatable(mainKey).getString();
+            List<Component> lines = new ArrayList<>();
+            // The real client seeds hover tooltips with the display name at index 0 before
+            // Block#appendHoverText runs — GTCEu's auto-insert then lands at index 1.
+            lines.add(machine.asStack(1).getHoverName());
+            machine.getBlock().appendHoverText(machine.asStack(1), null, lines,
+                    TooltipFlag.NORMAL);
+            long hits = lines.stream().filter(line -> line.getString().equals(description)).count();
+            helper.assertTrue(hits == 1, machine.getId() + " description tooltip appears " + hits +
+                    "x (expected exactly 1 — GTCEu already auto-inserts " + mainKey + ")");
+            long distinct = lines.stream().map(Component::getString).distinct().count();
+            helper.assertTrue(distinct == lines.size(), machine.getId() + " tooltip lines contain duplicates: " +
+                    lines.stream().map(Component::getString).toList());
+            System.out.printf("[HC-TOOLTIP] %s: description x%d, %d lines all distinct%n", machine.getId(), hits,
+                    lines.size());
         }
         helper.succeed();
     }
