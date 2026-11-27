@@ -101,6 +101,21 @@
 
 - **交付**：`satellite_dish_frame/panel/feed_horn` 方块、`api_credential_card`（右击站点控制器绑定 UUID）/`token_credit_card`（NBT 整数 Token）物品、`api_satellite_station`（3×3×3 固定多方块：钢架+反射面板+顶面中心馈源，LV/MV 能源仓即可驱动，馈源露天直视天空否则拒联机；数据变现=高纯数据集自动出售 50k/份、晶卡整额存取）与 `local_fallback_gateway`（IV 被动部件，429/缺额/型号下线 → 本地 ×4 降速零计费兜底）。Token 账本 `CloudTokenLedger`（SavedData 挂 overworld `hypercluster_cloud_ledger`，跨站跨维度共享）：UUID 账户 long 余额、一次性 5,000,000 体验金（标志持久化唯一）、订单三态 hold/settle/release（订单 ID 去重不双扣、HELD 精确退款不吞单、≤512 条有界）、Tier 1–5 并发（累计消费 50 万/200 万/500 万/2000 万 → 1–5 会话，429 超限暂停不计费，会话运行态重启清零）。计费纯函数 `CloudPricing`：基准 25,000/100t；缓存键 (playerUuid, machinePos, recipeId, modelId, tier) 连续第 2 轮起 ×0.1；Batch ×0.5 账单 ×2 耗时**乘法叠加**（缓存+批处理=5%）；档位 Medium ×1 / ExtraHigh ×2 单价 ×0.5 耗时 120 EU/t；雨 ×1.5 雷 ×2.0 耗时；Y>120 ×0.95 账单 ×0.9 耗时。模型 `CloudModels`：omni_flash 永不下线 + legacy_llama 游戏日生命周期（-Dhypercluster.legacyRetireDay=3/leavingSoonDays=1，LEAVING_SOON 仍可用显倒计时、RETIRED 拦截不计费）。runGametest **56/56**（新增 hypercluster_04_cloud 11 例单例批次 + 生存批 1 例）；Xvfb 冒烟零内容 ERROR（仅历史 narrator 报错）；0.4 正式贴图（Public/ 9 张 + 7 Aseprite 源，`block/cloud/` 路径）已交付并直接接入，无占位。报告 `docs/reports/0.4_acceptance_report.md`。
 
+## GTCEu 7.4.0 + LDLib 1.0.40.b 原生 CTM 标准配置（0.4.1 接入，长期复用模板）
+
+- **零代码接入**：方块不需要任何 Java/Mixin 改动（GTCEu 的 `computer_casing`/`fusion_casing_mk2/3`/`cleanroom_glass`/`plascrete` 全是普通 registrate block + 普通模型）。LDLib 自带 `SpriteResourceLoaderMixin` 扫描全部 `.png.mcmeta` 的 `ldlib.connection` 并用 `SingleFile` 源自动把 CTM 图缝进 blocks 图集；`ModelEvent$ModifyBakingResult` 时给引用了带 connection 贴图的模型包 `CustomBakedModel`。机器 `workableCasingModel` 引用 CTM 贴图同样生效（GTCEu 自家 cleanroom 机器就是 `workableCasingModel(plascrete)` + plascrete CTM）。
+- **标准模板**（与基础 16×16 贴图同目录）：
+  - `<name>.png.mcmeta`：`{"ldlib": {"connection": "hypercluster:block/<dir>/<name>_ctm"}}`（4 空格缩进，GTCEu 同款）；
+  - `<name>_ctm.png`：`32×32 RGBA`。
+- **32×32 图集布局（LDLib `Submap.uvs` 20 格 + `Connections` 语义，字节码逐格验证）**：4×4 网格、每格 `8×8px` 对应面内一个 `8×8` texel 象限（1:1，非 2× 超采样）：
+  - `(0,0)(0,1)(1,0)(1,1)`（左上 16×16）= 四面全连通的**无缝内部**（submap 0/1/4/5，无任何边框）；
+  - 右上列 `(0,2)(0,3)(1,2)(1,3)`（submap 2/3/6/7）= 仅上下连通、保留**左右外边框**；
+  - 左下行 `(2,0)(2,1)(3,0)(3,1)`（submap 8/9/12/13）= 仅左右连通、保留**上下外边框**；
+  - 右下块 `(2,2)(2,3)(3,2)(3,3)`（submap 10/11/14/15）= 四边连通但**对角缺块**（画 2×2 角点小残桩，T/L 凹角封口）；
+  - **孤立单块不走 CTM 图**：submap 16–19（`idx>15`）直接采样**原基础贴图**的四个 8×8 象限 —— CTM 图集只画连接态，美术在 x=7|8、y=7|8 中缝与基础贴图逐像素咬合即可。
+- **已接入 5 方块**（0.4.1，2026-11-27）：`raised_floor`（仅顶/底面 `raised_floor_top` 启用，侧面 `raised_floor_side` 保持独立）、`rack_casing_intake`/`rack_casing_exhaust`（cubeAll 全六面）、`satellite_dish_frame`/`satellite_dish_panel`。资源在 `assets/hypercluster/textures/block/{datacenter,cloud}/`；美术源 `Public/textures/source/*_ctm.aseprite`，效果预览 `Public/textures/previews/ctm_preview.png`。
+- 验收基线：runData/build 零变更、runGametest 56/56、Xvfb 冒烟 blocks 图集正常缝合零 ldlib/ctm/TextureAtlas 报错（唯一 ERROR 为历史 narrator 噪音）。
+
 ## GameTest 环境三坑（长期有效，0.4 实测踩坑）
 
 - **`run/gametest/server.properties` 必须 `level-type=minecraft\flat`**：gametest 场地在 y=-60，`normal` 世界上方是天然深板岩（y≈-31..-20），任何露天/天空判定会随机被地形挡（0.4 馈源露天校验因此批量假失败）。已改 flat 并删除旧 `run/gametest/world`（含历史残留结构）。**gametest 世界跨多次 runGametest 持久化**（同一 run/gametest 目录），依赖世界级全局状态（SavedData）的测试必须每测试随机 UUID/订单 ID。

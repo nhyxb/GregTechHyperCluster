@@ -1,8 +1,9 @@
 # GregTech HyperCluster 0.1 + 0.2 + 0.2.1 + 0.3 + 0.4 贴图与 Aseprite 源文件清单
 
-本目录存放 **0.1（HV 首发闭环）**、**0.2（EV 数据工坊）**、**0.2.1（EV 数据工坊扩展）**、**0.3（IV 自建算力 / 智算机房 Tier I–II）** 与 **0.4（IV 闭源云 / API 卫星地面站与 Token 计费）** 的全部 **47 张 `16×16` RGBA** Minecraft / GTCEu Modern 贴图与对应的 **36 个分层 `.aseprite` 源文件**，供工程拷贝进 `src/main/resources/assets/hypercluster/textures/`。
+本目录存放 **0.1（HV 首发闭环）**、**0.2（EV 数据工坊）**、**0.2.1（EV 数据工坊扩展）**、**0.3（IV 自建算力 / 智算机房 Tier I–II）** 与 **0.4（IV 闭源云 / API 卫星地面站与 Token 计费）** 的全部 **47 张 `16×16` RGBA 基础贴图**、**5 张 `32×32` RGBA LDLib 2×2 CTM 衔接图集**（合计 **52 张贴图**）与对应的 **41 个分层 `.aseprite` 源文件**（36 个 `16×16` + 5 个 `32×32`），供工程拷贝进 `src/main/resources/assets/hypercluster/textures/`。
 
-全量总览预览图（18 件物品 `4x / 2x / 1x` 槽位对比 + 0.1–0.4 全部机器叠加 HV 橙金 / EV 钛紫 / IV 蓝机壳对比 + 架空地板/机柜冷热面 + 0.4 卫星站钢架/反射面板无缝平铺、馈源接收头与卫星锅组合预览）见 [contact_sheet.png](textures/previews/contact_sheet.png)。
+- 基础贴图全量总览（18 件物品 `4x / 2x / 1x` 槽位对比 + 0.1–0.4 全部机器叠加 HV 橙金 / EV 钛紫 / IV 蓝机壳对比 + 架空地板/机柜冷热面 + 0.4 卫星站钢架/反射面板/馈源接收头预览）见 [contact_sheet.png](textures/previews/contact_sheet.png)。
+- 5 个结构方块的 **LDLib 2×2 CTM 衔接图集与 3×3 / T 型 / L 型 / 多方块立面实测拼接预览**见 [ctm_preview.png](textures/previews/ctm_preview.png)。
 
 ---
 
@@ -70,6 +71,16 @@
 | 0.4 IV | 本地 Fallback 兜底网关（待机） | `textures/block/machines/local_fallback_gateway/overlay_front.png` | `textures/source/local_fallback_gateway_front.aseprite`（`idle`） | `assets/hypercluster/textures/block/machines/local_fallback_gateway/overlay_front.png` |
 | 0.4 IV | 本地 Fallback 兜底网关（运行） | `textures/block/machines/local_fallback_gateway/overlay_front_active.png` | `textures/source/local_fallback_gateway_front.aseprite`（`active`） | `assets/hypercluster/textures/block/machines/local_fallback_gateway/overlay_front_active.png` |
 
+### 四、LDLib 2×2 CTM 衔接图集（5 张 `32×32 RGBA` 全不透明）
+
+| 阶段 | 中文名与拼接效果 | 导出图集（`32×32 RGBA`） | 分层源文件（`.aseprite`） | 目标资源路径（`modid = hypercluster`） |
+| :---: | --- | --- | --- | --- |
+| 0.3 IV | 防静电架空地板顶面 CTM | `textures/block/datacenter/raised_floor_top_ctm.png` | `textures/source/raised_floor_top_ctm.aseprite` | `assets/hypercluster/textures/block/datacenter/raised_floor_top_ctm.png` |
+| 0.3 IV | 42U 算力机柜进风面（冷面）CTM | `textures/block/datacenter/rack_casing_front_intake_ctm.png` | `textures/source/rack_casing_front_intake_ctm.aseprite` | `assets/hypercluster/textures/block/datacenter/rack_casing_front_intake_ctm.png` |
+| 0.3 IV | 42U 算力机柜出风面（热面）CTM | `textures/block/datacenter/rack_casing_back_exhaust_ctm.png` | `textures/source/rack_casing_back_exhaust_ctm.aseprite` | `assets/hypercluster/textures/block/datacenter/rack_casing_back_exhaust_ctm.png` |
+| 0.4 IV | 卫星站钢架方块 CTM | `textures/block/cloud/satellite_dish_frame_ctm.png` | `textures/source/satellite_dish_frame_ctm.aseprite` | `assets/hypercluster/textures/block/cloud/satellite_dish_frame_ctm.png` |
+| 0.4 IV | 抛物面天线反射面板 CTM | `textures/block/cloud/satellite_dish_panel_ctm.png` | `textures/source/satellite_dish_panel_ctm.aseprite` | `assets/hypercluster/textures/block/cloud/satellite_dish_panel_ctm.png` |
+
 ---
 
 ## 视觉规范、轮廓区分与复用说明
@@ -114,3 +125,19 @@
 - **0.4 IV（适配 GTCEu IV 蓝色机壳）**：
   - **`api_satellite_station`**：顶部 1px 切角控制面板 + 宽底刷卡底座；上方宽屏左区为倾斜小型抛物面天线与双层上行波纹，右区为 3 格递增独立垂直信号条，底部为水平横向 Token 读卡插槽。待机暗态可读轮廓（8 色），运行态右侧信号格亮起鲜明青绿色，天线波纹与底部读卡口亮起高亮琥珀金（14 色；3 图层：`station_bezel` / `antenna_and_signal` / `token_card_slot`）。
   - **`local_fallback_gateway`**：重型 `12×12` 全直角网络网关面板，顶部左右分置主路（云端）/ 备路（本地）双状态指示灯，下方暗色路由矩阵内绘制 Y 型双向上行分流箭头直指两侧通道。待机暗态清晰可辨（8 色），运行态同步点亮左侧青蓝云端主路灯/左分支与右侧琥珀金本地备路灯/右分支（13 色；3 图层：`gateway_bezel` / `dual_status_leds` / `routing_arrows`）。
+
+### 5. LDLib 2×2 CTM 衔接图集规范与校验（`32×32 RGBA` 全不透明）
+5 张 CTM 图集均严格复用了各自基础 `16×16` `.aseprite` 的色板（零新增杂色）、左上光照与分层结构，并已直接对照本工程锁定的 **LDLib `1.0.40.b`（`Connections.java` / `Submap.java`）** 与 **GTCEu `7.4.0` 官方 `*_ctm.png`** 字节码与 UV 索引完成校验：
+- **标准 LDLib 2×2 象限映射（4 个 `16×16` 瓦片）**：
+  - 左上 `(0, 0)`：`V && H && D`（`submap 0, 1, 4, 5`）—— 四周全连通的**内部无缝块**（无外边框）。
+  - 右上 `(16, 0)`：`V && !H`（`submap 2, 3, 6, 7`）—— 仅**上下垂直连通**、左右有外边框（用于竖柱及大面左右边缘）。
+  - 左下 `(0, 16)`：`!V && H`（`submap 8, 9, 12, 13`）—— 仅**左右水平连通**、上下有外边框（用于横梁及大面上下边缘；42U 机柜的冰蓝/橙红通道标识条仅位于此象限与基础贴图的顶边）。
+  - 右下 `(16, 16)`：`V && H && !D`（`submap 10, 11, 14, 15`）—— 四边均连通但**内角缺失（四角点）**，用于拼出 T 型 / L 型凹角与内转角封口。
+  - 孤立单块与连续大面的四个外拐角（`!V && !H`，`submap 16..19`）由 LDLib 自动采样对应 `16×16` 基础贴图的四个 `8×8` 象限，因此各 CTM 图集均在 `x=7|8`、`y=7|8` 接缝处与基础贴图逐像素咬合。
+- **各方块 CTM 特征**：
+  - `raised_floor_top_ctm`（3 图层，9 色）：内部无缝贯通防滑穿孔格栅与连续青色 ESD 接地总线，仅外围保留亮/暗金属收边框。
+  - `rack_casing_front_intake_ctm`（3 图层，7 色 ⊆ 基础 9 色）：内部连成一整面同相位深灰黑穿孔网门，外框为重型 42U 边框，右侧延伸连续拉手竖条，冰蓝色冷通道标识条仅出现在顶边（并在 L 型凹角处带暗槽封口）。
+  - `rack_casing_back_exhaust_ctm`（3 图层，7 色 ⊆ 基础 10 色）：内部连成整面同相位水平散热百叶与微暗红热腔，仅外缘保留重型背板边框，橙红色热通道标识条仅出现在顶边（L 型凹角带暗槽封口）。
+  - `satellite_dish_frame_ctm`（3 图层，9 色）：外缘保留完整 2px 钨钢主梁边框，内部去除重复粗边，45° 交叉斜撑自然延伸并在四块交汇处组成与中心完全同构的 4×4 螺栓节点板，拼出连续航天钻石桁架。
+  - `satellite_dish_panel_ctm`（3 图层，9 色 ⊆ 基础 10 色）：内部连成极简纯净冷白反射面板、无断层淡青细格线与对齐的微弱同心校准弧，外缘统一收出 2px 冷钢金属框线。
+- 接入工程时只需为对应的基础 `16×16` 贴图配置标准 `.png.mcmeta`（`{"ldlib": {"connection": "hypercluster:block/<dir>/<name>_ctm"}}`）即可与 LDLib 渲染管线原生联动；完整 3×3 / T 型 / L 型 / 条带 / 多方块立面效果见 [ctm_preview.png](textures/previews/ctm_preview.png)。
