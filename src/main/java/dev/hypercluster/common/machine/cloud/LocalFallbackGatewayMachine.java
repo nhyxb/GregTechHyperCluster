@@ -1,9 +1,10 @@
 package dev.hypercluster.common.machine.cloud;
 
+import com.gregtechceu.gtceu.api.gui.GuiTextures;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.multiblock.part.MultiblockPartMachine;
 
-import com.lowdragmc.lowdraglib.gui.widget.LabelWidget;
+import com.lowdragmc.lowdraglib.gui.widget.ImageWidget;
 import com.lowdragmc.lowdraglib.gui.widget.Widget;
 import com.lowdragmc.lowdraglib.gui.widget.WidgetGroup;
 import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
@@ -14,6 +15,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.BlockHitResult;
+
+import dev.hypercluster.common.machine.MachineUi;
 
 /**
  * 0.4 · the local fallback gateway ({@code hypercluster:local_fallback_gateway}).
@@ -67,17 +70,14 @@ public class LocalFallbackGatewayMachine extends MultiblockPartMachine {
 
     @Override
     public Widget createUIWidget() {
-        WidgetGroup group = new WidgetGroup(0, 0, 90, 60);
-        group.addWidget(new LabelWidget(5, 6, Component
-                .translatable("hypercluster.machine.local_fallback_gateway.title").getString()));
-        group.addWidget(new LabelWidget(5, 20,
-                () -> isFormed() ? Component.translatable("hypercluster.machine.local_fallback_gateway.standby")
-                        .getString() :
-                        Component.translatable("hypercluster.machine.local_fallback_gateway.idle")
-                                .getString()));
-        group.addWidget(new LabelWidget(5, 32,
-                () -> Component.translatable("hypercluster.machine.local_fallback_gateway.rounds",
-                        fallbackRounds).getString()));
+        String uiKey = "hypercluster.machine.local_fallback_gateway.";
+        WidgetGroup group = MachineUi.panel(190, 88);
+        group.addWidget(new ImageWidget((group.getSize().width - 20) / 2, 6, 20, 20, getTabIcon()));
+        group.addWidget(MachineUi.display(4, 30, group.getSize().width - 8, 54, GuiTextures.DISPLAY,
+                MachineUi.statusText(getLevel().isClientSide, lines -> {
+                    lines.add(Component.translatable(uiKey + (isFormed() ? "standby" : "idle")));
+                    lines.add(Component.translatable(uiKey + "rounds", fallbackRounds));
+                }).setCenter(true)));
         return group;
     }
 

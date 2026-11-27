@@ -1,0 +1,23 @@
+{
+  "type": "patchouli:shapeless_book_recipe",
+  "conditions": [
+    {
+      "type": "forge:mod_loaded",
+      "modid": "patchouli"
+    }
+  ],
+  "book": "hypercluster:hypercluster_manual",
+  "ingredients": [
+    {
+      "item": "minecraft:book"
+    },
+    [
+      {
+        "item": "hypercluster:mining_telemetry_log"
+      },
+      {
+        "item": "hypercluster:blank_carrier"
+      }
+    ]
+  ]
+}

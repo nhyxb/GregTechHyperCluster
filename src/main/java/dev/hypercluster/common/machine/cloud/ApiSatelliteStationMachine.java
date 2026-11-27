@@ -13,9 +13,9 @@ import com.gregtechceu.gtceu.api.transfer.item.CustomItemStackHandler;
 import com.gregtechceu.gtceu.client.model.machine.MachineRenderState;
 import com.gregtechceu.gtceu.utils.FormattingUtil;
 
+import com.lowdragmc.lowdraglib.gui.texture.GuiTextureGroup;
 import com.lowdragmc.lowdraglib.gui.texture.TextTexture;
 import com.lowdragmc.lowdraglib.gui.widget.ButtonWidget;
-import com.lowdragmc.lowdraglib.gui.widget.LabelWidget;
 import com.lowdragmc.lowdraglib.gui.widget.Widget;
 import com.lowdragmc.lowdraglib.gui.widget.WidgetGroup;
 import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
@@ -43,9 +43,12 @@ import dev.hypercluster.common.cloud.CloudTokenLedger;
 import dev.hypercluster.common.item.CredentialCardItem;
 import dev.hypercluster.common.item.HyperClusterItems;
 import dev.hypercluster.common.item.TokenCreditCardItem;
+import dev.hypercluster.common.machine.MachineUi;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 import javax.annotation.Nullable;
 
@@ -760,74 +763,62 @@ public class ApiSatelliteStationMachine extends WorkableElectricMultiblockMachin
 
     @Override
     public Widget createUIWidget() {
-        WidgetGroup group = (WidgetGroup) super.createUIWidget();
+        String uiKey = "hypercluster.machine.api_satellite_station.";
+        int slotY = 13;
+        int tokenY = 35;
+        int settingsY = 57;
+        WidgetGroup controls = MachineUi.multiblockControls(75);
 
-        SlotWidget credential = new SlotWidget(credentialSlot, 0, 52, 24, true, true);
-        credential.setBackground(GuiTextures.SLOT);
-        credential.setHoverTooltips(
-                Component.translatable("hypercluster.machine.api_satellite_station.credential_slot"));
-        group.addWidget(credential);
+        controls.addWidgets(
+                MachineUi.label(0, 0, 42, uiKey + "label.credential"),
+                MachineUi.label(46, 0, 44, uiKey + "label.sell"),
+                MachineUi.label(94, 0, 42, uiKey + "label.input"),
+                MachineUi.label(140, 0, 42, uiKey + "label.output"),
+                controlSlot(credentialSlot, 12, slotY, true, uiKey + "credential_slot"),
+                controlSlot(sellSlot, 59, slotY, true, uiKey + "sell_slot"),
+                controlSlot(inputSlot, 106, slotY, true, uiKey + "input_slot"),
+                controlSlot(outputSlot, 152, slotY, false, uiKey + "output_slot"));
 
-        SlotWidget sell = new SlotWidget(sellSlot, 0, 70, 24, true, true);
-        sell.setBackground(GuiTextures.SLOT);
-        sell.setHoverTooltips(Component.translatable("hypercluster.machine.api_satellite_station.sell_slot"));
-        group.addWidget(sell);
+        controls.addWidgets(
+                controlSlot(cardSlot, 0, tokenY, true, uiKey + "card_slot"),
+                MachineUi.label(22, tokenY + 4, 54, uiKey + "label.card"),
+                controlButton(80, tokenY, 47, () -> Component.translatable(uiKey + "deposit"),
+                        uiKey + "deposit.tooltip", this::depositCard),
+                controlButton(131, tokenY, 51, () -> Component.translatable(uiKey + "withdraw"),
+                        uiKey + "withdraw.tooltip", this::withdrawToCard));
 
-        SlotWidget card = new SlotWidget(cardSlot, 0, 52, 44, true, true);
-        card.setBackground(GuiTextures.SLOT);
-        card.setHoverTooltips(Component.translatable("hypercluster.machine.api_satellite_station.card_slot"));
-        group.addWidget(card);
+        ToggleButtonWidget batch = new ToggleButtonWidget(0, settingsY, 18, 18, GuiTextures.BUTTON_BATCH,
+                () -> batchMode, this::setBatchMode);
+        batch.setHoverTooltips(Component.translatable(uiKey + "batch.tooltip"));
+        controls.addWidgets(
+                batch,
+                controlButton(22, settingsY, 64,
+                        () -> Component.translatable(uiKey + "tier." + selectedTier().name().toLowerCase(Locale.ROOT)),
+                        uiKey + "tier.tooltip", this::cycleTier),
+                controlButton(90, settingsY, 92, () -> Component.translatable(selectedModel().displayKey()),
+                        uiKey + "model.tooltip", this::cycleModel));
+        return MachineUi.multiblockPage(this, controls);
+    }
 
-        ButtonWidget deposit = new ButtonWidget(70, 44, 26, 16,
-                new TextTexture(
-                        () -> Component.translatable("hypercluster.machine.api_satellite_station.deposit").getString()),
-                clickData -> depositCard());
-        deposit.setHoverTooltips(
-                Component.translatable("hypercluster.machine.api_satellite_station.deposit.tooltip").getString());
-        group.addWidget(deposit);
-        ButtonWidget withdraw = new ButtonWidget(98, 44, 26, 16,
-                new TextTexture(() -> Component.translatable("hypercluster.machine.api_satellite_station.withdraw")
-                        .getString()),
-                clickData -> withdrawToCard());
-        withdraw.setHoverTooltips(
-                Component.translatable("hypercluster.machine.api_satellite_station.withdraw.tooltip").getString());
-        group.addWidget(withdraw);
+    private static SlotWidget controlSlot(CustomItemStackHandler inventory, int x, int y, boolean canInsert,
+                                          String tooltipKey) {
+        SlotWidget slot = new SlotWidget(inventory, 0, x, y, canInsert, true);
+        slot.setBackground(GuiTextures.SLOT);
+        slot.setHoverTooltips(Component.translatable(tooltipKey));
+        return slot;
+    }
 
-        SlotWidget input = new SlotWidget(inputSlot, 0, 133, 24, true, true);
-        input.setBackground(GuiTextures.SLOT);
-        input.setHoverTooltips(Component.translatable("hypercluster.machine.api_satellite_station.input_slot"));
-        group.addWidget(input);
-        SlotWidget output = new SlotWidget(outputSlot, 0, 151, 24, false, true);
-        output.setBackground(GuiTextures.SLOT);
-        output.setHoverTooltips(Component.translatable("hypercluster.machine.api_satellite_station.output_slot"));
-        group.addWidget(output);
-
-        ToggleButtonWidget batch = new ToggleButtonWidget(52, 62, 26, 16,
-                GuiTextures.TOOL_AUTO_OUTPUT, () -> batchMode, value -> setBatchMode(value));
-        batch.setShouldUseBaseBackground();
-        batch.setTooltipText(
-                Component.translatable("hypercluster.machine.api_satellite_station.batch.tooltip").getString());
-        group.addWidget(batch);
-
-        ButtonWidget tier = new ButtonWidget(80, 62, 36, 16,
-                new TextTexture(() -> Component.translatable("hypercluster.machine.api_satellite_station.tier." +
-                        selectedTier().name().toLowerCase(java.util.Locale.ROOT)).getString()),
-                clickData -> cycleTier());
-        tier.setHoverTooltips(
-                Component.translatable("hypercluster.machine.api_satellite_station.tier.tooltip").getString());
-        group.addWidget(tier);
-
-        ButtonWidget model = new ButtonWidget(118, 62, 49, 16,
-                new TextTexture(() -> Component.translatable(selectedModel().displayKey()).getString()),
-                clickData -> cycleModel());
-        model.setHoverTooltips(
-                Component.translatable("hypercluster.machine.api_satellite_station.model.tooltip").getString());
-        group.addWidget(model);
-
-        group.addWidget(new LabelWidget(52, 80,
-                () -> Component.translatable("hypercluster.machine.api_satellite_station.status." +
-                        waitingReason.name().toLowerCase(java.util.Locale.ROOT)).getString()));
-        return group;
+    private static ButtonWidget controlButton(int x, int y, int width, Supplier<Component> label, String tooltipKey,
+                                              Runnable action) {
+        TextTexture text = new TextTexture(() -> label.get().getString())
+                .setWidth(width - 6)
+                .setType(TextTexture.TextType.ROLL_ALWAYS)
+                .setDropShadow(false)
+                .setColor(0xff1d252b);
+        ButtonWidget button = new ButtonWidget(x, y, width, 18, new GuiTextureGroup(GuiTextures.BUTTON, text),
+                click -> action.run());
+        button.setHoverTooltips(Component.translatable(tooltipKey));
+        return button;
     }
 
     @Override
@@ -840,6 +831,15 @@ public class ApiSatelliteStationMachine extends WorkableElectricMultiblockMachin
                 .addCustom(lines -> {
                     if (!isFormed() || !(getLevel() instanceof ServerLevel)) {
                         return;
+                    }
+                    if (waitingReason != WaitingReason.NONE) {
+                        lines.add(Component
+                                .translatable("hypercluster.machine.api_satellite_station.status." +
+                                        waitingReason.name().toLowerCase(Locale.ROOT))
+                                .withStyle(switch (waitingReason) {
+                                    case LOW_POWER, RATE_LIMITED_429, MODEL_OFFLINE, INSUFFICIENT_FUNDS, SKY_BLOCKED -> ChatFormatting.RED;
+                                    default -> ChatFormatting.GRAY;
+                                }));
                     }
                     CloudTokenLedger ledger = ledger();
                     UUID owner = accountOwner();
@@ -880,16 +880,6 @@ public class ApiSatelliteStationMachine extends WorkableElectricMultiblockMachin
                                 Component.literal(String.valueOf(Math.max(0, taskTicksRemaining)))
                                         .withStyle(ChatFormatting.AQUA))
                                 .withStyle(ChatFormatting.GRAY));
-                    } else if (waitingReason != WaitingReason.NONE) {
-                        lines.add(Component
-                                .translatable("hypercluster.machine.api_satellite_station.status." +
-                                        waitingReason.name().toLowerCase(java.util.Locale.ROOT))
-                                .withStyle(waitingReason == WaitingReason.LOW_POWER ||
-                                        waitingReason == WaitingReason.RATE_LIMITED_429 ||
-                                        waitingReason == WaitingReason.MODEL_OFFLINE ||
-                                        waitingReason == WaitingReason.INSUFFICIENT_FUNDS ||
-                                        waitingReason == WaitingReason.SKY_BLOCKED ? ChatFormatting.RED :
-                                                ChatFormatting.GRAY));
                     }
                 })
                 .addWorkingStatusLine();

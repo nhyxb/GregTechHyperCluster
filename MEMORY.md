@@ -76,6 +76,8 @@
   `env -u WAYLAND_DISPLAY LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew runClient`
   本环境 openSUSE 的 `xorg-x11-server-Xvfb` 包只带 `/usr/bin/Xvfb`、无 `xvfb-run` 脚本，等价做法：手动 `Xvfb :99 -screen 0 1280x720x24 &` 后 `env -u WAYLAND_DISPLAY LIBGL_ALWAYS_SOFTWARE=1 DISPLAY=:99 ./gradlew runClient`，结束后 kill 掉 Xvfb，不留后台进程。若以后装了 `xvfb-run`（需要用户确认安装来源），直接用标准命令即可。
 
+- 自定义机器界面复用 `MachineUi`。多方块的 `DISPLAY` 只包含带裁剪的可滚动状态文本，物品槽、按钮和固定宽度标签放入独立操作区。`MachineUiTests` 在 `runGametest` 中直接构造四台机器的页面，检查控件包围盒、最小 3 px 间距和单格仓室的居中对齐。更新标签时也用 Xvfb 检查客户端字体的实际宽度。
+
 ## 环境注意事项
 
 - `run/server/eula.txt` 从未置 true（P00 当时 runServer 实际在 EULA 检查处退出）；`run/gametest/eula.txt` 已按 README 流程置 true。

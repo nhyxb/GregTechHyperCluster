@@ -1,0 +1,27 @@
+{
+  "name": "7×5×5 LoRA Engraving & Circuit #3",
+  "category": "hypercluster:02_ev_workshop",
+  "icon": "hypercluster:lora_engraving_chamber",
+  "sortnum": 2,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "Don't throw away the $(item)Golden Datasets$() (1/10 chance) exhaled by the scrubbing tower — feed them with high-purity datasets into the $(item)LoRA Engraving Chamber$() to craft domain LoRA cards.$(br2)LoRA cards unlock $(#0E7490)Circuit #3$() specialized recipes focused on higher rare yields."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/lora_engraving_chamber",
+      "text": "Built with an EV Sensor and Titanium Plates. Check the maintenance hatch once formed."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "7×5×5 Gantry Cleanroom",
+      "text": "$(li)$(#0E7490)Floor (y=0, 7×1×5)$(): Plascrete platform with 1 Filter Casing centered at `(3, 0, 2)` as the engraving stage.$(li)$(#0E7490)Walls (y=1..3)$(): Plascrete side walls (place Item Import/Export, Fluid Import, Energy, and Maintenance hatches here), 5-wide Cleanroom Glass windows front & back, hollow inside.$(li)$(#0E7490)Gantry (y=4)$(): Exposed Titanium Frame ring and center beam, with the controller suspended below it facing forward."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Engraving & Circuit #3 Yields",
+      "text": "$(#0E7490)LoRA Engraving$() (2048 EU/t × 300t): 1 High-Purity Dataset + 1 Blank Carrier + 1 Golden Dataset + 500 mB Distilled Water → 1 Domain LoRA Card.$(br2)$(#0E7490)Circuit #3 Specialization (Card Not Consumed)$():$(li)Ore Washer: keeps 100 mB water savings and raises $(bold)Cobalt Dust chance from 1/3 to 2/3$().$(li)Chemical Reactor: keeps 2 Aluminium Dust cost and $(bold)doubles Small Indium Dust (1 → 2)$()."
+    }
+  ]
+}

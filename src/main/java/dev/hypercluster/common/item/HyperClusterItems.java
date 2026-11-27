@@ -75,7 +75,16 @@ public final class HyperClusterItems {
 
     private HyperClusterItems() {}
 
-    public static void init() {}
+    public static void init() {
+        // Patchouli manual metadata keys (used only when Patchouli is installed; zero hard dependency).
+        HyperCluster.REGISTRATE.addRawLang("book.hypercluster.hypercluster_manual.name", "HyperCluster Tech Manual");
+        HyperCluster.REGISTRATE.addRawLang("book.hypercluster.hypercluster_manual.subtitle",
+                "HV–IV Telemetry, Datacenters & Cloud Uplink");
+        HyperCluster.REGISTRATE.addRawLang("book.hypercluster.hypercluster_manual.landing",
+                "This manual covers the HV through IV computing chain currently implemented in GregTech HyperCluster.$(br2)" +
+                        "It walks through gathering telemetry from HV ore washing and burning edge chips, purifying datasets with LoRA fine-tuning and red-team alignment in EV, and scaling into either an IV air-cooled datacenter or a closed-source cloud satellite station.$(br2)" +
+                        "Check EMI / JEI for full recipe lookups and multiblock previews.");
+    }
 
     private static ItemEntry<TooltipItem> register(String name, String englishName, String englishTooltip) {
         MutableComponent lang = HyperCluster.REGISTRATE.addRawLang("item.hypercluster." + name + ".tooltip",

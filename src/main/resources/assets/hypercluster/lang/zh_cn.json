@@ -60,6 +60,8 @@
   "hypercluster.machine.air_cooled_compute_rack.snack_slot": "绿色零食包槽：镇宅玄学，全机房总耗电 -5%（可配置）。",
   "hypercluster.machine.air_cooled_compute_rack.providing": "供算中",
   "hypercluster.machine.air_cooled_compute_rack.computation": "算力：%s / %s CWU/t",
+  "hypercluster.machine.air_cooled_compute_rack.label.blades": "计算刀片",
+  "hypercluster.machine.air_cooled_compute_rack.label.snack": "零食包",
   "hypercluster.machine.air_cooled_compute_rack.room": "机房评级：Tier %s（环境系数 %s）",
   "hypercluster.machine.air_cooled_compute_rack.pue": "PUE：%s（IT %s EU/t + 制冷 %s EU/t）",
   "hypercluster.machine.air_cooled_compute_rack.standby": "待机功耗：%s",
@@ -71,6 +73,7 @@
   "hypercluster.machine.air_cooled_compute_rack.derate.low_power": "算力归零：电力不足。",
   "block.hypercluster.iv_inference_hatch": "IV 推理协处理器仓",
   "hypercluster.machine.iv_inference_hatch.tooltip": "IV 推理协处理器仓：经光学管道真实消耗 CWU/t，为数据清洗塔的配方提供 25%/50% 能耗折扣。",
+  "hypercluster.machine.iv_inference_hatch.label.chip": "推理芯片",
   "hypercluster.machine.iv_inference_hatch.chip_slot": "推理芯片：普通领域边缘芯片可驱动 2 CWU/t 配方，已对齐芯片最高可驱动 8 CWU/t 配方。",
   "block.hypercluster.precision_crac": "机房精密空调",
   "hypercluster.machine.precision_crac.tooltip": "精密空调：8 格内运行中的机组可将算力机柜机房升级为 Tier II（PUE 压至 1.45）。",
@@ -88,6 +91,11 @@
   "block.hypercluster.satellite_feed_horn": "卫星馈源头",
   "block.hypercluster.api_satellite_station": "API 卫星地面站",
   "hypercluster.machine.api_satellite_station.tooltip": "IV 闭源云卫星地面站：开户领体验金、收购高纯数据集并按订单计费调用本地模拟闭源服务（LV/MV 供电即可，馈源头需露天直视天空）。",
+  "hypercluster.machine.api_satellite_station.label.credential": "API 凭据",
+  "hypercluster.machine.api_satellite_station.label.sell": "出售",
+  "hypercluster.machine.api_satellite_station.label.input": "输入",
+  "hypercluster.machine.api_satellite_station.label.output": "输出",
+  "hypercluster.machine.api_satellite_station.label.card": "Token 卡",
   "hypercluster.machine.api_satellite_station.credential_slot": "API 凭据卡：本站操作的账户身份（首次在任意地面站开户自动发放一次性体验 Token）。",
   "hypercluster.machine.api_satellite_station.sell_slot": "上传槽：放入凭据卡后，高纯数据集自动出售兑换整数 Token。",
   "hypercluster.machine.api_satellite_station.card_slot": "Token 信用卡槽：在卡与绑定账户之间存取 Token。",
@@ -126,5 +134,8 @@
   "hypercluster.machine.local_fallback_gateway.title": "本地兜底网关",
   "hypercluster.machine.local_fallback_gateway.standby": "待命中：被 429 / 缺额 / 下线拦截的轮次在此本地降速执行。",
   "hypercluster.machine.local_fallback_gateway.idle": "空闲：把我接入卫星地面站的天线框架。",
-  "hypercluster.machine.local_fallback_gateway.rounds": "已完成的兜底轮次：%s"
+  "hypercluster.machine.local_fallback_gateway.rounds": "已完成的兜底轮次：%s",
+  "book.hypercluster.hypercluster_manual.name": "超算集群科技手册",
+  "book.hypercluster.hypercluster_manual.subtitle": "HV–IV 遥测、智算机房与云端接入",
+  "book.hypercluster.hypercluster_manual.landing": "这本手册只记当前版本已经实装的 HV 到 IV 算力线内容。$(br2)从 HV 洗矿机攒遥测日志、拿微型烧录台压边缘芯片，到 EV 数据清洗塔提纯样本、做 LoRA 微调和红队对齐，再到 IV 搭自建风冷机房或建卫星地面站调闭源云，机制和数字都按实际逻辑核对过。$(br2)具体配方表和多方块摆放预览可以直接用 EMI / JEI 查看。"
 }

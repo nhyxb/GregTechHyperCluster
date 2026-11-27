@@ -1,0 +1,27 @@
+{
+  "name": "5×9×5 数据清洗塔",
+  "category": "hypercluster:02_ev_workshop",
+  "icon": "hypercluster:data_scrubbing_tower",
+  "sortnum": 1,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "$(item)数据清洗塔$()是一座 5×9×5 的阶梯收腰分馏塔，用来把原始遥测日志洗干净：一边提纯出$(item)高纯领域数据集$()和$(item)清洁数据集$()，一边剥离出$(item)乱码噪点$()和稀有的$(item)黄金标注样本$()。$(br2)清洗塔也是后续接入 IV 推理协处理器仓降低耗电的核心多方块。"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/data_scrubbing_tower",
+      "recipe2": "hypercluster:shaped/blank_carrier_from_clean_dataset"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "5×9×5 塔体结构要点",
+      "text": "$(li)$(#0E7490)底座（5×2×5）$()：洁净不锈钢机械方块，主控放在第 2 层正面中央。输入/输出总线、流体输入仓、能源仓、维护仓，以及 IV 阶段的 1 个推理协处理器仓全装在底座上。$(li)$(#0E7490)中段（3×5×3）$()：中心 1×5×1 钛管道机械方块，外包无尘室玻璃，四角配独立钛框架柱与上下环梁。$(li)$(#0E7490)顶帽（5×2×5）$()：EV 机械方块与格栅机械方块交错收顶。$(br)成型后先修好维护仓再通电。"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "分馏与噪点回收配方",
+      "text": "$(li)$(#0E7490)清洗矿处/化工日志$()（2048 EU/t × 200t）：1 原始日志 + 1000 mB 蒸馏水 → 1 高纯矿处/化工数据集 + 1 $(item)清洁数据集$() + $(bold)9/10 概率$()乱码噪点 + $(bold)1/10 概率$()黄金标注样本。$(li)$(#0E7490)噪点回炉$()（1024 EU/t × 100t）：4 乱码噪点 + 250 mB 蒸馏水 → 1 硅粉。$(br2)清洁数据集除了拿去合 4 倍产量的空白载体，在 IV 还能直接喂给云端地面站。"
+    }
+  ]
+}

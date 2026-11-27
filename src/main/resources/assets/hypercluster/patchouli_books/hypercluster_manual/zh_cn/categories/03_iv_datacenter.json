@@ -1,0 +1,6 @@
+{
+  "name": "第三章 · IV 自建智算机房",
+  "description": "零 HPCA 前置的风冷机柜、PUE 评级与推理协处理器仓。",
+  "icon": "hypercluster:air_cooled_compute_rack",
+  "sortnum": 2
+}

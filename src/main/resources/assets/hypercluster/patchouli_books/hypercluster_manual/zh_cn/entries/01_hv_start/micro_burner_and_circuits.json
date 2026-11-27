@@ -1,0 +1,32 @@
+{
+  "name": "微型烧录台与边缘芯片",
+  "category": "hypercluster:01_hv_start",
+  "icon": "hypercluster:hv_micro_burner",
+  "sortnum": 1,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "从洗矿机取出$(item)矿处遥测日志$()后，下一步是在$(item)HV 微型烧录台$()里把日志烧进$(item)空白载体$()，做成可复用的边缘芯片。$(br2)先合一批空白载体和烧录台，HV 阶段就可以把第一条省水洗矿闭环跑起来。"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/hv_micro_burner",
+      "recipe2": "hypercluster:shaped/blank_carrier"
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "hypercluster:mining_edge_chip",
+      "link_recipe": true,
+      "text": "微型烧录台支持两种样本：$(li)$(#0E7490)原始日志版$()：1 矿处遥测日志 + 1 空白载体 → 1 矿处边缘芯片，需 512 EU/t × 128t。$(li)$(#0E7490)高纯数据集版（EV 解锁）$()：1 高纯矿处数据集 + 1 空白载体 → 1 矿处边缘芯片，只需 $(bold)128 EU/t × 64t$()，耗电压到 1/4、时间减半。$(br2)高纯化工数据集也在这里烧录$(item)化工边缘芯片$()（512 EU/t × 128t）。"
+    },
+    {
+      "type": "patchouli:relations",
+      "entries": [
+        "hypercluster:01_hv_start/telemetry_ore_washer",
+        "hypercluster:02_ev_workshop/telemetry_chemical_reactor",
+        "hypercluster:02_ev_workshop/data_scrubbing_tower"
+      ],
+      "text": "芯片烧好后放回洗矿机配合电路 #2 就能省 90% 的水。进到 EV 阶段后，去造化学反应釜和数据清洗塔。"
+    }
+  ]
+}

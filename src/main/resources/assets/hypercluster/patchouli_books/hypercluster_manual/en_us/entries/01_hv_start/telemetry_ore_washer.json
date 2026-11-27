@@ -1,0 +1,27 @@
+{
+  "name": "HV Telemetry Ore Washer",
+  "category": "hypercluster:01_hv_start",
+  "icon": "hypercluster:hv_telemetry_ore_washer",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "The $(item)HV Telemetry Ore Washer$() is where your data chain begins. It washes ore on HV power like a standard washer, but tracks outputs with strict settlement rules.$(br2)It records $(#0E7490)+1 Mining Telemetry Log$() only after a batch finishes and its regular outputs actually land in the output slots. Output jams, cancelled runs, power loss, and idle ticks all log 0."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/hv_telemetry_ore_washer",
+      "text": "Upgrades directly from a vanilla GTCEu HV Ore Washer. Keep a programmed circuit handy to switch recipe tiers cleanly."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Log Buffer & Full Rule",
+      "text": "The slot to the right of the battery slot is a dedicated $(item)telemetry log buffer$() holding up to $(#0E7490)64 logs$() (withdraw-only).$(br2)Once it reaches 64/64, the washer $(bold)does not stall$() — ores and by-products keep settling as normal, while extra logs are dropped and flagged in the slot tooltip. Breaking the washer drops buffered logs once; re-placing it starts empty."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Circuit #1 vs #2 Water Usage",
+      "text": "Programmed circuits keep the same ore separated cleanly:$(li)$(#0E7490)Circuit #1 (Base Mirror)$(): 1 Crushed Copper Ore + $(bold)1000 mB Water$() → 1 Purified Copper + 1 Stone Dust + 1/3 Cobalt Dust chance (16 EU/t × 400t base; HV OC 256 EU/t × 100t).$(li)$(#0E7490)Circuit #2 (Chip Water-Save)$(): 1 non-consumed $(item)Mining Edge Chip$() cuts water to $(bold)100 mB$() (-90% water) with identical yields."
+    }
+  ]
+}

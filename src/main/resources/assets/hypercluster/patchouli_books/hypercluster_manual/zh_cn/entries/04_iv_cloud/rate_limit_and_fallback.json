@@ -1,0 +1,27 @@
+{
+  "name": "429 限流、下线与兜底网关",
+  "category": "hypercluster:04_iv_cloud",
+  "icon": "hypercluster:local_fallback_gateway",
+  "sortnum": 2,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "同一个云账户能同时跑几座地面站，取决于累计真实消费额（Tier 1–5 对应 1–5 并发）：$(li)Tier 1（< 50 万）：1 并发$(li)Tier 2（≥ 50 万）：2 并发$(li)Tier 3（≥ 200 万）：3 并发$(li)Tier 4（≥ 500 万）：4 并发$(li)Tier 5（≥ 2000 万）：5 并发$(br)超上限会触发 $(#0E7490)429 限流$()，新轮次暂停且不计费。"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/local_fallback_gateway",
+      "text": "IV 级被动仓室，接在卫星站底层 3×3 天线框架上（每站最多 1 个）。"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "型号目录与 Leaving Soon",
+      "text": "目录里共有两个模型：$(li)$(#0E7490)OmniFlash-72B$()：主力稳定模型，永不下线。$(li)$(#0E7490)LegacyLlama-8B$()：生命周期演示模型，按主世界游戏日（`dayTime / 24000`）推进。默认第 2 天起标出 $(bold)Leaving Soon$()（仍可调用并显示剩余天数），到第 3 天正式下线并拦截新轮次（不计费）。$(br)参数：`-Dhypercluster.legacyRetireDay=3` 与 `leavingSoonDays=1`。"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "本地 Fallback 兜底网关",
+      "text": "在卫星地面站的 3×3 底座里装上 1 个$(item)本地兜底网关$()后，遇上 $(#0E7490)429 限流$()、$(#0E7490)Token 余额不足$()或$(#0E7490)模型已下线$()时，任务不会硬卡死，而是自动切给网关本地完成：$(li)本地功耗 60 EU/t，耗时 $(bold)×4$()（基准 400 tick，仍叠加 Batch / 天气 / 海拔）。$(li)$(bold)零 Token 计费$()、不占并发槽。$(br)注意：若馈源上方被实体方块挡住，兜底同样不会启动。"
+    }
+  ]
+}

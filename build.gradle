@@ -39,6 +39,14 @@ repositories {
         forRepository { maven { url = 'https://maven.terraformersmc.com/releases/' } }
         filter { includeGroup 'dev.emi' }
     }
+    exclusiveContent { // BlameJared - Patchouli for dev soft-integration runs
+        forRepository { maven { url = 'https://maven.blamejared.com' } }
+        filter { includeGroup 'vazkii.patchouli' }
+    }
+    exclusiveContent { // Modrinth - AE2, GuideME, and Jade for dev runs
+        forRepository { maven { url = 'https://api.modrinth.com/maven' } }
+        filter { includeGroup 'maven.modrinth' }
+    }
 }
 
 legacyForge {
@@ -97,8 +105,12 @@ dependencies {
     }
     modImplementation("com.tterrag.registrate:Registrate:${registrate_version}")
     modImplementation("dev.toma.configuration:configuration-forge-${minecraft_version}:${configuration_version}")
-    // Dev-only recipe viewer; modRuntimeOnly rides MDG's automatic SRG->Mojmap remapping.
+    // Dev-only runtime mods (not in mods.toml); modRuntimeOnly rides MDG's automatic SRG->Mojmap remapping.
     modRuntimeOnly("dev.emi:emi-forge:${emi_version}")
+    modRuntimeOnly("vazkii.patchouli:Patchouli:${patchouli_version}")
+    modRuntimeOnly("maven.modrinth:ae2:${ae2_version}")
+    modRuntimeOnly("maven.modrinth:guideme:${guideme_version}")
+    modRuntimeOnly("maven.modrinth:jade:${jade_version}")
 }
 
 apply from: 'gradle/scripts/spotless.gradle'

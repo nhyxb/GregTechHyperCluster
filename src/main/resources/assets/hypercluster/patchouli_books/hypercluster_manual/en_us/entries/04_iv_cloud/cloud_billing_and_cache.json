@@ -1,0 +1,27 @@
+{
+  "name": "Cloud Billing, Caching & Batch",
+  "category": "hypercluster:04_iv_cloud",
+  "icon": "hypercluster:token_credit_card",
+  "sortnum": 1,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "The closed-source demo service turns 1× $(item)Clean Dataset$() into 1× $(item)High-Purity Mining Dataset$() (100 ticks base, 25,000 Tokens base).$(br2)Every round uses a unique order ID with three-state settlement: pre-deducted (`HELD`) on start, finalized (`SETTLED`) on completion, and refunded once (`REFUNDED`) if cancelled by breaking the structure or pulling the card. Insufficient funds refuse to start."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/token_credit_card",
+      "recipe2": "hypercluster:shaped/satellite_feed_horn"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Tiers & Prompt Caching (10%)",
+      "text": "$(li)$(#0E7490)Inference Tiers$(): $(bold)Medium$() (×1 price, ×1 duration, 30 EU/t) or $(bold)Extra High$() (×2 price, ×0.5 duration, 120 EU/t).$(li)$(#0E7490)Prompt Caching$(): keyed on $(bold)(playerUUID, stationPos, recipeId, modelId, tier)$(). From the 2nd consecutive round with the exact same key, Token price drops to $(bold)10%$().$(br)Changing any key dimension or restarting the server resets the cache cold to full rate."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Batch (50%) Stacking to 5%",
+      "text": "Enabling $(#0E7490)Batch mode$() in the station GUI:$(li)Doubles round duration ($(bold)×2$()), while halving the Token bill ($(bold)×0.5$()).$(li)Batch does not invalidate Prompt Caching — they $(bold)stack multiplicatively$(): cached + batch costs $(bold)0.1 × 0.5 = 5%$() of base!$(br2)At Medium (25,000 base), cached + batch drops to 1,250 Tokens, or 1,188 Tokens above Y > 120."
+    }
+  ]
+}

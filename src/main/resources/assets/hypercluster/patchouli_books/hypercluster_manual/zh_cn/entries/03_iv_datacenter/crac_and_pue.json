@@ -1,0 +1,27 @@
+{
+  "name": "精密空调与 PUE 评级",
+  "category": "hypercluster:03_iv_datacenter",
+  "icon": "hypercluster:precision_crac",
+  "sortnum": 1,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "风冷机柜的耗电按机房 PUE 实时结算：$(br)$(#0E7490)总耗电 = IT 耗电 + 基础制冷耗电 × 环境系数 × 气流系数$()$(br)$(#0E7490)PUE = 总耗电 / IT 耗电$()（0 刀片时显示待机功耗 64 EU/t）。$(br2)基础制冷耗电固定为 IT 耗电的 80%。默认 Tier I 机房气流系数是 1.00，标准环境下 $(bold)PUE = 1.80$()（单刀片 IT 256 + 制冷 205 EU/t）。"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/precision_crac",
+      "recipe2": "hypercluster:shaped/raised_floor"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Tier I → Tier II 判定条件",
+      "text": "同时满足以下 3 条，机房自动升为 Tier II（气流系数 0.5625，标准环境 $(#0E7490)PUE 1.80 → 1.45$()）：$(li)$(#0E7490)架空地板$()：机柜 3×2 占地正下方那一整层（6 格）全部铺满$(item)防静电架空地板$()。$(li)$(#0E7490)冷热通道$()：主控正面外 1 格与背面出风面外 1 格不能被实心不透明方块堵死。$(li)$(#0E7490)精密空调$()：机柜周围 $(bold)8 格$()（切比雪夫距离）内有成型且通电运行的 3×3×1 $(item)机房精密空调$()（IV 机械方块外框，自耗 128 EU/t）。"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "自然冷源与高温惩罚",
+      "text": "环境系数同样大幅影响制冷耗电：$(li)$(#0E7490)自然冷源（制冷 -40%，×0.6）$()：机柜放在 $(bold)Y < 20$() 地下、降雪群系，或深海群系。$(li)$(#0E7490)高温环境（制冷 ×2.0）$()：下界维度，或无降水且温度 ≥ 1.5 的炎热群系（如沙漠）。$(br2)机房评级靠邻近方块变化与空调状态事件触发重算，外加 40 tick 轻量校验，不扫全图不拖 TPS。"
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "name": "429 Limits, Retirements & Fallback",
+  "category": "hypercluster:04_iv_cloud",
+  "icon": "hypercluster:local_fallback_gateway",
+  "sortnum": 2,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "An account's concurrent cloud-station limit scales across 5 tiers by cumulative settled spend (`totalSpent`):$(li)Tier 1 (< 500k): 1 concurrent$(li)Tier 2 (≥ 500k): 2 concurrent$(li)Tier 3 (≥ 2M): 3 concurrent$(li)Tier 4 (≥ 5M): 4 concurrent$(li)Tier 5 (≥ 20M): 5 concurrent$(br)Exceeding the ceiling triggers $(#0E7490)429 rate limiting$(), pausing extra rounds with no charge."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/local_fallback_gateway",
+      "text": "IV passive part mounted on the station's 3×3 frame base (max 1 per station)."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Models & Leaving Soon Lifecycle",
+      "text": "Two models are in the catalog:$(li)$(#0E7490)OmniFlash-72B$(): flagship model; never retires.$(li)$(#0E7490)LegacyLlama-8B$(): lifecycle demo evaluated by save game day (`dayTime / 24000`). By default it shows $(bold)Leaving Soon$() starting day 2 (still usable, countdown shown) and goes $(bold)RETIRED$() at day 3, blocking cloud calls at no charge.$(br)Flags: `-Dhypercluster.legacyRetireDay=3`, `leavingSoonDays=1`."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Local Fallback Gateway",
+      "text": "Attach 1× $(item)Local Fallback Gateway$() to the station's 3×3 frame base to keep production moving whenever cloud calls are blocked by $(#0E7490)429 limits$(), $(#0E7490)insufficient Tokens$(), or a $(#0E7490)RETIRED model$():$(li)Runs the task locally at 60 EU/t and $(bold)×4 duration$() (400 ticks base, still scaled by Batch / weather / altitude).$(li)$(bold)Zero Token billing$() and uses no concurrency slot.$(br)Note: a sky-blocked feed horn still blocks both cloud and fallback."
+    }
+  ]
+}

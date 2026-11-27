@@ -1,0 +1,27 @@
+{
+  "name": "计费契约、缓存与批处理",
+  "category": "hypercluster:04_iv_cloud",
+  "icon": "hypercluster:token_credit_card",
+  "sortnum": 1,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "闭源云演示服务消耗 1 份$(item)清洁数据集$()，在输出槽产出 1 份$(item)高纯矿处数据集$()（基准 100 tick、单价 25,000 Token）。$(br2)每轮都按唯一订单 ID 走三态账本：开跑预扣（HELD），跑完扣实（SETTLED），拆结构或拔卡取消时精确退回（REFUNDED），不吞单也不双扣；余额不足直接拒启。"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/token_credit_card",
+      "recipe2": "hypercluster:shaped/satellite_feed_horn"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "档位与 Prompt Caching（1 折）",
+      "text": "$(li)$(#0E7490)推理档位$()：$(bold)Medium$()（×1 单价、×1 耗时、30 EU/t）或 $(bold)Extra High$()（×2 单价、×0.5 耗时、120 EU/t）。$(li)$(#0E7490)Prompt Caching$()：缓存键为 $(bold)(玩家UUID, 站点坐标, 配方ID, 模型ID, 档位)$()。同一把键连续跑到第 2 轮起，Token 费率打 $(bold)1 折（×0.1）$()。$(br)键里任意一项变动或重启服务器，缓存都会变冷并按全价重新起算。"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Batch 5 折与叠乘 5%",
+      "text": "勾选面板左下角的$(#0E7490)批处理（Batch）$()模式后：$(li)单轮耗时 $(bold)×2$()，Token 账单 $(bold)×0.5（5 折）$()。$(li)Batch 与 Prompt Caching $(bold)互不失效、按乘法叠乘$()：命中缓存后再开 Batch，单轮费率压到 $(bold)0.1 × 0.5 = 5%$()！$(br2)按 Medium 基准 25,000 Token 算，缓存 + Batch 只需 1,250 Token；若地面站建在 Y > 120，还能再乘 0.95 到 1,188 Token。"
+    }
+  ]
+}

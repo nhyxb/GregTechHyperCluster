@@ -1,0 +1,22 @@
+{
+  "name": "EV Telemetry Chemical Reactor",
+  "category": "hypercluster:02_ev_workshop",
+  "icon": "hypercluster:ev_telemetry_chemical_reactor",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "The $(item)EV Telemetry Chemical Reactor$() applies the same exact settlement to chemical processing. Whenever a supported recipe settles regular item outputs, it deposits $(#0E7490)+1 Chemical Telemetry Log$() into its 64-slot withdraw-only buffer.$(br2)Jams, power drops, and cancelled runs log 0, and once the buffer hits 64/64 the reactor keeps running while dropping extra logs."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/ev_telemetry_chemical_reactor",
+      "text": "Upgrades directly from a vanilla EV Chemical Reactor. Indium concentrate separation is your source of chemical logs."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Indium Separation Comparison",
+      "text": "Mirrors GTCEu's indium concentrate separation (50 ticks base):$(li)$(#0E7490)Circuit #1 (Base)$(): $(bold)4 Aluminium Dust$() + 1000 mB Indium Concentrate → 1 Small Indium Dust + 4 Aluminium Sulfite Dust + 1000 mB Lead Zinc Solution (600 EU/t).$(li)$(#0E7490)Circuit #2 (Chip Reagent-Save)$(): non-consumed $(item)Chemical Edge Chip$() halves input to $(bold)2 Aluminium Dust$() and sulfite output to 2 (Al conserved), keeping full indium yield."
+    }
+  ]
+}

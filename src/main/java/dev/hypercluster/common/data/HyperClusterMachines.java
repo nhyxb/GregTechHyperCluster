@@ -116,6 +116,9 @@ public final class HyperClusterMachines {
         // 0.3 — IV datacenter machines, slots and settlement lines.
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.air_cooled_compute_rack.tooltip",
                 "Tier I air-cooled compute rack: 4 IV compute blades give up to 24 CWU/t through optical pipes.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.air_cooled_compute_rack.label.blades",
+                "Compute blades");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.air_cooled_compute_rack.label.snack", "Snack");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.air_cooled_compute_rack.blade_slot",
                 "IV compute blade slot: 6 CWU/t per blade.");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.air_cooled_compute_rack.snack_slot",
@@ -144,6 +147,7 @@ public final class HyperClusterMachines {
                 "Derated to 0 CWU/t: not enough energy.");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.iv_inference_hatch.tooltip",
                 "IV inference coprocessor hatch: pulls real CWU/t through optical pipes to run boosted tower recipes (25%/50% less EU/t).");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.iv_inference_hatch.label.chip", "Inference chip");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.iv_inference_hatch.chip_slot",
                 "Inference chip: ordinary domain edge chips serve 2 CWU/t recipes, aligned chips up to 8 CWU/t.");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.precision_crac.tooltip",
@@ -156,6 +160,11 @@ public final class HyperClusterMachines {
         // 0.4 — the API satellite ground station: the closed-source cloud.
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.tooltip",
                 "IV closed-source cloud ground station: opens Token accounts, buys high-purity datasets and runs billable cloud service rounds (LV/MV power, feed horn must see open sky).");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.label.credential", "API key");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.label.sell", "Sell");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.label.input", "Input");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.label.output", "Output");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.label.card", "Token");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.credential_slot",
                 "API credential card: binds the account this station operates on (first open anywhere grants the welcome Tokens).");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.sell_slot",

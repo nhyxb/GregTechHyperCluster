@@ -1,0 +1,32 @@
+{
+  "name": "Micro Burner & Edge Chips",
+  "category": "hypercluster:01_hv_start",
+  "icon": "hypercluster:hv_micro_burner",
+  "sortnum": 1,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "Once you pull $(item)Mining Telemetry Logs$() from the washer, burn them onto $(item)Blank Carriers$() inside the $(item)HV Micro Burner$() to produce reusable edge chips.$(br2)Craft a batch of carriers and the burner first to close your HV water-saving loop."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/hv_micro_burner",
+      "recipe2": "hypercluster:shaped/blank_carrier"
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "hypercluster:mining_edge_chip",
+      "link_recipe": true,
+      "text": "The Micro Burner accepts two input tiers:$(li)$(#0E7490)Raw Log$(): 1 Mining Telemetry Log + 1 Blank Carrier → 1 Mining Edge Chip (512 EU/t × 128t).$(li)$(#0E7490)High-Purity Dataset (EV)$(): 1 High-Purity Mining Dataset + 1 Blank Carrier → 1 Mining Edge Chip at $(bold)128 EU/t × 64t$() (1/4 EU/t, 1/2 time).$(br2)High-Purity Chemical Datasets burn $(item)Chemical Edge Chips$() here too (512 EU/t × 128t)."
+    },
+    {
+      "type": "patchouli:relations",
+      "entries": [
+        "hypercluster:01_hv_start/telemetry_ore_washer",
+        "hypercluster:02_ev_workshop/telemetry_chemical_reactor",
+        "hypercluster:02_ev_workshop/data_scrubbing_tower"
+      ],
+      "text": "Drop the burned chip back into the ore washer on Circuit #2 to cut water use by 90%. In EV, move on to the chemical reactor and scrubbing tower."
+    }
+  ]
+}

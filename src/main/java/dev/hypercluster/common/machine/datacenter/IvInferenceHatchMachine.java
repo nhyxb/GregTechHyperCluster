@@ -25,6 +25,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
 import dev.hypercluster.common.item.HyperClusterItems;
+import dev.hypercluster.common.machine.MachineUi;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -116,8 +117,9 @@ public class IvInferenceHatchMachine extends OpticalComputationHatchMachine impl
 
     @Override
     public Widget createUIWidget() {
-        WidgetGroup group = (WidgetGroup) super.createUIWidget();
-        SlotWidget chip = new SlotWidget(chipSlot, 0, 79, 26, true, true);
+        WidgetGroup group = MachineUi.panel(164, 78);
+        group.addWidget(MachineUi.label(16, 21, 132, "hypercluster.machine.iv_inference_hatch.label.chip"));
+        SlotWidget chip = new SlotWidget(chipSlot, 0, (group.getSize().width - 18) / 2, 35, true, true);
         chip.setBackground(GuiTextures.SLOT);
         chip.setHoverTooltips(Component.translatable("hypercluster.machine.iv_inference_hatch.chip_slot"));
         group.addWidget(chip);

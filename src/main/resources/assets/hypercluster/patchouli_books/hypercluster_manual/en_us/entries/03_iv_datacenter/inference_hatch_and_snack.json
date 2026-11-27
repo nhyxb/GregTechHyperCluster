@@ -1,0 +1,29 @@
+{
+  "name": "Inference Hatch & Snack Pack",
+  "category": "hypercluster:03_iv_datacenter",
+  "icon": "hypercluster:iv_inference_hatch",
+  "sortnum": 2,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "The $(item)IV Inference Hatch$() is an optional part mounted on the Clean Stainless Steel base of the $(item)Data Scrubbing Tower$() (at most 1 per tower).$(br2)Link it with GT optical cable to a compute rack's transmission hatch and insert an edge chip to trade CWU/t for tower EU/t savings.$(br2)Note: optical pipes do not auto-connect to pre-placed hatches — verify connections with a wrench."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/iv_inference_hatch",
+      "recipe2": "hypercluster:shaped/green_snack_pack"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "CWU/t Billing & Watchdog",
+      "text": "Applies to the tower's two raw-log scrubbing recipes (2048 EU/t base):$(li)$(#0E7490)Ordinary Edge Chip$() (mining or chemical): consumes $(bold)2 CWU/t$() every tick for $(bold)-25% EU/t$() (→ 1536 EU/t).$(li)$(#0E7490)Aligned Edge Chip$(): consumes $(bold)8 CWU/t$() every tick for $(bold)-50% EU/t$() (→ 1024 EU/t).$(br)Without a chip or CWU/t, it runs normally at 2048 EU/t. If CWU/t dies mid-batch, a watchdog interrupts the stalled run so the next cycle falls back to standard rules instead of soft-locking."
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "hypercluster:green_snack_pack",
+      "link_recipe": true,
+      "title": "Green Snack Pack Easter Egg",
+      "text": "Keep a $(item)Green Snack Pack$() in the $(item)Air-Cooled Compute Rack$()'s snack slot to trim total rack EU/t (IT, cooling, and standby) by $(#0E7490)5%$().$(br2)Enabled by default; server admins can disable it with `-Dhypercluster.snackBonus=false`."
+    }
+  ]
+}

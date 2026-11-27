@@ -13,14 +13,20 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.Recipe;
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import dev.hypercluster.HyperCluster;
 import dev.hypercluster.common.data.HyperClusterBlocks;
 import dev.hypercluster.common.data.HyperClusterMachines;
 import dev.hypercluster.common.item.HyperClusterItems;
 
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -397,6 +403,103 @@ public class SurvivalCraftingTests {
         System.out.printf("[HC-04] 0.4 cloud survival recipes verified: %d distinct ingredients, all zero-HPCA%n",
                 ingredients.size());
         helper.succeed();
+    }
+
+    /**
+     * Patchouli soft-integration contract: zero hard dependency when Patchouli is absent (recipe
+     * skipped cleanly by forge:mod_loaded), craftable guide book when Patchouli is loaded, and all
+     * book definition/model/texture/bilingual entry JSONs resolve cleanly on the classpath.
+     */
+    @GameTest(template = "hc_floor", batch = SURVIVAL_BATCH, timeoutTicks = 100)
+    public static void patchouliManualSoftIntegrationAndResourcesValid(GameTestHelper helper) {
+        boolean patchouliLoaded = ModList.get().isLoaded("patchouli");
+        Recipe<?> manualRecipe = helper.getLevel().getRecipeManager()
+                .byKey(HyperCluster.id("hypercluster_manual")).orElse(null);
+        if (!patchouliLoaded) {
+            helper.assertTrue(manualRecipe == null,
+                    "hypercluster_manual recipe must be skipped when Patchouli is absent");
+        } else {
+            helper.assertTrue(manualRecipe instanceof CraftingRecipe,
+                    "hypercluster_manual recipe must load when Patchouli is present");
+            CraftingRecipe crafting = (CraftingRecipe) manualRecipe;
+            ItemStack output = crafting.getResultItem(helper.getLevel().registryAccess());
+            helper.assertTrue(
+                    BuiltInRegistries.ITEM.getKey(output.getItem())
+                            .equals(new ResourceLocation("patchouli", "guide_book")),
+                    "manual recipe must output patchouli:guide_book, got " + output);
+            helper.assertTrue(output.hasTag() &&
+                    "hypercluster:hypercluster_manual".equals(output.getTag().getString("patchouli:book")),
+                    "manual output NBT patchouli:book mismatch: " + output.getTag());
+            assertRecipeUses(helper, crafting, "minecraft:book", "manual recipe must consume minecraft:book");
+            assertRecipeUses(helper, crafting, "hypercluster:mining_telemetry_log",
+                    "manual recipe must accept mining_telemetry_log");
+            assertRecipeUses(helper, crafting, "hypercluster:blank_carrier",
+                    "manual recipe must accept blank_carrier");
+        }
+
+        JsonObject book = readJsonResource(helper,
+                "data/hypercluster/patchouli_books/hypercluster_manual/book.json");
+        helper.assertTrue(book.get("use_resource_pack").getAsBoolean(),
+                "Patchouli 1.20.1 mod books require use_resource_pack=true");
+        helper.assertTrue("hypercluster:hypercluster_manual".equals(book.get("model").getAsString()),
+                "book.json model must resolve to assets/hypercluster/models/item/hypercluster_manual.json");
+        for (String langKey : new String[] { "name", "subtitle", "landing_text" }) {
+            helper.assertTrue(Language.getInstance().has(book.get(langKey).getAsString()),
+                    "missing translation key for book.json " + langKey + ": " + book.get(langKey));
+        }
+
+        JsonObject model = readJsonResource(helper, "assets/hypercluster/models/item/hypercluster_manual.json");
+        helper.assertTrue("hypercluster:item/hypercluster_manual"
+                .equals(model.getAsJsonObject("textures").get("layer0").getAsString()),
+                "manual model layer0 texture mismatch");
+        try (InputStream tex = SurvivalCraftingTests.class.getClassLoader()
+                .getResourceAsStream("assets/hypercluster/textures/item/hypercluster_manual.png")) {
+            helper.assertTrue(tex != null, "missing assets/hypercluster/textures/item/hypercluster_manual.png");
+        } catch (Exception e) {
+            helper.assertTrue(false, "failed reading manual texture: " + e.getMessage());
+        }
+
+        String[] bookFiles = {
+                "categories/01_hv_start.json",
+                "categories/02_ev_workshop.json",
+                "categories/03_iv_datacenter.json",
+                "categories/04_iv_cloud.json",
+                "entries/01_hv_start/telemetry_ore_washer.json",
+                "entries/01_hv_start/micro_burner_and_circuits.json",
+                "entries/02_ev_workshop/telemetry_chemical_reactor.json",
+                "entries/02_ev_workshop/data_scrubbing_tower.json",
+                "entries/02_ev_workshop/lora_engraving_chamber.json",
+                "entries/02_ev_workshop/red_team_sandbox.json",
+                "entries/03_iv_datacenter/air_cooled_compute_rack.json",
+                "entries/03_iv_datacenter/crac_and_pue.json",
+                "entries/03_iv_datacenter/inference_hatch_and_snack.json",
+                "entries/04_iv_cloud/satellite_station_and_accounts.json",
+                "entries/04_iv_cloud/cloud_billing_and_cache.json",
+                "entries/04_iv_cloud/rate_limit_and_fallback.json"
+        };
+        for (String lang : new String[] { "zh_cn", "en_us" }) {
+            for (String rel : bookFiles) {
+                JsonObject obj = readJsonResource(helper,
+                        "assets/hypercluster/patchouli_books/hypercluster_manual/" + lang + "/" + rel);
+                helper.assertTrue(obj.has("name") && !obj.get("name").getAsString().isEmpty(),
+                        "missing name in " + lang + "/" + rel);
+            }
+        }
+        System.out.printf("[HC-MANUAL] Patchouli soft integration verified (patchouliLoaded=%s, %d bilingual files)%n",
+                patchouliLoaded, bookFiles.length);
+        helper.succeed();
+    }
+
+    private static JsonObject readJsonResource(GameTestHelper helper, String path) {
+        try (InputStream stream = SurvivalCraftingTests.class.getClassLoader().getResourceAsStream(path)) {
+            helper.assertTrue(stream != null, "missing resource on classpath: " + path);
+            try (var reader = new InputStreamReader(stream, StandardCharsets.UTF_8)) {
+                return JsonParser.parseReader(reader).getAsJsonObject();
+            }
+        } catch (Exception e) {
+            helper.assertTrue(false, "invalid JSON at " + path + ": " + e.getMessage());
+            return new JsonObject();
+        }
     }
 
     private static CraftingRecipe craftingRecipe(GameTestHelper helper, String path) {

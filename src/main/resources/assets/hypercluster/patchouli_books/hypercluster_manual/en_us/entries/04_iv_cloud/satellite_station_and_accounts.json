@@ -1,0 +1,32 @@
+{
+  "name": "5×6×5 Satellite Station & Accounts",
+  "category": "hypercluster:04_iv_cloud",
+  "icon": "hypercluster:api_satellite_station",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "Rather than building an air-cooled room, IV players can build a 5×6×5 $(item)API Satellite Station$() to call the simulated closed-source cloud. Like the datacenter, it has $(bold)zero HPCA and zero Research Station prerequisites$().$(br2)Power requirements are tiny: an $(#0E7490)LV or MV Energy Hatch$() is enough (Medium: 30 EU/t, Extra High: 120 EU/t, Fallback: 60 EU/t)."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/api_satellite_station",
+      "recipe2": "hypercluster:shaped/api_credential_card"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/satellite_dish_frame",
+      "recipe2": "hypercluster:shaped/satellite_dish_panel"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Dish Structure & Signal Rules",
+      "text": "$(li)$(#0E7490)Structure$(): 3×3 $(item)Satellite Dish Frame$() base (controller front-center; hatches and optional fallback gateway go here), truss holding a 5×5 concave $(item)Satellite Dish Panel$() bowl, and a 2-tall $(item)Satellite Feed Horn$() at top center `(2, 5, 2)`.$(li)$(#0E7490)Open Sky$(): no solid-render block may sit above the feed horn (glass is fine), or uplink is refused.$(li)$(#0E7490)Weather & Altitude$(): rain ×1.5 duration, thunder ×2.0; controller at $(bold)Y > 120$() gives ×0.95 bill and ×0.9 duration."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "5M Welcome Tokens & Uploads",
+      "text": "$(li)$(#0E7490)Account & 5M Bonus$(): $(bold)right-click$() any station controller with an $(item)API Credential Card$() to bind your UUID, then insert it into the API key slot. Opening your account anywhere in the save grants a one-time $(bold)5,000,000 Token$() welcome balance (shared overworld ledger across dimensions).$(li)$(#0E7490)Sell High-Purity Data$(): with a credential card inserted, $(item)High-Purity Datasets$() in the Sell slot auto-convert at $(bold)50,000 Tokens$() each.$(li)Use a $(item)Token Credit Card$() to deposit or withdraw full balances."
+    }
+  ]
+}

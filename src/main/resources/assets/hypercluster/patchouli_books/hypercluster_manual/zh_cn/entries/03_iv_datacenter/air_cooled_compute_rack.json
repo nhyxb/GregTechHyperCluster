@@ -1,0 +1,32 @@
+{
+  "name": "3×5×2 风冷算力机柜",
+  "category": "hypercluster:03_iv_datacenter",
+  "icon": "hypercluster:air_cooled_compute_rack",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "进了 IV 阶段不用等科研站和 HPCA 才能用上算力。整套 IV 自建机房组件全用常规 IV 材料（钢、橡胶、铜、不锈钢、铂线、细银线、硅晶圆和 IV 电子件）合成，$(bold)零 HPCA、零科研站、零数据仓前置$()。$(br2)$(item)风冷算力机柜$()不吃 PCB 冷却液，直接通过 GT 原生算力传输仓和光学管道往外送 CWU/t。"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/air_cooled_compute_rack",
+      "recipe2": "hypercluster:shaped/iv_compute_blade"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/rack_casing_intake",
+      "recipe2": "hypercluster:shaped/rack_casing_exhaust"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "3×5×2 结构与刀片线性增长",
+      "text": "$(li)$(#0E7490)前墙（3×5 进风面）$()：14 块$(item)42U 机柜外壳（进风面）$()（冰蓝顶条），主控放正面中心 `(1, 2, 0)`。$(li)$(#0E7490)后墙（3×5 出风面）$()：$(item)42U 机柜外壳（出风面）$()（橙红顶条），底起第 2 排替换放 1–2 个能源仓、维护仓，以及 $(bold)1 个 GT 原生算力传输仓$()。$(li)$(#0E7490)计算刀片$()：GUI 最多插 4 枚$(item)IV 风冷计算刀片$()，每枚 +6 CWU/t（$(bold)0 → 24 CWU/t$()）、IT 耗电 256 EU/t。0 刀片待机耗电 64 EU/t。"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "同 tick 严格预算与降额",
+      "text": "机柜实现 GTCEu 原生 `IOpticalComputationProvider`，同 tick 内多个用算设备共享这 0–24 CWU/t 预算池：$(li)预览查询（simulate）不扣额度，真实运转才实时消耗，不会超发。$(li)软锤暂停、维护仓未修、未插刀片或供电不足时，算力直接归零并在界面标明降额原因。$(li)光学管道断开时消费侧同样只能拿到 0 CWU/t。"
+    }
+  ]
+}

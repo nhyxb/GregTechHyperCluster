@@ -1,0 +1,27 @@
+{
+  "name": "7×6×7 Red-Team Sandbox & Circuit #4",
+  "category": "hypercluster:02_ev_workshop",
+  "icon": "hypercluster:red_team_sandbox",
+  "sortnum": 3,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "Ordinary edge chips save materials, but to cut machine power directly you need to stress-test them in the $(item)Red-Team Sandbox$() using $(item)Corrupted Noise$() as adversarial samples.$(br2)Chips that pass come out as $(item)Aligned Edge Chips$(), unlocking $(#0E7490)Circuit #4$() low-energy stable recipes with zero glitch side-products."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/red_team_sandbox",
+      "text": "Controller uses an EV Emitter and Titanium Plates; red-team recipes require no fluids."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "7×6×7 Octagonal Blast Dome",
+      "text": "$(li)$(#0E7490)Base (y=0..1)$(): Cut-corner octagonal Solid Steel Casing floor and lower wall, controller front-center `(3, 0, 0)`. $(bold)Minimum required hatches$() (Item Import/Export, Energy, Maintenance) must sit in the Solid Steel base; the upper `y=4` HSSE ring only accepts optional extra hatches.$(li)$(#0E7490)Core & Windows$(): 3×2 Tempered Glass windows on all 4 faces with Steel Frame ribs, isolated 2-tall HSSE pedestal inside, Solid Steel cap at `y=5`."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Alignment & Circuit #4 Savings",
+      "text": "$(#0E7490)Red-Team Testing$() (2048 EU/t × 150t): 2 Corrupted Noise + 1 Edge Chip → 1 Aligned Edge Chip.$(br2)$(#0E7490)Circuit #4 Benefits (Chip Not Consumed)$():$(li)Ore Washer: $(bold)16 → 12 EU/t (-25%)$(), 1000 mB Water, base outputs.$(li)Chemical Reactor: $(bold)600 → 450 EU/t (-25%)$(), 4 Aluminium Dust, base outputs.$(br)Aligned chips also drive the 8 CWU/t (-50% EU/t) tier in an IV Inference Hatch."
+    }
+  ]
+}

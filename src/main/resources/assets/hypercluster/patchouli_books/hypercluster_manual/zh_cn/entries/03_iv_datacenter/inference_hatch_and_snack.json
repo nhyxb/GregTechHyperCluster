@@ -1,0 +1,29 @@
+{
+  "name": "推理协处理器仓与零食彩蛋",
+  "category": "hypercluster:03_iv_datacenter",
+  "icon": "hypercluster:iv_inference_hatch",
+  "sortnum": 2,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "$(item)IV 推理协处理器仓$()是专门挂在$(item)数据清洗塔$()洁净不锈钢底座上的可选仓室（每座塔最多 1 个）。$(br2)用 GT 光学管道把它连到风冷算力机柜的算力传输仓，再在仓内芯片槽放 1 枚边缘芯片，就能拿算力换清洗塔的耗电折扣。"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/iv_inference_hatch",
+      "recipe2": "hypercluster:shaped/green_snack_pack"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "CWU/t 折扣与断算回退",
+      "text": "对清洗塔两条原始日志清洗配方（基准 2048 EU/t）：$(li)$(#0E7490)普通边缘芯片$()（矿处/化工都行）：每 tick 真实扣 $(bold)2 CWU/t$()，耗电 $(bold)-25%$()（→ 1536 EU/t）。$(li)$(#0E7490)已对齐边缘芯片$()：每 tick 真实扣 $(bold)8 CWU/t$()，耗电 $(bold)-50%$()（→ 1024 EU/t）。$(br)没插芯片或算力不够时按原功耗 2048 EU/t 跑。若工作半途断算，看门狗会中断卡住的批次，下一批自动退回原规则，不会卡死。"
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "hypercluster:green_snack_pack",
+      "link_recipe": true,
+      "title": "绿色零食包彩蛋",
+      "text": "往$(item)风冷算力机柜$()右侧的零食槽里塞 1 包$(item)绿色零食包$()，机柜整机总耗电（包括 IT、制冷与待机）直接 $(#0E7490)-5%$()。$(br2)这项机房镇宅玄学默认开启，可用启动参数 `-Dhypercluster.snackBonus=false` 关闭。"
+    }
+  ]
+}

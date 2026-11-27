@@ -19,7 +19,6 @@ import com.lowdragmc.lowdraglib.gui.widget.Widget;
 import com.lowdragmc.lowdraglib.gui.widget.WidgetGroup;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
-import com.lowdragmc.lowdraglib.utils.Position;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -29,6 +28,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 import dev.hypercluster.common.item.HyperClusterItems;
+import dev.hypercluster.common.machine.MachineUi;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -457,22 +457,23 @@ public class AirCooledComputeRackMachine extends WorkableElectricMultiblockMachi
 
     @Override
     public Widget createUIWidget() {
-        WidgetGroup group = (WidgetGroup) super.createUIWidget();
-        int slotY = 20;
+        String uiKey = "hypercluster.machine.air_cooled_compute_rack.";
+        int slotY = 13;
+        WidgetGroup controls = MachineUi.multiblockControls(31);
+        controls.addWidgets(
+                MachineUi.label(11, 0, 96, uiKey + "label.blades"),
+                MachineUi.label(123, 0, 58, uiKey + "label.snack"));
         for (int i = 0; i < DatacenterRating.BLADE_SLOTS; i++) {
-            SlotWidget blade = new SlotWidget(bladeInventory, i, 53 + i * 18, slotY, true, true);
+            SlotWidget blade = new SlotWidget(bladeInventory, i, 17 + i * 22, slotY, true, true);
             blade.setBackground(GuiTextures.SLOT);
-            if (i == 0) {
-                blade.setHoverTooltips(
-                        Component.translatable("hypercluster.machine.air_cooled_compute_rack.blade_slot"));
-            }
-            group.addWidget(blade);
+            blade.setHoverTooltips(Component.translatable(uiKey + "blade_slot"));
+            controls.addWidget(blade);
         }
-        SlotWidget snack = new SlotWidget(snackSlot, 0, 53 + 2 * 18, slotY + 18, true, true);
+        SlotWidget snack = new SlotWidget(snackSlot, 0, 143, slotY, true, true);
         snack.setBackground(GuiTextures.SLOT);
-        snack.setHoverTooltips(Component.translatable("hypercluster.machine.air_cooled_compute_rack.snack_slot"));
-        group.addWidget(snack);
-        return group;
+        snack.setHoverTooltips(Component.translatable(uiKey + "snack_slot"));
+        controls.addWidget(snack);
+        return MachineUi.multiblockPage(this, controls);
     }
 
     @Override

@@ -1,0 +1,6 @@
+{
+  "name": "Chapter 4: IV Closed-Source Cloud",
+  "description": "5×6×5 satellite station, 5M welcome Tokens, caching/batch billing, and local fallback.",
+  "icon": "hypercluster:api_satellite_station",
+  "sortnum": 3
+}

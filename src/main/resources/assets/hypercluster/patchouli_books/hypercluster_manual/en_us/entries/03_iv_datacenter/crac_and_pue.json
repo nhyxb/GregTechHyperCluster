@@ -1,0 +1,27 @@
+{
+  "name": "Precision CRAC & PUE Rating",
+  "category": "hypercluster:03_iv_datacenter",
+  "icon": "hypercluster:precision_crac",
+  "sortnum": 1,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "Rack power settles live by room PUE:$(br)$(#0E7490)Total EU/t = IT EU/t + Base Cooling × Env × Airflow$()$(br)$(#0E7490)PUE = Total EU/t / IT EU/t$() (shows 64 EU/t standby with 0 blades).$(br2)Base cooling equals 80% of IT draw. A default Tier I room has airflow 1.00, giving $(bold)PUE = 1.80$() in neutral biomes (IT 256 + Cooling 205 EU/t per blade)."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/precision_crac",
+      "recipe2": "hypercluster:shaped/raised_floor"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Tier I → Tier II Conditions",
+      "text": "Meeting all 3 conditions upgrades the room to Tier II (airflow 0.5625, neutral $(#0E7490)PUE 1.80 → 1.45$()):$(li)$(#0E7490)Raised Floor$(): all 6 blocks directly under the rack's 3×2 footprint (`y = bottom - 1`) must be $(item)Anti-Static Raised Floor$().$(li)$(#0E7490)Open Air Aisles$(): the block right in front of the controller intake AND right behind the exhaust face must not be solid-render blocks.$(li)$(#0E7490)Running CRAC$(): a formed, powered 3×3×1 $(item)Precision CRAC$() (IV Machine Casings, 128 EU/t) within $(bold)8 blocks$()."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Natural Cold & Hot Environments",
+      "text": "Location modifies cooling power via the environment multiplier:$(li)$(#0E7490)Natural Cold Source (-40%, ×0.6)$(): placing the rack below $(bold)Y < 20$(), in a snowy biome, or in a deep ocean biome.$(li)$(#0E7490)Hot Environment (×2.0)$(): the Nether, or hot dry biomes (no precipitation and temperature ≥ 1.5, such as deserts).$(br2)Room checks are event-driven on block/CRAC state changes plus a lightweight 40-tick recheck — no full-world scans."
+    }
+  ]
+}

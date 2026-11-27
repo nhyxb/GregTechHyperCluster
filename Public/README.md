@@ -1,8 +1,8 @@
 # GregTech HyperCluster 0.1 + 0.2 + 0.2.1 + 0.3 + 0.4 贴图与 Aseprite 源文件清单
 
-本目录存放 **0.1（HV 首发闭环）**、**0.2（EV 数据工坊）**、**0.2.1（EV 数据工坊扩展）**、**0.3（IV 自建算力 / 智算机房 Tier I–II）** 与 **0.4（IV 闭源云 / API 卫星地面站与 Token 计费）** 的全部 **47 张基础/运行态贴图**（含 6 组多方块主控竖排多帧动画精灵表及配套 `.png.mcmeta`）、**5 张 `32×32` RGBA LDLib 2×2 CTM 衔接图集**（合计 **52 张贴图**）与对应的 **41 个分层 `.aseprite` 源文件**（36 个主资产 + 5 个 `32×32` CTM），供工程拷贝进 `src/main/resources/assets/hypercluster/textures/`。
+本目录存放 **0.1（HV 首发闭环）**、**0.2（EV 数据工坊）**、**0.2.1（EV 数据工坊扩展）**、**0.3（IV 自建算力 / 智算机房 Tier I–II）**、**0.4（IV 闭源云 / API 卫星地面站与 Token 计费）** 及**通用科技手册**的全部 **48 张基础/运行态贴图**（含 6 组多方块主控竖排多帧动画精灵表及配套 `.png.mcmeta`）、**5 张 `32×32` RGBA LDLib 2×2 CTM 衔接图集**（合计 **53 张贴图**）与对应的 **42 个分层 `.aseprite` 源文件**（37 个主资产 + 5 个 `32×32` CTM），供工程拷贝进 `src/main/resources/assets/hypercluster/textures/`。
 
-- 基础贴图全量总览（18 件物品 `4x / 2x / 1x` 槽位对比 + 0.1–0.4 全部机器叠加 HV 橙金 / EV 钛紫 / IV 蓝机壳对比 + 架空地板/机柜冷热面 + 0.4 卫星站钢架/反射面板/馈源接收头预览）见 [contact_sheet.png](textures/previews/contact_sheet.png)。
+- 基础贴图全量总览（19 件物品 `4x / 2x / 1x` 槽位对比 + 0.1–0.4 全部机器叠加 HV 橙金 / EV 钛紫 / IV 蓝机壳对比 + 架空地板/机柜冷热面 + 0.4 卫星站钢架/反射面板/馈源接收头预览 + 科技手册 `1x / 2x` 物品栏轮廓对比）见 [contact_sheet.png](textures/previews/contact_sheet.png)。
 - 5 个结构方块的 **LDLib 2×2 CTM 衔接图集与 3×3 / T 型 / L 型 / 多方块立面实测拼接预览**见 [ctm_preview.png](textures/previews/ctm_preview.png)。
 - 6 台多方块主控的 **运行态多帧动画逐帧展开与无缝循环检视表**见 [active_animations_sheet.png](textures/previews/active_animations_sheet.png)。
 
@@ -10,7 +10,7 @@
 
 ## 交付清单
 
-### 一、物品贴图（18 张 `16×16 RGBA`）
+### 一、物品贴图（19 张 `16×16 RGBA`）
 
 | 阶段 | 中文名 | 导出贴图（`16×16 RGBA`） | 分层源文件（`.aseprite`） | 目标资源路径（`modid = hypercluster`） |
 | :---: | --- | --- | --- | --- |
@@ -32,6 +32,7 @@
 | 0.3 | 绿色零食包 | `textures/item/green_snack_pack.png` | `textures/source/green_snack_pack.aseprite` | `assets/hypercluster/textures/item/green_snack_pack.png` |
 | 0.4 | Token 充值晶卡 | `textures/item/token_credit_card.png` | `textures/source/token_credit_card.aseprite` | `assets/hypercluster/textures/item/token_credit_card.png` |
 | 0.4 | API 凭证卡 | `textures/item/api_credential_card.png` | `textures/source/api_credential_card.aseprite` | `assets/hypercluster/textures/item/api_credential_card.png` |
+| 通用 | 超算集群科技手册 | `textures/item/hypercluster_manual.png` | `textures/source/hypercluster_manual.aseprite` | `assets/hypercluster/textures/item/hypercluster_manual.png` |
 
 ### 二、结构方块贴图（7 张 `16×16 RGBA` 全不透明：0.3 机房 4 张 + 0.4 卫星站 3 张）
 
@@ -93,11 +94,12 @@
 - **载体、边缘芯片与已对齐芯片（`blank_carrier` / `*_edge_chip` / `aligned_*_edge_chip`）**：`14×12` 横版陶瓷基板；空载体浅色中空芯片槽，未对齐芯片压装深炭黑硅片+金触点+琥珀/青绿领域斜纹；**0.2.1 `aligned_*_edge_chip`** 复用同款芯片底图并叠加独立 `alignment_shield_seal` 图层（6 图层：`carrier_outline` / `carrier_substrate` / `metal_contacts` / `dark_ic_chip` / `mining_mark` 或 `chemical_mark` / `alignment_shield_seal`），在左上角增加青绿认证封条高光、右下角压印带亮白勾选符（`✓`）的青绿校验盾标，整图色数严格控制在 ≤16 色，物品栏 `1×` 缩放下亦可瞬间区分对齐前后。
 - **0.2.1 LoRA 扩展插卡（`mining_lora_card` / `chemical_lora_card`）**：独立 `10×14` 窄长竖向扩展卡廓形（左上角斜切定位角 + 右侧外探 4 针金手指排针），彻底区别于底部金手指的数据卡、正方数据集和横版陶瓷芯片；两张卡 Alpha 外轮廓逐像素一致，仅切换 `domain_emblem` 为矿处橙金 / 化工青绿（4 图层：`card_outline` / `card_pcb` / `side_pins` / `domain_emblem`）。
 
-### 2. 0.3 / 0.4 IV 核心物品
+### 2. 0.3 / 0.4 IV 核心物品与通用手册
 - **IV 风冷计算刀片（`iv_compute_blade`）**：修长横版 `14×10` T 型热插拔服务器刀片廓形（左侧带锁扣拉手与幽蓝状态灯，上部 4 道银灰铝合金散热鳍片，下部深灰 PCB + 幽蓝电路纹，右侧 3 组后端背板金手指），与竖卡、方盒、芯片板及 LoRA 竖卡轮廓完全区分（5 图层：`blade_outline` / `blade_chassis` / `heatsink_fins` / `blue_circuitry` / `gold_fingers`）。
 - **绿色零食包（`green_snack_pack`）**：`12×14` 鼓胀枕式鲜绿色铝箔包装袋 + 上下清晰白色锯齿压纹封口 + 正面暖黄复古笑脸小徽标，致敬机房镇宅玄学彩蛋（4 图层：`pouch_outline` / `green_foil_body` / `white_crimped_seals` / `front_label`）。
 - **0.4 Token 充值晶卡（`token_credit_card`）**：`14×10` 横版斜切角科技晶卡廓形（右上/左下 2px 科技晶卡切角），采用高饱和暖色系琥珀金—深古铜色相偏移色板（9 色），与全部冷钢/冷蓝数据卡一眼区分；中央深古铜嵌入式芯片槽内点亮纯白高光亮金 `T` 字 Token 芯片徽标，左右辅以金色微电路走线（4 图层：`card_outline` / `amber_crystal_body` / `circuit_accent_lines` / `token_chip_emblem`）。
 - **0.4 API 凭证卡（`api_credential_card`）**：`14×10` 横版圆角安全密钥卡廓形，深靛蓝暗夜卡体配上下黑金金属饰条与右侧 2×2 金色安全芯片触点，左侧纯白镂空钥匙图标、底部居中对称白色分段加密条纹（12 色），供后续多凭证池与 403 熔断体系使用（4 图层：`card_outline` / `indigo_card_body` / `gold_security_trim` / `key_and_crypto_stripes`）。
+- **超算集群科技手册（`hypercluster_manual`）**：`14×14` 斜放硬壳精装科技手册廓形（保留四周 1px 透明安全边，与全系列水平/竖直轴对齐数据卡、数据集、边缘芯片、LoRA 卡、晶卡及刀片彻底区分），采用深蓝灰硬壳色相偏移色板与左上主光照（左侧弧形书脊带 3 道立体装订棱与暗槽折痕，封面居中压印带冰青核心与四向青色算力总线的琥珀金芯片纹章，右侧与底部露出一截浅暖象牙色书页叠层并于右下垂落 2px 青色书签带；15 色，5 图层：`book_outline` / `hardcover_body` / `exposed_pages` / `cyan_bookmark` / `compute_chip_emblem`），在 `1×` 物品栏中即可一眼识别。
 
 ### 3. 0.3 / 0.4 IV 结构方块（`block/datacenter/` 与 `block/cloud/`）
 - **0.3 防静电架空地板（`raised_floor_top` / `raised_floor_side`）**：

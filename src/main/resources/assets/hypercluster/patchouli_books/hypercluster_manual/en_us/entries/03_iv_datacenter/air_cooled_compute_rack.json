@@ -1,0 +1,32 @@
+{
+  "name": "3×5×2 Air-Cooled Compute Rack",
+  "category": "hypercluster:03_iv_datacenter",
+  "icon": "hypercluster:air_cooled_compute_rack",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "Once you hit IV, you do not need to wait on a Research Station or HPCA to generate computation. Every IV datacenter component crafts from standard IV materials (Steel, Rubber, Copper, Stainless Steel, Platinum Wire, Fine Silver Wire, Silicon Wafers, and IV electronics) — $(bold)zero HPCA, zero Research Station, zero Data Bank prerequisites$().$(br2)The $(item)Air-Cooled Compute Rack$() needs no PCB coolant and outputs CWU/t straight over GT optical pipes."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/air_cooled_compute_rack",
+      "recipe2": "hypercluster:shaped/iv_compute_blade"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/rack_casing_intake",
+      "recipe2": "hypercluster:shaped/rack_casing_exhaust"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "3×5×2 Structure & Blade Scaling",
+      "text": "$(li)$(#0E7490)Front Wall (3×5 Intake)$(): 14× $(item)42U Rack Casing (Intake Face)$() (ice-blue top stripe), controller at center `(1, 2, 0)`.$(li)$(#0E7490)Back Wall (3×5 Exhaust)$(): $(item)42U Rack Casing (Exhaust Face)$() (orange-red top stripe); row `y=1` hosts 1–2 Energy Hatches, Maintenance Hatch, and $(bold)1× GT Computation Data Transmission Hatch$().$(li)$(#0E7490)Compute Blades$(): up to 4× $(item)IV Compute Blades$(), +6 CWU/t each ($(bold)0 → 24 CWU/t$()), 256 EU/t IT draw per blade (64 EU/t standby at 0 blades)."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Same-Tick Budget & Derating",
+      "text": "The rack implements GTCEu's `IOpticalComputationProvider` with a strict same-tick pool across all consumers:$(li)Simulation queries (`simulate=true`) never deduct CWU/t; only real consumption drains the 0–24 CWU/t budget.$(li)Pausing with a soft mallet, unfixed maintenance, 0 blades, or low power drops output to 0 CWU/t and logs the exact derate reason in the GUI.$(li)Cutting the optical pipe zeroes delivered CWU/t on the consumer side."
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "name": "5×6×5 卫星站与账号开户",
+  "category": "hypercluster:04_iv_cloud",
+  "icon": "hypercluster:api_satellite_station",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "不想自己搭机房时，IV 阶段可以建一座 5×6×5 的$(item)API 卫星地面站$()调用本地模拟的闭源云服务。和自建机房一样，整套设备$(bold)零 HPCA、零科研站前置$()。$(br2)地面站电口门槛极低：$(#0E7490)LV 或 MV 能源仓$()即可驱动（Medium 档 30 EU/t，Extra High 档 120 EU/t，兜底 60 EU/t）。"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/api_satellite_station",
+      "recipe2": "hypercluster:shaped/api_credential_card"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/satellite_dish_frame",
+      "recipe2": "hypercluster:shaped/satellite_dish_panel"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "结构与露天 / 天气 / 海拔",
+      "text": "$(li)$(#0E7490)结构$()：底层 3×3 $(item)卫星天线框架$()（主控在正面中央，仓室和可选兜底网关全放底层框架），上方桁架托起 5×5 凹面$(item)卫星反射面板$()，中心立起 2 格高$(item)卫星馈源头$()（顶层 y=5）。$(li)$(#0E7490)露天校验$()：馈源头正上方不能有不透明固体方块遮挡（玻璃不挡），否则$(bold)拒联机$()。$(li)$(#0E7490)天气与海拔$()：下雨耗时 ×1.5，雷暴 ×2.0；控制器高度 $(bold)Y > 120$() 时账单 ×0.95、耗时 ×0.9。"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "500 万体验金与高纯变现",
+      "text": "$(li)$(#0E7490)开户与 500 万体验金$()：手持$(item)API 凭据卡$()对地面站主控$(bold)右击$()绑定你的 UUID，插进凭据槽即开户。全存档（主世界 SavedData 跨站跨维度共享）首次开户一次性发 $(bold)5,000,000 Token$()，不重复发。$(li)$(#0E7490)高纯数据变现$()：带凭据卡时，把$(item)高纯矿处/化工数据集$()放进上传槽，立即按 $(bold)50,000 Token/份$() 卖出充入账户。$(li)也可通过$(item)Token 信用卡$()按钮整额存取。"
+    }
+  ]
+}

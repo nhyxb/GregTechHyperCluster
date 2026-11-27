@@ -1,0 +1,14 @@
+{
+  "name": "book.hypercluster.hypercluster_manual.name",
+  "subtitle": "book.hypercluster.hypercluster_manual.subtitle",
+  "landing_text": "book.hypercluster.hypercluster_manual.landing",
+  "version": "0",
+  "book_texture": "patchouli:textures/gui/book_cyan.png",
+  "model": "hypercluster:hypercluster_manual",
+  "use_resource_pack": true,
+  "show_progress": false,
+  "text_overflow_mode": "resize",
+  "header_color": "1E3A5F",
+  "link_color": "0E7490",
+  "link_hover_color": "0284C7"
+}

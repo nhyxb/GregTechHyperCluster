@@ -1,0 +1,27 @@
+{
+  "name": "5×9×5 Data Scrubbing Tower",
+  "category": "hypercluster:02_ev_workshop",
+  "icon": "hypercluster:data_scrubbing_tower",
+  "sortnum": 1,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "The $(item)Data Scrubbing Tower$() is a 5×9×5 tiered fractionating tower that cleans raw telemetry logs into $(item)High-Purity Domain Datasets$() and $(item)Clean Datasets$(), while separating $(item)Corrupted Noise$() and rare $(item)Golden Datasets$().$(br2)Later in IV, it also hosts the Inference Hatch for CWU/t power discounts."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/data_scrubbing_tower",
+      "recipe2": "hypercluster:shaped/blank_carrier_from_clean_dataset"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "5×9×5 Tower Structure",
+      "text": "$(li)$(#0E7490)Pedestal (5×2×5)$(): Clean Stainless Steel Casings; controller sits front-center on layer 2. Put Item Import/Export, Fluid Import, Energy, Maintenance, and (in IV) up to 1 Inference Hatch here.$(li)$(#0E7490)Body (3×5×3)$(): 1×5×1 Titanium Pipe core wrapped in Cleanroom Glass, framed by Titanium Frame corner columns and ring beams.$(li)$(#0E7490)Cap (5×2×5)$(): EV Machine Casings and Grate Casings. Fix maintenance before running."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Scrubbing & Noise Recycling",
+      "text": "$(li)$(#0E7490)Scrub Mining/Chemical Log$() (2048 EU/t × 200t): 1 Raw Log + 1000 mB Distilled Water → 1 High-Purity Domain Dataset + 1 $(item)Clean Dataset$() + $(bold)9/10$() chance Corrupted Noise + $(bold)1/10$() chance Golden Dataset.$(li)$(#0E7490)Noise Recycling$() (1024 EU/t × 100t): 4 Corrupted Noise + 250 mB Distilled Water → 1 Silicon Dust.$(br2)Clean Datasets craft 4× Blank Carriers and later feed the IV satellite cloud."
+    }
+  ]
+}

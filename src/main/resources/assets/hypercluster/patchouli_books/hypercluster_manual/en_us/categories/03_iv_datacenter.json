@@ -1,0 +1,6 @@
+{
+  "name": "Chapter 3: IV Self-Built Datacenter",
+  "description": "Zero-HPCA air-cooled compute racks, PUE room ratings, and the inference hatch.",
+  "icon": "hypercluster:air_cooled_compute_rack",
+  "sortnum": 2
+}

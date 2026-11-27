@@ -1,0 +1,6 @@
+{
+  "name": "第二章 · EV 数据工坊",
+  "description": "化工遥测、5×9×5 清洗塔、7×5×5 LoRA 刻录与 7×6×7 红队对齐。",
+  "icon": "hypercluster:data_scrubbing_tower",
+  "sortnum": 1
+}

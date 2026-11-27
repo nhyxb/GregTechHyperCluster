@@ -1,0 +1,22 @@
+{
+  "name": "EV 遥测示范化学反应釜",
+  "category": "hypercluster:02_ev_workshop",
+  "icon": "hypercluster:ev_telemetry_chemical_reactor",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "$(item)EV 遥测示范化学反应釜$()把同样的精确遥测结算带到了化工线。只要受支持的化工配方真正把常规产物送进输出槽/流体输出槽，它就会往 64 格只取槽里存 $(#0E7490)+1 份化工遥测日志$()。$(br2)和 HV 洗矿机一样，堵仓、断电、取消都不记日志；缓冲满 64 份后机器照常运行，新日志自动丢弃。"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/ev_telemetry_chemical_reactor",
+      "text": "直接用原版 EV 化学反应釜升级。记住不要拆掉它，拿它跑铟浓缩液分离就是化工日志的来源。"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "铟浓缩液分离路线",
+      "text": "以 GTCEu 原版的铟浓缩液分离为基准（50 tick）：$(li)$(#0E7490)电路 #1（基准）$()：$(bold)4 铝粉$() + 1000 mB 铟浓缩液 → 1 小堆铟粉 + 4 亚硫酸铝粉 + 1000 mB 铅锌溶液（600 EU/t）。$(li)$(#0E7490)电路 #2（芯片省料）$()：带不消耗的$(item)化工边缘芯片$()，$(bold)铝粉减半为 2 份$()，亚硫酸铝粉同步守恒输出 2 份（600 EU/t），铟粉和溶液一点不少。"
+    }
+  ]
+}
