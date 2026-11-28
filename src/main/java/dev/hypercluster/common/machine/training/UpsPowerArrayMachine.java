@@ -20,6 +20,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
+import dev.hypercluster.common.sound.MachineAlerts;
+
 import java.util.List;
 
 /**
@@ -57,6 +59,9 @@ public class UpsPowerArrayMachine extends WorkableElectricMultiblockMachine {
     @Persisted
     @DescSynced
     protected boolean discharging = false;
+
+    /** 0.6.3: stamp of the last terminal_alert cue, throttled by {@link MachineAlerts}. */
+    protected long lastAlertTick = MachineAlerts.NEVER;
 
     /** Ticks the array has been discharging in the current brownout. */
     @Persisted
@@ -135,6 +140,11 @@ public class UpsPowerArrayMachine extends WorkableElectricMultiblockMachine {
         long delivered = Math.min(Math.min(requested, TrainingRating.UPS_DISCHARGE_EU_T), storedEu);
         storedEu -= delivered;
         if (delivered > 0) {
+            // 0.6.3: the first delivered joule of a brownout is the switch to battery cover.
+            if (!discharging) {
+                this.lastAlertTick = MachineAlerts.play(getLevel(), getPos(), this.lastAlertTick,
+                        getOffsetTimer());
+            }
             discharging = true;
         }
         return delivered;

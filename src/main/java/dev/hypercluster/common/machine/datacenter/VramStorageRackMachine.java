@@ -101,9 +101,10 @@ public class VramStorageRackMachine extends WorkableElectricMultiblockMachine
 
     /** Total TB this rack provides with its current modules (regardless of power state). */
     public int getTerabytesInstalled() {
+        var slots = hardwareInventory();
         int total = 0;
-        for (int i = 0; i < moduleSlot.getSlots(); i++) {
-            ItemStack stack = moduleSlot.getStackInSlot(i);
+        for (int i = 0; i < VramRating.HBM_SLOTS; i++) {
+            ItemStack stack = DatacenterHardwareHatchMachine.installedStack(slots, i);
             if (stack.isEmpty()) {
                 continue;
             }
@@ -122,8 +123,8 @@ public class VramStorageRackMachine extends WorkableElectricMultiblockMachine
         return VramRating.HBM_SLOTS;
     }
 
-    public CustomItemStackHandler getModuleSlot() {
-        return moduleSlot;
+    public IItemHandlerModifiable getModuleSlot() {
+        return hardwareInventory();
     }
 
     public State getState() {
@@ -235,7 +236,7 @@ public class VramStorageRackMachine extends WorkableElectricMultiblockMachine
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     @Override
-    public IItemHandlerModifiable hardwareInventory() {
+    public IItemHandlerModifiable legacyHardwareInventory() {
         return moduleSlot;
     }
 

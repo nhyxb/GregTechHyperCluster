@@ -60,7 +60,9 @@ public final class HyperClusterRecipeTypes {
                 .setMaxIOSize(2, 1, 0, 0)
                 .setEUIO(IO.IN)
                 .prepareBuilder(builder -> builder.EUt(GTValues.V[GTValues.HV]).duration(128))
-                .setProgressBar(GuiTextures.PROGRESS_BAR_ARROW, LEFT_TO_RIGHT);
+                .setProgressBar(GuiTextures.PROGRESS_BAR_ARROW, LEFT_TO_RIGHT)
+                // 0.6.3: the micro burner's own work loop.
+                .setSound(HyperClusterSounds.LASER_BURN);
 
         TELEMETRY_ORE_WASHING_RECIPES = register("telemetry_ore_washing")
                 .setMaxIOSize(3, 3, 1, 0)
@@ -99,7 +101,8 @@ public final class HyperClusterRecipeTypes {
                 .setSlotOverlay(false, false, GuiTextures.PATTERN_OVERLAY)
                 .setSlotOverlay(true, false, GuiTextures.PATTERN_OVERLAY)
                 .setProgressBar(GuiTextures.PROGRESS_BAR_ARROW, LEFT_TO_RIGHT)
-                .setSound(com.gregtechceu.gtceu.common.data.GTSoundEntries.CHEMICAL);
+                // 0.6.3: same engraving-laser loop as the burner.
+                .setSound(HyperClusterSounds.LASER_BURN);
 
         // 0.2.1 — red-team sandbox: corrupted noise as adversarial samples validates ordinary
         // edge chips into aligned ones.
@@ -110,7 +113,8 @@ public final class HyperClusterRecipeTypes {
                 .setSlotOverlay(false, false, GuiTextures.PATTERN_OVERLAY)
                 .setSlotOverlay(true, false, GuiTextures.PATTERN_OVERLAY)
                 .setProgressBar(GuiTextures.PROGRESS_BAR_ARROW, LEFT_TO_RIGHT)
-                .setSound(com.gregtechceu.gtceu.common.data.GTSoundEntries.CHEMICAL);
+                // 0.6.3: adversarial scanning cue.
+                .setSound(HyperClusterSounds.RED_TEAM_SCAN);
 
         // 0.6 — tensor pretraining: one long annealing pass per high-purity domain dataset.
         // The recipe type exists so the cluster's UI shows a progress bar and the job is
@@ -122,7 +126,8 @@ public final class HyperClusterRecipeTypes {
                 .setSlotOverlay(false, false, GuiTextures.PATTERN_OVERLAY)
                 .setSlotOverlay(true, false, GuiTextures.PATTERN_OVERLAY)
                 .setProgressBar(GuiTextures.PROGRESS_BAR_ARROW_MULTIPLE, LEFT_TO_RIGHT)
-                .setSound(com.gregtechceu.gtceu.common.data.GTSoundEntries.COMPUTATION);
+                // 0.6.3: the long annealing hum of a pretraining run.
+                .setSound(HyperClusterSounds.PRETRAINING_CLUSTER);
 
         GTRegistries.RECIPE_TYPES.freeze();
         GTRegistries.RECIPE_CATEGORIES.freeze();

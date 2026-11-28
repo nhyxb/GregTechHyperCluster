@@ -1,5 +1,10 @@
 {
   "parent": "minecraft:block/block",
+  "dynamic_renders": [
+    {
+      "type": "hypercluster:moe_screen"
+    }
+  ],
   "loader": "gtceu:machine",
   "machine": "hypercluster:moe_router_rack",
   "texture_overrides": {

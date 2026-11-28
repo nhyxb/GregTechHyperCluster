@@ -1,0 +1,82 @@
+{
+  "datacenter_air_hum": {
+    "sounds": [
+      {
+        "type": "file",
+        "attenuation_distance": 24,
+        "name": "hypercluster:datacenter_air_hum"
+      }
+    ],
+    "subtitle": "hypercluster.subtitle.datacenter_air_hum"
+  },
+  "datacenter_liquid_hum": {
+    "sounds": [
+      {
+        "type": "file",
+        "attenuation_distance": 24,
+        "name": "hypercluster:datacenter_liquid_hum"
+      }
+    ],
+    "subtitle": "hypercluster.subtitle.datacenter_liquid_hum"
+  },
+  "laser_burn": {
+    "sounds": [
+      {
+        "type": "file",
+        "attenuation_distance": 24,
+        "name": "hypercluster:laser_burn"
+      }
+    ],
+    "subtitle": "hypercluster.subtitle.laser_burn"
+  },
+  "pretraining_cluster": {
+    "sounds": [
+      {
+        "type": "file",
+        "attenuation_distance": 24,
+        "name": "hypercluster:pretraining_cluster"
+      }
+    ],
+    "subtitle": "hypercluster.subtitle.pretraining_cluster"
+  },
+  "rack_click": {
+    "sounds": [
+      {
+        "type": "file",
+        "attenuation_distance": 16,
+        "name": "hypercluster:rack_click"
+      }
+    ],
+    "subtitle": "hypercluster.subtitle.rack_click"
+  },
+  "red_team_scan": {
+    "sounds": [
+      {
+        "type": "file",
+        "attenuation_distance": 24,
+        "name": "hypercluster:red_team_scan"
+      }
+    ],
+    "subtitle": "hypercluster.subtitle.red_team_scan"
+  },
+  "satellite_uplink": {
+    "sounds": [
+      {
+        "type": "file",
+        "attenuation_distance": 24,
+        "name": "hypercluster:satellite_uplink"
+      }
+    ],
+    "subtitle": "hypercluster.subtitle.satellite_uplink"
+  },
+  "terminal_alert": {
+    "sounds": [
+      {
+        "type": "file",
+        "attenuation_distance": 16,
+        "name": "hypercluster:terminal_alert"
+      }
+    ],
+    "subtitle": "hypercluster.subtitle.terminal_alert"
+  }
+}

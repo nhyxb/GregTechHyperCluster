@@ -3,6 +3,7 @@ package dev.hypercluster.gametest;
 import com.gregtechceu.gtceu.api.capability.recipe.EURecipeCapability;
 import com.gregtechceu.gtceu.api.data.chemical.ChemicalHelper;
 import com.gregtechceu.gtceu.api.data.tag.TagPrefix;
+import com.gregtechceu.gtceu.api.gui.widget.SlotWidget;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.multiblock.WorkableElectricMultiblockMachine;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
@@ -16,6 +17,8 @@ import com.gregtechceu.gtceu.common.machine.multiblock.electric.research.Researc
 import com.gregtechceu.gtceu.common.machine.multiblock.part.EnergyHatchPartMachine;
 import com.gregtechceu.gtceu.common.machine.multiblock.part.ItemBusPartMachine;
 import com.gregtechceu.gtceu.common.machine.multiblock.part.MaintenanceHatchPartMachine;
+
+import com.lowdragmc.lowdraglib.gui.widget.WidgetGroup;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -429,6 +432,91 @@ public class DatacenterTests {
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // 6. chunk unload / reload: blades and snack persist, budget resets //
     ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    @GameTest(template = "hc_field", batch = DATACENTER_BATCH, timeoutTicks = 100)
+    public static void hardwareHatchOwnsAndDropsInstalledItems(GameTestHelper helper) {
+        RackParts parts = placeRack(helper, 4, 1, 4);
+        BlockPos hatchPos = new BlockPos(4, 2, 4);
+        var hatchState = HyperClusterMachines.DATACENTER_HARDWARE_HATCH.getBlock().defaultBlockState();
+        var controllerState = helper.getBlockState(parts.controllerPos());
+        var blade = HyperClusterItems.IV_COMPUTE_BLADE.get();
+        var snack = HyperClusterItems.GREEN_SNACK_PACK.get();
+
+        var legacy = parts.controller().legacyHardwareInventory();
+        var taggedBlade = new ItemStack(blade);
+        taggedBlade.getOrCreateTag().putString("test", "legacy hardware");
+        legacy.setStackInSlot(0, taggedBlade);
+        var controllerBlockEntity = helper.getBlockEntity(parts.controllerPos());
+        var legacySave = controllerBlockEntity.saveWithFullMetadata();
+        legacy.setStackInSlot(0, ItemStack.EMPTY);
+        controllerBlockEntity.load(legacySave);
+        helper.setBlock(hatchPos, hatchState);
+
+        helper.runAtTickTime(40, () -> {
+            ensureFormed(parts.controller());
+            var hatch = (DatacenterHardwareHatchMachine) metaMachine(helper, hatchPos);
+            var hatchBlockEntity = helper.getBlockEntity(hatchPos);
+            var automation = hatchBlockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER, hatch.getFrontFacing())
+                    .orElseThrow(() -> new IllegalStateException("missing hardware port"));
+            helper.assertTrue(legacy.getStackInSlot(0).isEmpty() &&
+                    ItemStack.matches(taggedBlade, automation.getStackInSlot(0)),
+                    "formation must move the old controller stack and its NBT into the hatch");
+            int snackSlot = DatacenterRating.BLADE_SLOTS;
+            helper.assertTrue(automation.insertItem(snackSlot, new ItemStack(snack), false).isEmpty(),
+                    "the hatch must accept ancillary hardware");
+
+            var hatchSave = hatchBlockEntity.saveWithFullMetadata();
+            automation.extractItem(0, 1, false);
+            automation.extractItem(snackSlot, 1, false);
+            hatchBlockEntity.load(hatchSave);
+            helper.assertTrue(ItemStack.matches(taggedBlade, automation.getStackInSlot(0)) &&
+                    parts.controller().getBladeCount() == 1 && parts.controller().isSnackPresent(),
+                    "the hatch must reload its own contents and the rack must read them");
+
+            var openSlots = ((WidgetGroup) hatch.createUIWidget()).getWidgetsByType(SlotWidget.class);
+            var alreadyOpenBladeSlot = openSlots.get(0).getHandler();
+            helper.assertTrue(alreadyOpenBladeSlot.mayPlace(taggedBlade) &&
+                    !alreadyOpenBladeSlot.mayPlace(new ItemStack(snack)),
+                    "the attached GUI must use the controller's hardware filter");
+
+            helper.destroyBlock(parts.controllerPos());
+            helper.assertItemEntityCountIs(blade, parts.controllerPos(), 2, 0);
+            helper.assertItemEntityCountIs(snack, parts.controllerPos(), 2, 0);
+            helper.assertTrue(automation.extractItem(0, 1, false).isEmpty(),
+                    "a cached capability must detach when the controller is removed");
+
+            var reopenedSlots = ((WidgetGroup) hatch.createUIWidget()).getWidgetsByType(SlotWidget.class);
+            helper.assertTrue(reopenedSlots.size() == openSlots.size() && reopenedSlots.size() == 5,
+                    "both menus must expose the physical hatch slots after the controller breaks");
+            var reopenedBladeSlot = reopenedSlots.get(0).getHandler();
+            helper.assertTrue(ItemStack.matches(taggedBlade, alreadyOpenBladeSlot.getItem()) &&
+                    !alreadyOpenBladeSlot.mayPlace(taggedBlade) && !reopenedBladeSlot.mayPlace(taggedBlade),
+                    "an already-open menu must retain the items and update its insertion rules");
+            helper.assertTrue(ItemStack.matches(taggedBlade, reopenedBladeSlot.remove(1)) &&
+                    alreadyOpenBladeSlot.getItem().isEmpty(),
+                    "reopening the detached hatch must allow taking the same stored item exactly once");
+
+            helper.destroyBlock(hatchPos);
+            helper.assertItemEntityCountIs(blade, hatchPos, 0, 0);
+            helper.assertItemEntityCountIs(snack, hatchPos, 0, 1);
+        });
+
+        helper.runAtTickTime(41, () -> {
+            helper.setBlock(parts.controllerPos(), controllerState);
+            helper.setBlock(hatchPos, hatchState);
+            var controller = (AirCooledComputeRackMachine) metaMachine(helper, parts.controllerPos());
+            ensureFormed(controller);
+            helper.assertTrue(controller.isFormed(), "the replacement rack must form");
+            controller.getBladeInventory().setStackInSlot(0, new ItemStack(blade));
+
+            helper.destroyBlock(hatchPos);
+            helper.assertItemEntityCountIs(blade, hatchPos, 2, 1);
+            helper.assertTrue(controller.getBladeCount() == 0, "breaking the hatch must take its hardware offline");
+            helper.destroyBlock(parts.controllerPos());
+            helper.assertItemEntityCountIs(blade, hatchPos, 2, 1);
+            helper.succeed();
+        });
+    }
 
     @GameTest(template = "hc_field", batch = DATACENTER_BATCH, timeoutTicks = 400)
     public static void chunkUnloadReloadPersistence(GameTestHelper helper) {

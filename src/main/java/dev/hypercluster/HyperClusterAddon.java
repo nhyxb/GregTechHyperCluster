@@ -10,6 +10,7 @@ import net.minecraft.resources.ResourceLocation;
 import dev.hypercluster.common.data.HyperClusterMachines;
 import dev.hypercluster.common.data.HyperClusterRecipeTypes;
 import dev.hypercluster.common.data.HyperClusterRecipes;
+import dev.hypercluster.common.data.HyperClusterSounds;
 
 @GTAddon
 public final class HyperClusterAddon implements IGTAddon {
@@ -17,6 +18,16 @@ public final class HyperClusterAddon implements IGTAddon {
     @Override
     public GTRegistrate getRegistrate() {
         return HyperCluster.REGISTRATE;
+    }
+
+    /**
+     * Sounds must be added before GTCEu calls {@code SoundEntry::prepare} and freezes
+     * {@code GTRegistries.SOUNDS} — i.e. from this hook, which {@code GTSoundEntries.init()}
+     * invokes. {@link #initializeAddon()} runs after that freeze.
+     */
+    @Override
+    public void registerSounds() {
+        HyperClusterSounds.init();
     }
 
     @Override

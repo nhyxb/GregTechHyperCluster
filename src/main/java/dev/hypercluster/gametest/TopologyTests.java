@@ -16,6 +16,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -408,6 +409,95 @@ public class TopologyTests {
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // 3. MoE router: deploy, OOM refusal, load and eviction //
     ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // 0.6.3 · the floating 6×6 display //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    @GameTest(template = "hc_field", batch = TOPOLOGY_BATCH, timeoutTicks = 400)
+    public static void moeScreenLightsWithPowerAndDeepSeek(GameTestHelper helper) {
+        fillFloor(helper, 1, 0, 1, 14, 13);
+        MoE parts = placeMoeRouter(helper, 1, 1, 1);
+        MoeRouterRackMachine router = parts.controller();
+        primeEnergy(parts.energyHatch(), helper, 20, 400);
+
+        helper.runAtTickTime(30, () -> {
+            ensureFormed(router);
+            helper.assertTrue(!router.isScreenLit(), "an unformed/unpowered cabinet must stay dark");
+
+            // Formed and powered, but nothing deployed and the manual switch off: still dark.
+            helper.runAtTickTime(60, () -> {
+                helper.assertTrue(router.isFormed(), "the router must form");
+                helper.assertTrue(!router.isShowScreen(), "the display switch defaults to off");
+                helper.assertTrue(!router.isScreenLit(),
+                        "formed + powered without a model or the switch must stay dark");
+
+                // The manual switch alone lights it.
+                router.setShowScreen(true);
+                helper.assertTrue(router.isScreenLit(),
+                        "the manual switch must light the display on its own");
+
+                // Turning it back off, with nothing deployed, goes dark again.
+                router.setShowScreen(false);
+                helper.assertTrue(!router.isScreenLit(),
+                        "clearing the switch with no model must go dark again");
+
+                router.setShowScreen(true);
+                router.onStructureInvalid();
+                helper.assertTrue(!router.isScreenLit(), "invalidating the structure must extinguish the display");
+                helper.succeed();
+            });
+        });
+    }
+
+    @GameTest(template = "hc_field", batch = TOPOLOGY_BATCH, timeoutTicks = 900)
+    public static void moeScreenSwitchPersistsAcrossReload(GameTestHelper helper) {
+        fillFloor(helper, 1, 0, 1, 14, 13);
+        MoE parts = placeMoeRouter(helper, 1, 1, 1);
+        MoeRouterRackMachine router = parts.controller();
+        BlockPos controllerPos = parts.controllerPos();
+        primeEnergy(parts.energyHatch(), helper, 20, 900);
+
+        helper.runAtTickTime(30, () -> {
+            ensureFormed(router);
+            router.setShowScreen(true);
+            helper.assertTrue(router.isShowScreen(), "the switch must be settable");
+
+            // Round-trip the block entity through its own save/load, exactly like a world
+            // save followed by a chunk reload.
+            BlockEntity be = helper.getBlockEntity(controllerPos);
+            CompoundTag saved = be.saveWithFullMetadata();
+            be.load(saved);
+            helper.runAtTickTime(60, () -> {
+                MoeRouterRackMachine reloaded = (MoeRouterRackMachine) metaMachine(helper, controllerPos);
+                helper.assertTrue(reloaded.isShowScreen(),
+                        "the display switch must survive a save/reload round-trip");
+                helper.succeed();
+            });
+        });
+    }
+
+    @GameTest(template = "hc_field", batch = TOPOLOGY_BATCH, timeoutTicks = 400)
+    public static void moeScreenGoesDarkWithoutPower(GameTestHelper helper) {
+        fillFloor(helper, 1, 0, 1, 14, 13);
+        MoE parts = placeMoeRouter(helper, 1, 1, 1);
+        MoeRouterRackMachine router = parts.controller();
+
+        helper.runAtTickTime(30, () -> {
+            ensureFormed(router);
+            parts.energyHatch().energyContainer.addEnergy(parts.energyHatch().energyContainer.getEnergyCapacity());
+            router.setShowScreen(true);
+            helper.assertTrue(router.isScreenLit(), "a charged hatch must light the enabled display");
+            parts.energyHatch().energyContainer.removeEnergy(
+                    parts.energyHatch().energyContainer.getEnergyStored());
+            helper.runAtTickTime(60, () -> {
+                helper.assertTrue(!router.hasPower(), "the hatch must read as unpowered");
+                helper.assertTrue(!router.isScreenLit(),
+                        "losing power must extinguish the display even with the switch on");
+                helper.succeed();
+            });
+        });
+    }
 
     @GameTest(template = "hc_field", batch = TOPOLOGY_BATCH, timeoutTicks = 700)
     public static void moeRouterLoadsAndEvictsModels(GameTestHelper helper) {

@@ -16,10 +16,12 @@ import com.gregtechceu.gtceu.common.data.GTMaterials;
 import com.gregtechceu.gtceu.common.data.GTRecipeModifiers;
 import com.gregtechceu.gtceu.common.data.GTRecipeTypes;
 import com.gregtechceu.gtceu.common.data.machines.GTMachineUtils;
+import com.gregtechceu.gtceu.common.data.models.GTMachineModels;
 
 import net.minecraft.resources.ResourceLocation;
 
 import dev.hypercluster.HyperCluster;
+import dev.hypercluster.client.renderer.MoeScreenRender;
 import dev.hypercluster.common.machine.DataScrubbingTowerMachine;
 import dev.hypercluster.common.machine.LoraEngravingChamberMachine;
 import dev.hypercluster.common.machine.RedTeamSandboxMachine;
@@ -1061,8 +1063,17 @@ public final class HyperClusterMachines {
                         .where('#', Predicates.air())
                         .build())
                 .allowExtendedFacing(false)
-                .workableCasingModel(new ResourceLocation("gtceu", "block/casings/hpca/computer_casing/side"),
+                // 0.6.3: attach the floating 6×6 whale-maid display. The 5×5×5 pattern above is
+                // untouched — the screen is a pure client-side quad, so TopologyTests and saved
+                // worlds are unaffected.
+                // workableCasingModel() also declares the RECIPE_LOGIC_STATUS property; using
+                // .model(...) directly means declaring it here, or the blockstate has no such
+                // property and data generation fails.
+                .modelProperty(GTMachineModelProperties.RECIPE_LOGIC_STATUS, RecipeLogic.Status.IDLE)
+                .model(GTMachineModels.createWorkableCasingMachineModel(
+                        new ResourceLocation("gtceu", "block/casings/hpca/computer_casing/side"),
                         HyperCluster.id("block/machines/moe_router_rack"))
+                        .andThen(b -> b.addDynamicRenderer(MoeScreenRender::new)))
                 .register();
     }
 

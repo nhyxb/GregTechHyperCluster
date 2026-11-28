@@ -39,7 +39,7 @@ source env.fish
 ./gradlew runGametest
 ```
 
-资源生成输出在 `src/generated/resources/`，构建产物在 `build/libs/`。首次构建会下载 Gradle 和开发依赖。在启用命令的测试世界里可用 `/give @s hypercluster:mining_telemetry_log` 验证物品注册和模型。`runGametest` 以 headless 方式跑全部回归（Forge GameTestServer，目前 56 个用例：物品/配方、P02 结算探针、P03/P04 闭环与边界、P05/P06 生存配方存在性、0.2 EV 数据工坊全链、0.2.1 微调与红队对齐链、0.3 IV 智算机房全链、0.4 IV 闭源云全链）。
+资源生成输出在 `src/generated/resources/`，构建产物在 `build/libs/`。首次构建会下载 Gradle 和开发依赖。在启用命令的测试世界里可用 `/give @s hypercluster:mining_telemetry_log` 验证物品注册和模型。`runGametest` 以 headless 方式跑全部回归（Forge GameTestServer，目前 **92** 个用例，覆盖物品/配方、P02 结算探针、P03/P04 闭环与边界、P05/P06 生存配方存在性、0.2 EV 数据工坊全链、0.2.1 微调与红队对齐链、0.3 IV 智算机房全链、0.4 IV 闭源云全链、0.5 视觉与结构、0.6 系列 LuV 智算/拓扑/模型注册表/机房总线、0.6.3 音效注册与 MoE 发光大屏）。
 
 > **`runGametest` 环境要求（0.4 起）**：`run/gametest/server.properties` 须为 `level-type=minecraft\:flat`（gametest 场地固定在 y=-60，`normal` 世界会在其上方生成天然岩层，遮挡 0.4 卫星站的馈源露天校验）；且 gametest 世界在多次运行之间持久化，重跑前建议删除 `run/gametest/world` 以清掉历史残留结构与账本状态。
 
@@ -139,6 +139,70 @@ source env.fish
 - **GameTest**：结构模板场地扩宽为 15×12×15（容纳 7×6×7 穹顶、双站点并排与 9 层高塔），塔、两舱、卫星站与光学管路均按新结构测试。57 项回归通过，Xvfb 冒烟通过贴图、模型与 CTM 加载检查。[0.5 验收报告](docs/reports/0.5_acceptance_report.md)
 
 升级旧存档后，以上四座机器需要按 0.5 的结构预览重新搭建才能成型。
+
+## 0.6.0–0.6.2 内容（LuV 智算 → 机房拓扑 → 物理总线与光缆）
+
+- **0.6.0 · LuV 智算与训练**：`liquid_rack_casing` / `ups_battery_casing` 结构方块（原生 LDLib CTM）、`luv_liquid_blade` / `open_weight_module` 物品；`liquid_cooled_compute_rack`（5×5×3，4 刀片 0→64 CWU/t，PUE **1.20**，**冷却液是真实输入**：每 tick 喝 1 mB 蒸馏水或 PCB 冷却液，断液 20 tick 容错后归零）、`ups_power_array`（5×4×3，满 4,000,000 EU，**60 s 备电**）、`tensor_pretraining_cluster`（7×6×7 阶梯收腰，2400 t 训练，**每 25% 落 NBT Checkpoint**，OOM 显存闸门，UPS 保护续训）、`cloud_offload_node`（LuV 部件，租富余算力折算 Token）。
+- **0.6.1 · 机房拓扑 + TB 显存 + 模型注册表**：`vram_rack_casing` / `optical_switch_casing`（原生 CTM）、`iv_hbm_module`(4 TB) / `luv_hbm_module`(16 TB) / `jailbreak_card` 物品；`vram_storage_rack`（5×5×3，4 槽）、`optical_fabric_switch`（5×4×3，聚合 128 CWU/t，超限 **503 + 300 ticks**）、`moe_router_rack`（5×5×5，部署槽 + 4 LoRA + DeepThink）；`AIModelDefinition` / `AIModels` 运行时注册表，**10 台模型**分 `LOCAL` / `API` 两阵营（本地占显存零 Token，API 零本地显存计 Token）。
+- **0.6.2 · 物理总线与光缆网络**：批量物料改走 GTCEu 原生 `IMPORT_ITEMS` / `EXPORT_ITEMS`；刀片、HBM、权重、LoRA 等驻留硬件经支持 Forge 物品能力的**机房硬件仓**装卸，旧存档装仓口即可取回已装载硬件。底座必须压在同一片正交连通、同高、无缺口的矩形架空地板上（短边 ≥5、长边 ≤24、长宽比 ≤3:1）。跨房及对外用算走原生算力传输仓 + 连续光学管道 + 原生算力接收仓，**断链归零**。
+
+## 0.6.3 内容（8 组音效 + MoE 6×6 鲸娘发光大屏）
+
+### 音效
+
+8 个程序化合成的工业音效全部接入（mono 44100 Hz Ogg Vorbis，归一至 −14 LUFS，真峰值 ≤ −1.2 dBTP）：
+
+| 音效 | 绑定 | 类型 |
+| --- | --- | --- |
+| `datacenter_air_hum` | `air_cooled_compute_rack` | 工作循环 |
+| `datacenter_liquid_hum` | `liquid_cooled_compute_rack` | 工作循环 |
+| `pretraining_cluster` | `tensor_pretraining_cluster` | 工作循环 |
+| `satellite_uplink` | `api_satellite_station` | 工作循环 |
+| `laser_burn` | `hv_micro_burner`、`lora_engraving_chamber` | 工作循环 |
+| `red_team_scan` | `red_team_sandbox` | 工作循环 |
+| `rack_click` | 机柜/硬件仓插拔刀片、HBM、权重、LoRA，及路由状态切换 | 单次 |
+| `terminal_alert` | 429 限流（卫星站）、503 拥塞（光交换）、OOM（MoE 路由）、冷却断供（液冷机柜）、UPS 切备电（备电阵列） | 单次（同机 ≥60 tick 节流） |
+
+**实现要点**：
+
+- 由配方驱动的 4 台机器（micro burner、LoRA 舱、红队舱、预训练集群）通过 `GTRecipeType#setSound` 走 **GTCEu 原生 `RecipeLogic#updateSound`** 机制，机器停止/卸载时由框架自动停播。
+- 运行 `DUMMY_RECIPES` 的 3 台机器（风冷柜、液冷柜、卫星站）其"工作"是 tick 契约而非配方，`RecipeLogic` 永远不会报告 working，因此改用 **同一个 `AutoReleasedSound` 类**显式驱动，谓词与 GTCEu 自身守卫一致（`!isInValid()`、方块已加载、同一台机器仍在原位），并遵守 GT 的机械音效开关与消音升级。客户端静音（Blocks 音量归零）安全工作，因为从不直接触碰音频设备。
+- `sounds.json` 由 GTCEu 自带的 `SoundEntryBuilder.SoundEntryProvider` 在 `runData` 中生成，**注册表与 JSON 不可能漂移**。
+- `terminal_alert` 的 5 个触发源统一走 `MachineAlerts.play(...)`，每台机器各持一个 `lastAlertTick` 时间戳，**同机 60 tick 内只响一次**——429 反复重试、OOM 每 tick 复检、冷却液断供/回补抖动都不会变成警报风暴。
+- `rack_click` 挂在部署槽与 4 个 LoRA 槽的 `onContentsChanged` 上，覆盖手动、管道与 AE2 三种插拔路径；路由状态切到 LOADING/ONLINE/EVICTED 时也会响。
+
+### MoE 路由器 6×6 发光大屏
+
+- **`5×5×5` 结构完全未改动**——屏幕是纯客户端四边形，不加方块，现有 `TopologyTests` 与全部存档不受影响。
+- 贴图 `whale_maid_screen_96.png` 为 **96×96**；横跨 **6×6 方块**、16 px/格，即**一像素一纹素 1:1 还原**，无任何过滤。
+- 屏幕居中悬停于机柜顶框上方 0.75 格，随控制器前向自动旋转覆盖东南西北四向；以 `LightTexture.FULL_BRIGHT` 提交，配合 `entityCutoutNoCull` **双面可见且透明边缘不画黑框**，在无光机房与夜间均可读。
+- **点亮条件**：多方块已成型 + 有供电 +（部署任意 `DeepSeek-V6767` 系列模型 **或** 主控 GUI 打开"展示大屏"开关）。断电或拆毁自动熄灭。
+- `getRenderBoundingBox` 覆盖整块 6×6 悬浮区域，避免玩家偏视时被视锥剔除；`shouldRenderOffScreen` 保证它不随控制器所在的区块段一并剔除。
+- 主控 GUI 新增该开关（`MachineUiTests` 零重叠检测通过）。
+
+### 素材许可
+
+代码遵循根目录 [LICENSE.MD](LICENSE.MD)（**LGPL-3.0**）；AI 生成的工业贴图与音效素材遵循 [Public/ASSETS_LICENSE.md](Public/ASSETS_LICENSE.md)（**CC0 1.0 Universal**）。
+
+> ⚠️ **例外**：`whale_maid_screen_96.png`（及其 `.aseprite` 源文件与预览图）系基于外部参考图重绘，**不包含在 CC0 1.0 授权范围内**，待原作者授权确认。详见 [ASSETS_LICENSE.md 的排除条款](Public/ASSETS_LICENSE.md#2-明确排除条款not-cc0)。该贴图仅影响大屏显示内容，移除或替换不影响任何游戏机制或存档兼容性。
+
+## 素材预览
+
+### 方块与物品接触表
+
+![方块与物品接触表](Public/textures/previews/contact_sheet.png)
+
+### 原生 CTM 连接纹理
+
+![CTM 预览](Public/textures/previews/ctm_preview.png)
+
+### 机器运行态动画帧
+
+![运行态动画表](Public/textures/previews/active_animations_sheet.png)
+
+### MoE 大屏贴图
+
+![鲸娘大屏 96×96](Public/textures/previews/whale_maid_screen_preview.png)
 
 ## 运行锁定组合（P06 实测）
 

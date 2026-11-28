@@ -1,5 +1,6 @@
 package dev.hypercluster.common.machine.model;
 
+import com.gregtechceu.gtceu.api.capability.IEnergyContainer;
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
 import com.gregtechceu.gtceu.api.gui.widget.ToggleButtonWidget;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
@@ -21,11 +22,14 @@ import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.items.IItemHandlerModifiable;
 import net.minecraftforge.items.wrapper.CombinedInvWrapper;
+import net.minecraftforge.items.wrapper.RangedWrapper;
 
+import dev.hypercluster.common.data.HyperClusterSounds;
 import dev.hypercluster.common.item.HyperClusterItems;
 import dev.hypercluster.common.machine.MachineUi;
 import dev.hypercluster.common.machine.datacenter.DatacenterFloorNetwork;
@@ -35,6 +39,7 @@ import dev.hypercluster.common.machine.datacenter.VramRating;
 import dev.hypercluster.common.machine.datacenter.VramStorageRackMachine;
 import dev.hypercluster.common.model.AIModelDefinition;
 import dev.hypercluster.common.model.AIModels;
+import dev.hypercluster.common.sound.MachineAlerts;
 
 import java.util.List;
 import java.util.Locale;
@@ -103,6 +108,7 @@ public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine
     protected final CustomItemStackHandler modelSlot;
     @Persisted
     protected final CustomItemStackHandler loraSlot;
+    private final IItemHandlerModifiable legacyHardware;
 
     @javax.annotation.Nullable
     protected IMaintenanceMachine maintenance;
@@ -126,6 +132,19 @@ public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine
     @DescSynced
     protected int lastCwu = 0;
 
+    /**
+     * 0.6.3 · manual "show the display" switch for the floating 6×6 screen. Persisted and
+     * synced so the client renderer can read it directly.
+     */
+    @Persisted
+    @DescSynced
+    protected boolean showScreen = false;
+    @DescSynced
+    protected boolean screenLit;
+
+    /** 0.6.3: stamp of the last terminal_alert cue, throttled by {@link MachineAlerts}. */
+    protected long lastAlertTick = MachineAlerts.NEVER;
+
     public MoeRouterRackMachine(IMachineBlockEntity holder, Object... args) {
         super(holder, args);
         this.modelSlot = DatacenterHardwareHatchMachine.componentSlots(1);
@@ -133,6 +152,10 @@ public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine
         this.loraSlot = DatacenterHardwareHatchMachine.componentSlots(LORA_SLOTS);
         this.loraSlot.setFilter(stack -> stack.is(HyperClusterItems.MINING_LORA_CARD.get()) ||
                 stack.is(HyperClusterItems.CHEMICAL_LORA_CARD.get()));
+        this.legacyHardware = new CombinedInvWrapper(modelSlot, loraSlot);
+        // 0.6.3: every hardware movement through the deployment or LoRA slots clicks.
+        this.modelSlot.setOnContentsChanged(this::onHardwareChanged);
+        this.loraSlot.setOnContentsChanged(this::onHardwareChanged);
     }
 
     @Override
@@ -173,19 +196,72 @@ public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine
         return lastCwu;
     }
 
-    public CustomItemStackHandler getModelSlot() {
-        return modelSlot;
+    public IItemHandlerModifiable getModelSlot() {
+        return new RangedWrapper(hardwareInventory(), 0, 1);
     }
 
-    public CustomItemStackHandler getLoraSlot() {
-        return loraSlot;
+    public IItemHandlerModifiable getLoraSlot() {
+        return new RangedWrapper(hardwareInventory(), 1, LORA_SLOTS + 1);
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // 0.6.3 · floating 6×6 display //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    /** Blocks between the cabinet roof and the bottom edge of the floating screen. */
+    public static final float SCREEN_LIFT_BLOCKS = 0.75F;
+
+    public boolean isShowScreen() {
+        return showScreen;
+    }
+
+    public void setShowScreen(boolean value) {
+        this.showScreen = value;
+        updateScreenState();
+    }
+
+    /**
+     * Is any DeepSeek-V6767 model deployed? A module sitting in the deployment slot counts: the
+     * display contract is about a deployed model, not about the load having finished.
+     */
+    public boolean hasDeepSeekDeployed() {
+        AIModelDefinition model = modelInSlot();
+        return model != null && model.id().getPath().startsWith("deepseek_v6767");
+    }
+
+    public boolean isScreenLit() {
+        return screenLit;
+    }
+
+    private void updateScreenState() {
+        // GTCEu assembles the controller's energy capabilities on the server.
+        if (getLevel() instanceof ServerLevel) {
+            screenLit = isFormed() && !isInValid() && (showScreen || hasDeepSeekDeployed()) && hasPower();
+        }
+    }
+
+    /** True while an energy hatch can actually feed the cabinet. */
+    public boolean hasPower() {
+        IEnergyContainer energy = getEnergyContainer();
+        return energy != null && energy.getEnergyCapacity() > 0 && energy.getEnergyStored() > 0;
+    }
+
+    /** Vertical offset (blocks) from the controller centre to the screen's bottom edge. */
+    public float screenCenterUp() {
+        return SCREEN_LIFT_BLOCKS;
+    }
+
+    /** Horizontal offset (blocks) from the controller centre to the screen's centre. */
+    public float screenCenterLeft() {
+        return 0.0F;
     }
 
     /** LoRA cards currently inserted. */
     public int getLoraCount() {
+        var slots = hardwareInventory();
         int count = 0;
-        for (int i = 0; i < loraSlot.getSlots(); i++) {
-            if (!loraSlot.getStackInSlot(i).isEmpty()) {
+        for (int i = 1; i <= LORA_SLOTS; i++) {
+            if (!DatacenterHardwareHatchMachine.installedStack(slots, i).isEmpty()) {
                 count++;
             }
         }
@@ -210,7 +286,7 @@ public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine
     }
 
     public AIModelDefinition modelInSlot() {
-        ItemStack stack = modelSlot.getStackInSlot(0);
+        ItemStack stack = DatacenterHardwareHatchMachine.installedStack(hardwareInventory(), 0);
         if (stack.isEmpty()) {
             return null;
         }
@@ -256,13 +332,14 @@ public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine
         DatacenterFloorNetwork.detached(this);
         super.onStructureInvalid();
         this.maintenance = null;
+        updateScreenState();
         unload("unformed");
     }
 
     @Override
     public void onLoad() {
         super.onLoad();
-        if (getLevel() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+        if (getLevel() instanceof ServerLevel serverLevel) {
             serverLevel.getServer().execute(this::updateTickSubscription);
         }
     }
@@ -290,6 +367,7 @@ public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine
         if (!isFormed() || getLevel() == null || getLevel().isClientSide()) {
             return;
         }
+        updateScreenState();
         if (!recipeLogic.isWorkingEnabled()) {
             setState(State.PAUSED);
             return;
@@ -347,9 +425,45 @@ public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine
 
     protected void setState(State next) {
         if (this.state != next) {
+            State previous = this.state;
             this.state = next;
             updateRenderState();
+            playStateCues(previous, next);
         }
+    }
+
+    /**
+     * 0.6.3 · one-shots tied to routing state changes.
+     *
+     * <ul>
+     * <li>{@code rack_click} — a blade/HBM/weight module was pushed in or pulled out, or the
+     * routing state flipped (loading ↔ online ↔ evicted).</li>
+     * <li>{@code terminal_alert} — the routed job hit OOM or lost its compute feed (503-style
+     * congestion), throttled to one cue per {@value #SOUND_THROTTLE} ticks per machine so a
+     * flapping cluster cannot spam the mix.</li>
+     * </ul>
+     */
+    protected void playStateCues(State previous, State next) {
+        if (getLevel() == null || getLevel().isClientSide()) {
+            return;
+        }
+        boolean rackEvent = next == State.LOADING || next == State.ONLINE || next == State.EVICTED;
+        if (rackEvent) {
+            HyperClusterSounds.RACK_CLICK.playOnServer(getLevel(), getPos(), 0.7F, 1.0F);
+        }
+        if (next == State.OOM || next == State.EVICTED) {
+            this.lastAlertTick = MachineAlerts.play(getLevel(), getPos(), this.lastAlertTick,
+                    getOffsetTimer());
+        }
+    }
+
+    /** 0.6.3 · clicking cue when hardware moves through the deployment or LoRA slots. */
+    @Override
+    public void onHardwareChanged() {
+        if (getLevel() == null || getLevel().isClientSide()) {
+            return;
+        }
+        HyperClusterSounds.RACK_CLICK.playOnServer(getLevel(), getPos(), 0.7F, 1.0F);
     }
 
     @Override
@@ -373,8 +487,8 @@ public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     @Override
-    public IItemHandlerModifiable hardwareInventory() {
-        return new CombinedInvWrapper(modelSlot, loraSlot);
+    public IItemHandlerModifiable legacyHardwareInventory() {
+        return legacyHardware;
     }
 
     @Override
@@ -390,6 +504,12 @@ public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine
                 GuiTextures.BUTTON_BATCH, this::isDeepThink, this::setDeepThink);
         deepThinkToggle.setHoverTooltips(Component.translatable(uiKey + "deepthink.tooltip"));
         controls.addWidget(deepThinkToggle);
+        // 0.6.3: the manual "show the display" switch for the floating 6×6 screen, placed right
+        // of the 18 px DeepThink toggle with generous clearance (MachineUiTests requires ≥3 px).
+        ToggleButtonWidget screenToggle = new ToggleButtonWidget(36, 0, 18, 18,
+                GuiTextures.BUTTON_POWER, this::isShowScreen, this::setShowScreen);
+        screenToggle.setHoverTooltips(Component.translatable(uiKey + "screen.tooltip"));
+        controls.addWidget(screenToggle);
         return MachineUi.multiblockPage(this, controls);
     }
 

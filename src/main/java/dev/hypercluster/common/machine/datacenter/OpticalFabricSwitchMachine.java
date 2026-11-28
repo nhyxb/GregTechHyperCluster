@@ -20,6 +20,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.RandomSource;
 
 import dev.hypercluster.common.machine.MachineUi;
+import dev.hypercluster.common.sound.MachineAlerts;
 
 import java.util.Collection;
 import java.util.List;
@@ -67,6 +68,9 @@ public class OpticalFabricSwitchMachine extends WorkableElectricMultiblockMachin
         /** Maintenance problems unfixed. */
         MAINTENANCE
     }
+
+    /** 0.6.3: stamp of the last terminal_alert cue, throttled by {@link MachineAlerts}. */
+    protected long lastAlertTick = MachineAlerts.NEVER;
 
     @javax.annotation.Nullable
     protected IMaintenanceMachine maintenance;
@@ -286,6 +290,11 @@ public class OpticalFabricSwitchMachine extends WorkableElectricMultiblockMachin
         if (this.status != next) {
             this.status = next;
             updateRenderState();
+            // 0.6.3: entering the 503 busy cooldown raises the terminal alert.
+            if (next == Status.BUSY_503) {
+                this.lastAlertTick = MachineAlerts.play(getLevel(), getPos(), this.lastAlertTick,
+                        getOffsetTimer());
+            }
         }
     }
 

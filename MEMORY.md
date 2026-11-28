@@ -171,6 +171,22 @@
 
 ## 机房架构工程规范（0.6.2 起）
 
-- **标准总线与专用仓 I/O**。多方块批量物料经 GTCEu `IMPORT_ITEMS` / `EXPORT_ITEMS`。已完成的任务在输出不可用时保留待结算状态，腾出容量后继续。主控界面用于状态、启停和配置。刀片、HBM、权重、LoRA 等驻留硬件通过支持 Forge 物品能力的机房硬件仓装卸。硬件仓连接原有持久化库存，旧存档安装仓口即可取回已装载硬件。
+- **标准总线与专用仓 I/O**。多方块批量物料经 GTCEu `IMPORT_ITEMS` / `EXPORT_ITEMS`。已完成的任务在输出不可用时保留待结算状态，腾出容量后继续。主控界面用于状态、启停和配置。刀片、HBM、权重、LoRA 等驻留硬件由支持 Forge 物品能力的机房硬件仓持久化，拆仓时从仓口掉落。硬件仓界面始终绑定仓体的五个实体槽，双端容器索引一致。断开主控后仍可从界面取回物品，插入时检查当前成型主控的槽位规则。结构成型时按槽迁移主控的旧库存。目标槽已占用时，旧物品保留在主控，待腾出对应槽再成型时迁移。回归入口为 `DatacenterTests.hardwareHatchOwnsAndDropsInstalledItems`。
 - **房内地板暗线与跨房原生光路**。底座全部实心支承格必须直接压在同一片正交连通、同高、无缺口的矩形架空地板上，短边至少 5 格、长边至多 24 格、长宽比至多 3:1。放置、拆除、区块装卸及结构变化触发缓存失效。跨房及对外用算使用 GTCEu 原生算力传输仓、连续光学管道、原生算力接收仓；断链归零。交换机将本地与光路来源聚合至 128 CWU/t，并保留 503 冷却 300 tick。
 - GTCEu 7.4.0 的原生配方接收仓用 `requestCWUt(Integer.MAX_VALUE, true)` 探测可用额度。交换机把这次模拟读取按带宽上限处理，真实超限请求才执行常规 503 判定。测试原生光路时显式连通两个端口及每段管道。
+
+## 0.6.3 音效 + MoE 大屏已完成（2026-11-28，0.6.3）
+
+- **交付**：`HyperClusterSounds`（8 个 `SoundEntry`）、`HyperClusterDataGenerators`（`sounds.json` 由 GTCEu `SoundEntryProvider` 生成）、`MachineLoopSound`/`MachineLoopSounds`/`MachineAlerts`、`MoeScreenRender`（6×6 鲸娘大屏）、`SoundRegistrationTests`（4 例）。runGametest **91/91**；四道门禁 + Xvfb 冒烟全绿。报告 `docs/reports/0.6.3_acceptance_report.md`。分支 `feat/0.6.3-audio-screen-docs`。
+- **⚠️ GTCEu 音效注册时机**：`IGTAddon#registerSounds()` 由 `GTSoundEntries.init()` 调用，**早于** `initializeAddon()`，是唯一可注册窗口（之后 `GTRegistries.SOUNDS` 已 freeze）。`GTRegistry` 的查询方法是 **`containKey`**，不是 `containsKey`。
+- **⚠️ 非配方机器没有原生工作音效**：`RecipeLogic#updateSound()` 只看配方类型的 `setSound`。运行 `DUMMY_RECIPES` 的风冷机柜、液冷机柜和卫星站使用 `AutoReleasedSound`。播放期间每 tick 检查同步的工作态、`IRecipeLogicMachine#shouldWorkingPlaySound()`、当前客户端世界和原机器实例。客户端 `onUnload()` 会立即释放音效。
+- **⚠️ 动态渲染器在 7.4.0 的形态**：接口名不是 `IDynamicRender`——是 `DynamicRender<T,S>` 抽象类（`client/renderer/machine/`）。挂载点为 `GTMachineModels.createWorkableCasingMachineModel(...).andThen(b -> b.addDynamicRenderer(Supplier))`。**类型必须在构造期注册**（`DynamicRenderManager.register`，幂等守卫），否则 **runData 期**解码模型 JSON 的 `dynamic_renders` 就抛 "is not registered"。
+- **MoE 大屏的点亮状态由服务端同步**。GTCEu 7.4.0 的多方块能源能力汇总在服务端成型时组装。由主控根据成型状态、供电、展示开关和部署槽计算 `@DescSynced screenLit`，客户端渲染器直接读取这个结果。
+- **⚠️ 用 `.model(...)` 替代 `workableCasingModel(...)` 会丢模型属性**：`workableCasingModel` 内部会 `modelProperty(RECIPE_LOGIC_STATUS, IDLE)`；直接 `.model()` 必须自己补 `.modelProperty(...)`，否则 datagen 报 "Cannot get property recipe_logic_status as it does not exist"。
+- **⚠️ GameTest 里读 `assets/` 不能用服务端 `ResourceManager`**：它按 `PackType.SERVER_DATA` 构建，只看得见 `data/`。校验 `sounds.json` / `.ogg` 存在性要用类加载器（`HyperCluster.class.getResourceAsStream("/assets/...")`），语义等同真实 jar。
+- **音效母带恢复**：`Public/sounds/*.ogg` 曾丢失，但其无损 PCM 母带保留在合成脚本的 `scratch/wav_tmp/*.wav`；按 `encode_ogg()` 原参数 `ffmpeg -ac 1 -ar 44100 -c:a libvorbis -q:a 6.0` 重编即可逐样本等价还原。
+
+## 双许可结构（0.6.3 起，长期有效）
+
+- 代码 [LICENSE.MD](LICENSE.MD) = LGPL-3.0；素材 [Public/ASSETS_LICENSE.md](Public/ASSETS_LICENSE.md) = CC0 1.0。
+- **例外**：`whale_maid_screen_96.png` 及其 `.aseprite` 源与预览图基于外部参考图重绘，**不在 CC0 内**，待原作者授权。新增/搬运该贴图时勿当作 CC0 素材。
