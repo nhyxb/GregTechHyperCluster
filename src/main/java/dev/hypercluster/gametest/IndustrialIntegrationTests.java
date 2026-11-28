@@ -26,10 +26,12 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 
 import dev.hypercluster.HyperCluster;
+import dev.hypercluster.common.data.HyperClusterBlocks;
 import dev.hypercluster.common.data.HyperClusterFluids;
 import dev.hypercluster.common.data.HyperClusterMachines;
 import dev.hypercluster.common.item.HyperClusterItems;
@@ -164,6 +166,61 @@ public class IndustrialIntegrationTests {
         });
     }
 
+    @GameTest(template = "hc_network_field", batch = BATCH, timeoutTicks = 120)
+    public static void floorInferencePaysSharedRackAndFallsBack(GameTestHelper helper) {
+        TopologyTests.fillFloor(helper, 1, 0, 1, 10, 12);
+        var lcr = placeLcr(helper, 3, 1, 7);
+        var rack = DatacenterTests.placeRack(helper, 3, 1, 1);
+        var floorTile = new BlockPos(1, 0, 1);
+        var raw = sampleRecipe();
+        helper.runAtTickTime(10, () -> {
+            power(lcr.energy());
+            power(rack.energyHatch());
+            rack.controller().getBladeInventory().setStackInSlot(0,
+                    new ItemStack(HyperClusterItems.IV_COMPUTE_BLADE.get()));
+            form(helper, rack.controller());
+            form(helper, lcr.host());
+        });
+        helper.runAtTickTime(25, () -> {
+            var host = lcr.host();
+            var base = host.fullModifyRecipe(raw);
+            helper.assertTrue(base != null, "native baseline recipe must be valid");
+            lcr.inference().getChipSlot().setStackInSlot(0, new ItemStack(HyperClusterItems.CHEMICAL_EDGE_CHIP.get()));
+            var boosted = host.fullModifyRecipe(raw);
+            helper.assertTrue(boosted != null && IvInferenceHatchMachine.inferenceDemand(boosted) == 2 &&
+                    RecipeHelper.getRealEUt(boosted).getTotalEU() * 4 ==
+                            RecipeHelper.getRealEUt(base).getTotalEU() * 3,
+                    "shared raised floor alone should unlock the 2 CWU/t discount");
+
+            lcr.input().getInventory().setStackInSlot(0, new ItemStack(Items.IRON_INGOT, 2));
+            var logic = host.getRecipeLogic();
+            helper.assertTrue(logic.checkMatchedRecipeAvailable(raw), "floor-boosted recipe should start");
+            int available = rack.controller().requestCWUt(100, true);
+            logic.handleRecipeWorking();
+            helper.assertTrue(available >= 2 && rack.controller().requestCWUt(100, true) == available - 2,
+                    "the floor must debit the same rack budget that an optical client uses");
+            rack.controller().requestCWUt(100, false);
+            var exhausted = host.fullModifyRecipe(raw);
+            helper.assertTrue(exhausted != null && IvInferenceHatchMachine.inferenceDemand(exhausted) == 0 &&
+                    RecipeHelper.getRealEUt(exhausted).equals(RecipeHelper.getRealEUt(base)),
+                    "an exhausted shared rack must not grant a discount");
+            helper.setBlock(floorTile, Blocks.AIR);
+        });
+        helper.runAtTickTime(30, () -> {
+            var host = lcr.host();
+            var fallback = host.fullModifyRecipe(raw);
+            helper.assertTrue(fallback != null && IvInferenceHatchMachine.inferenceDemand(fallback) == 0,
+                    "breaking the shared floor must remove the discount");
+            helper.assertTrue(host.getRecipeLogic().checkMatchedRecipeAvailable(raw), "base recipe should restart");
+            helper.setBlock(floorTile, HyperClusterBlocks.RAISED_FLOOR.get());
+        });
+        helper.runAtTickTime(35, () -> {
+            helper.assertTrue(lcr.host().getRecipeLogic().isRecipeDirty(),
+                    "restoring floor compute should refresh a cached undiscounted recipe at its next batch");
+            helper.succeed();
+        });
+    }
+
     @GameTest(template = "hc_network_field", batch = BATCH, timeoutTicks = 180)
     public static void poweredGlmDiagnosesNativeLcr(GameTestHelper helper) {
         TopologyTests.fillFloor(helper, 1, 0, 1, 15, 13);
@@ -201,6 +258,9 @@ public class IndustrialIntegrationTests {
             helper.assertTrue(lcr.inference().getNumMaintenanceProblems() == 0, "GLM must repair the host");
             helper.assertTrue(lcr.inference().diagnosis() == ShutdownDiagnosis.MISSING_INPUT_OR_NO_RECIPE,
                     "powered empty LCR should report missing inputs, got " + lcr.inference().diagnosis());
+            var boosted = lcr.host().fullModifyRecipe(sampleRecipe());
+            helper.assertTrue(boosted != null && IvInferenceHatchMachine.inferenceDemand(boosted) == 2,
+                    "GLM with a shared compute room must unlock the discount without a chip or optical cable");
             lcr.energy().energyContainer.removeEnergy(lcr.energy().energyContainer.getEnergyStored());
         });
         helper.runAtTickTime(45, () -> {

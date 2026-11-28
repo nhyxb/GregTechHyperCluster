@@ -2,6 +2,7 @@ package dev.hypercluster.common.machine.datacenter;
 
 import com.gregtechceu.gtceu.api.capability.recipe.CWURecipeCapability;
 import com.gregtechceu.gtceu.api.capability.recipe.EURecipeCapability;
+import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
 import com.gregtechceu.gtceu.api.gui.widget.SlotWidget;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
@@ -12,6 +13,7 @@ import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMaintenanceMachine;
 import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiController;
 import com.gregtechceu.gtceu.api.machine.feature.multiblock.IWorkableMultiController;
 import com.gregtechceu.gtceu.api.machine.multiblock.WorkableElectricMultiblockMachine;
+import com.gregtechceu.gtceu.api.machine.trait.NotifiableComputationContainer;
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.content.Content;
@@ -51,20 +53,19 @@ import javax.annotation.Nullable;
  *
  * <p>
  * A GT-style multiblock part (attachable to the data scrubbing tower's structure) that acts as an
- * optical <b>computation receiver</b>: like GTCEu's own computation reception hatch it pulls real
- * {@code CWU/t} through an adjacent optical pipe from an {@link AirCooledComputeRackMachine}. It
+ * optical <b>computation receiver</b>: it draws real {@code CWU/t} through an adjacent optical
+ * pipe or the raised-floor room's compute providers. It
  * adds one inference chip slot (ordinary or aligned domain edge chips) and a per-recipe contract:
  *
  * <ul>
  * <li>Host recipes whitelisted with the {@code hc_inference_boost} tag (the two base data
  * scrubbing recipes) match under the original rules (2048 EU/t). When this hatch holds a chip and
- * the optical link can deliver, {@link #modifyRecipe} rewrites the recipe into its boosted form:
+ * the linked compute providers can deliver, {@link #modifyRecipe} rewrites the recipe into its boosted form:
  * the chip's CWU/t demand (2 for an ordinary domain edge chip, 8 for an aligned one) is added as
  * a tick input and the EU/t drops by the chip's discount (25% / 50%). The demand is then billed
  * every tick through this hatch's native computation container — the discount exists exactly
  * while CWU/t is really consumed. Never a free discount.</li>
- * <li>If the chip cannot serve the demand, no chip is inserted or the optical link cannot
- * deliver, the recipe passes through unchanged — the tower runs under the original rules.</li>
+ * <li>The tower keeps the original recipe if a chip or enough computation is unavailable.</li>
  * <li>If the CWU/t feed is cut mid-run, a small watchdog marks the host's recipe dirty so the
  * next search falls back to the original rules instead of stalling.</li>
  * </ul>
@@ -108,6 +109,51 @@ public class IvInferenceHatchMachine extends OpticalComputationHatchMachine
         this.chipSlot = new CustomItemStackHandler(1);
         this.chipSlot.setFilter(stack -> isInferenceChip(stack) || stack.is(HyperClusterItems.MINING_LORA_CARD.get()) ||
                 stack.is(HyperClusterItems.CHEMICAL_LORA_CARD.get()));
+    }
+
+    @Override
+    protected NotifiableComputationContainer createComputationContainer(Object... args) {
+        return new NotifiableComputationContainer(this, IO.IN, false) {
+
+            @Override
+            public List<Integer> handleRecipeInner(IO io, GTRecipe recipe, List<Integer> left, boolean simulate) {
+                if (io != IO.IN || !isInferenceRecipe(recipe)) {
+                    return super.handleRecipeInner(io, recipe, left, simulate);
+                }
+                var host = host();
+                if (host == null) {
+                    return left;
+                }
+                int demand = left.stream().mapToInt(Integer::intValue).sum();
+                int outstanding = demand - requestInferenceCWUt(host, demand, simulate);
+                return outstanding > 0 ? List.of(outstanding) : null;
+            }
+        };
+    }
+
+    private static boolean isInferenceRecipe(GTRecipe recipe) {
+        return IndustrialInference.hasPlan(recipe) || recipe.data.contains(INFERENCE_BOOST_TAG);
+    }
+
+    private int requestInferenceCWUt(IWorkableMultiController host, int demand, boolean simulate) {
+        if (demand <= 0) {
+            return 0;
+        }
+        // Choose one path for the whole charge. A wired endpoint and the floor may share a rack.
+        if (computationContainer.requestCWUt(demand, true) >= demand) {
+            return simulate ? demand : computationContainer.requestCWUt(demand, false);
+        }
+        var room = DatacenterOpticalNetwork.floorProviders(host.self());
+        if (DatacenterOpticalNetwork.request(room, demand, true, new ArrayList<>()) < demand) {
+            return 0;
+        }
+        return simulate ? demand : DatacenterOpticalNetwork.request(room, demand, false, new ArrayList<>());
+    }
+
+    private boolean hasInferenceCapacity(IWorkableMultiController host, int demand) {
+        return computationContainer.getMaxCWUt() >= demand ||
+                DatacenterOpticalNetwork.capacity(DatacenterOpticalNetwork.floorProviders(host.self()),
+                        new ArrayList<>()) >= demand;
     }
 
     /** The existing domain edge chips (ordinary and red-team aligned) drive the hatch. */
@@ -297,29 +343,34 @@ public class IvInferenceHatchMachine extends OpticalComputationHatchMachine
             return null;
         }
         if (!recipe.data.contains(INFERENCE_BOOST_TAG)) {
-            if (host == null || !(host.self() instanceof WorkableElectricMultiblockMachine electric) ||
-                    !electric.getDefinition().getId().getNamespace().equals("gtceu") ||
-                    recipe.getTickInputContents(EURecipeCapability.CAP).isEmpty() || inferenceDemand(recipe) != 0) {
+            if (host == null || !eligibleForIndustrialInference(host, recipe)) {
                 return recipe;
             }
-            var plan = IndustrialInference.plan(electric, recipe, chipSlot.getStackInSlot(0), onlineRouters(host));
-            return plan != null && computationContainer.requestCWUt(plan.demand(), true) >= plan.demand() ?
+            var plan = IndustrialInference.plan((WorkableElectricMultiblockMachine) host.self(), recipe,
+                    chipSlot.getStackInSlot(0), onlineRouters(host));
+            return plan != null && requestInferenceCWUt(host, plan.demand(), true) >= plan.demand() ?
                     IndustrialInference.mark(recipe, plan) : recipe;
         }
         ItemStack chip = chipSlot.getStackInSlot(0);
         int demand = chipCapacity(chip);
-        if (demand <= 0) {
+        if (host == null || demand <= 0) {
             return recipe; // no chip: original rules.
         }
         // Simulate only: the real per-tick billing runs through this hatch's computation
         // container while the recipe works (never a free discount).
-        int granted = computationContainer.requestCWUt(demand, true);
+        int granted = requestInferenceCWUt(host, demand, true);
         if (granted < demand) {
             return recipe; // no CWU/t right now: original rules.
         }
         long boostedEUt = Math.max(1,
                 Math.round(recipeEUt(recipe) * (1.0 - chipDiscount(chip))));
         return boostRecipe(recipe, demand, boostedEUt);
+    }
+
+    private static boolean eligibleForIndustrialInference(IWorkableMultiController host, GTRecipe recipe) {
+        return host.self() instanceof WorkableElectricMultiblockMachine electric &&
+                electric.getDefinition().getId().getNamespace().equals("gtceu") &&
+                !recipe.getTickInputContents(EURecipeCapability.CAP).isEmpty() && inferenceDemand(recipe) == 0;
     }
 
     /** The recipe's EU/t from its EU tick input (0 if it has none). */
@@ -391,22 +442,7 @@ public class IvInferenceHatchMachine extends OpticalComputationHatchMachine
         }
         repairIfAutomatic(host, glm);
 
-        GTRecipe last = logic.getLastRecipe();
-        if (last != null && !logic.isSuspend() && logic.getDuration() > 0 &&
-                (IndustrialInference.hasPlan(last) || last.data.contains(INFERENCE_BOOST_TAG))) {
-            int demand = inferenceDemand(last);
-            boolean industrial = IndustrialInference.hasPlan(last);
-            boolean changed = industrial && host.self() instanceof WorkableElectricMultiblockMachine electric &&
-                    !IndustrialInference.matchesPlan(last, IndustrialInference.plan(electric, last, card, routers));
-            boolean linkLost = industrial && computationContainer.getMaxCWUt() < demand;
-            if (demand > 0 && (changed || linkLost ||
-                    logic.isWaiting() && computationContainer.requestCWUt(demand, true) < demand)) {
-                // Native GT has consumed the batch inputs by this point. Interrupt it and force
-                // the next lookup to reapply the original recipe rather than reuse the discount.
-                logic.markLastRecipeDirty();
-                logic.interruptRecipe();
-            }
-        }
+        updateRunningInference(host, card, routers);
 
         glmOnline = glm;
         diagnosis = glm ? ShutdownDiagnosis.inspect(host) : ShutdownDiagnosis.NONE;
@@ -419,6 +455,37 @@ public class IvInferenceHatchMachine extends OpticalComputationHatchMachine
             router.updateDiagnostic(this, diagnosis);
         }
         attachedRouters = routers;
+    }
+
+    private void updateRunningInference(IWorkableMultiController host, ItemStack card,
+                                        List<MoeRouterRackMachine> routers) {
+        var logic = host.getRecipeLogic();
+        GTRecipe last = logic.getLastRecipe();
+        if (last == null || logic.isSuspend() || logic.getDuration() <= 0) {
+            return;
+        }
+        boolean tower = last.data.contains(INFERENCE_BOOST_TAG);
+        boolean industrial = IndustrialInference.hasPlan(last);
+        if (!tower && !industrial && !eligibleForIndustrialInference(host, last)) {
+            return;
+        }
+
+        var plan = !tower && host.self() instanceof WorkableElectricMultiblockMachine electric ?
+                IndustrialInference.plan(electric, last, card, routers) : null;
+        int demand = inferenceDemand(last);
+        if (demand == 0) {
+            int nextDemand = tower ? chipCapacity(card) : plan == null ? 0 : plan.demand();
+            if (nextDemand > 0 && requestInferenceCWUt(host, nextDemand, true) >= nextDemand) {
+                // Some GT hosts reuse the last recipe after completion. Re-evaluate at the batch boundary.
+                logic.markLastRecipeDirty();
+            }
+        } else if (industrial && !IndustrialInference.matchesPlan(last, plan) ||
+                !hasInferenceCapacity(host, demand) ||
+                logic.isWaiting() && requestInferenceCWUt(host, demand, true) < demand) {
+                    // The inputs were already consumed. Interrupt and search again using the available paths.
+                    logic.markLastRecipeDirty();
+                    logic.interruptRecipe();
+                }
     }
 
     private void clearDiagnostics() {
