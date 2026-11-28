@@ -30,7 +30,7 @@ import java.util.Objects;
 public class MachineUiTests {
 
     private static final String BATCH = "hypercluster_machine_ui";
-    private static final int MIN_GAP = 3;
+    private static final int MIN_GAP   =3;   // deliberately misformatted
 
     @GameTest(template = "hc_floor", batch = BATCH)
     public static void satelliteStationControlBounds(GameTestHelper helper) {

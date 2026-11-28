@@ -5,6 +5,7 @@
 - 基础贴图全量总览（24 件物品 `4x / 2x / 1x` 槽位对比 + 0.1–0.6.1 全部机器叠加 HV 橙金 / EV 钛紫 / IV 蓝 / LuV 淡品红紫粉机壳对比 + 架空地板/机柜冷热面 + 0.4 卫星站钢架/反射面板/馈源 + 0.6.0 LuV 液冷机柜/UPS 电池柜 + 0.6.1 显存墙/光交换背板/HBM 显存条/越狱卡 + 物品栏轮廓对比）见 [contact_sheet.png](textures/previews/contact_sheet.png)。
 - 9 个结构方块的 **LDLib 2×2 CTM 衔接图集与 3×3 / T 型 / L 型 / 多方块立面实测拼接预览**见 [ctm_preview.png](textures/previews/ctm_preview.png)。
 - 13 台多方块主控的 **运行态多帧动画逐帧展开与无缝循环检视表**见 [active_animations_sheet.png](textures/previews/active_animations_sheet.png)。
+- 8 段 **Minecraft 1.20.1 工业与科幻音效**（6 段无缝循环运行音效 + 2 段单次交互与告警音效，全部为单声道 Mono `44100 Hz` Ogg Vorbis，统一响度归一化至 `-14.0 LUFS`、零削波失真）存放于 `sounds/`，供工程拷贝进 `src/main/resources/assets/hypercluster/sounds/`。
 
 ---
 
@@ -110,6 +111,21 @@
 | 0.6.1 LuV | 42U 显存/权重机柜外壳 CTM | `textures/block/datacenter/vram_rack_casing_ctm.png` | `textures/source/vram_rack_casing_ctm.aseprite` | `assets/hypercluster/textures/block/datacenter/vram_rack_casing_ctm.png` |
 | 0.6.1 LuV | 高速光交换机外壳 CTM | `textures/block/datacenter/optical_switch_casing_ctm.png` | `textures/source/optical_switch_casing_ctm.aseprite` | `assets/hypercluster/textures/block/datacenter/optical_switch_casing_ctm.png` |
 
+### 五、工业与科幻音效（8 段单声道 Mono `44100 Hz` Ogg Vorbis，统一归一化至 `-14 LUFS`）
+
+全部音效使用 Python（`numpy` / `scipy`）+ `ffmpeg`（`libvorbis`）程序化合成，导出为 **单声道（1 channel / mono）** 以保证 Minecraft 1.20.1 OpenAL 正常执行 3D 空间距离衰减；循环音效均采用相位锁定 + 等功率交叉淡化（Overlap-Add Crossfade）与零交点对齐，经解码首尾拼接验证零爆音、无音量塌陷。
+
+| 类型 | 音效文件 | 时长 | 实测响度 / 真峰值 | 适用机器 / 场景 | 目标资源路径（`modid = hypercluster`） |
+| :---: | --- | :---: | :---: | --- | --- |
+| 循环运行 | `sounds/datacenter_air_hum.ogg` | `5.00 s` | `-13.90 LUFS` / `-1.80 dBTP` | 风冷算力机柜与精密空调（真实机房低频风扇嗡嗡声 + 柔和带通滤波气流声） | `assets/hypercluster/sounds/datacenter_air_hum.ogg` |
+| 循环运行 | `sounds/datacenter_liquid_hum.ogg` | `5.00 s` | `-14.00 LUFS` / `-1.80 dBTP` | 冷板液冷机柜与数据清洗塔（低沉液冷泵循环声 + 细微流体管路流动声） | `assets/hypercluster/sounds/datacenter_liquid_hum.ogg` |
+| 循环运行 | `sounds/pretraining_cluster.ogg` | `6.00 s` | `-14.00 LUFS` / `-2.00 dBTP` | 张量预训练集群（深沉科幻超算低频谐振 + 克制的高频数据扫描脉冲） | `assets/hypercluster/sounds/pretraining_cluster.ogg` |
+| 循环运行 | `sounds/satellite_uplink.ogg` | `5.00 s` | `-14.00 LUFS` / `-2.00 dBTP` | API 卫星地面站（轻柔射频载波脉冲 + 间歇遥测轻滴声） | `assets/hypercluster/sounds/satellite_uplink.ogg` |
+| 循环运行 | `sounds/laser_burn.ogg` | `4.50 s` | `-14.00 LUFS` / `-1.90 dBTP` | 微型烧录台与神经微调刻录舱（高频细密光学激光刻录滋滋声） | `assets/hypercluster/sounds/laser_burn.ogg` |
+| 循环运行 | `sounds/red_team_scan.ogg` | `5.00 s` | `-14.00 LUFS` / `-2.40 dBTP` | 沙盒红队测试舱（低沉电子对抗扫描波 + 轻微故障脉冲） | `assets/hypercluster/sounds/red_team_scan.ogg` |
+| 单次交互 | `sounds/rack_click.ogg` | `0.48 s` | `-14.00 LUFS` / `-1.30 dBTP` | 插入/拔出计算刀片、HBM 显存条或权重模块（清脆金属导轨“咔哒”锁定声） | `assets/hypercluster/sounds/rack_click.ogg` |
+| 单次告警 | `sounds/terminal_alert.ogg` | `0.80 s` | `-14.00 LUFS` / `-4.60 dBTP` | 触发 503 繁忙、OOM、道德拒答或 UPS 切备电（短促克制的工业终端双音告警） | `assets/hypercluster/sounds/terminal_alert.ogg` |
+
 ---
 
 ## 视觉规范、轮廓区分与复用说明
@@ -205,3 +221,9 @@
 - **42U 显存/权重机柜外壳（`vram_rack_casing` / `vram_rack_casing_ctm`）**：深靛蓝金属背板内排布高密度银灰 HBM 芯片阵列（4×4 偏移网格）并穿插细微紫/青双色内存通道轨，CTM 拼接时连成一整面连续高密度显存墙，与银白竖管为主的冷板液冷机柜在色调与结构肌理上明显区分（15 色，4 图层：`indigo_backplate` / `hbm_array_modules` / `purple_cyan_channels` / `cabinet_frame`）。
 - **高速光交换机外壳（`optical_switch_casing` / `optical_switch_casing_ctm`）**：哑光深黑金属背板配合 4 行错位高密度青/琥珀双孔光纤跳线端口阵，CTM 拼接为整面无缝光交换背板（13 色，3 图层：`matte_backplate` / `optical_port_matrix` / `cabinet_frame`）。
 - **0.6.1 LuV 多方块主控（`vram_storage_rack` / `optical_fabric_switch` / `moe_router_rack`）**：全部 3 台主控均保持外围 2px 100% 透明与一致冷钢左上光照，预览合成于基于 GTCEu `luv_machine_casing` 淡品红/紫粉金属调色的 LuV 机壳（见 [contact_sheet.png](textures/previews/contact_sheet.png)、[ctm_preview.png](textures/previews/ctm_preview.png) 与 [active_animations_sheet.png](textures/previews/active_animations_sheet.png)）。
+
+### 9. 音效合成规范、无缝循环与验收说明（`sounds/*.ogg`）
+- **格式与 OpenAL 3D 衰减合规**：8 个文件均已通过 `ffprobe` 逐一核验，全部严格符合 `codec_name=vorbis`、`channels=1`（`channel_layout=mono`）、`sample_rate=44100 Hz`（`libvorbis -q:a 6`，约 `110 kbps` 单声道），可在 Minecraft 1.20.1 OpenAL 音频管线中正常触发 3D 空间衰减与方位定位。
+- **统一响度与防削波保护**：全部文件经 `ffmpeg ebur128=peak=true` 迭代纯常数增益归一化至 `-14.0 LUFS`（实测 `-14.00` 至 `-13.90 LUFS`），并配合软拐点峰值保护，真峰值控制在 `-4.60 dBTP` 至 `-1.30 dBTP`，解码 PCM 零削波样本（`clipped = 0`）、直流偏移 `< 0.0003`，同时对 2.8–3.6 kHz 人耳敏感频段做了温和压制，长时间驻留机房不刺耳。
+- **无缝循环设计（6 段运行音效）**：所有周期谐波、风机/泵体转速与扫描 LFO 频率均锁定至循环时长的整数倍周期，滤波噪声层采用扩展时长等功率交叉淡化（Overlap-Add Equal-Power Crossfade）叠回，并在编码前圆周移位至低能量零交点以消除 Vorbis MDCT 帧边界畸变；经 `.ogg` 解码后直接首尾拼接校验，全部 6 段接缝处跳变均远低于内部信号 99% 分位值且首尾 50 ms RMS 差值 ≤ `1.26 dB`，听感零爆音、无呼吸塌陷。
+- **单次交互与告警（2 段 One-Shot 音效）**：`rack_click.ogg`（`0.48 s`）包含导轨轻擦、初次限位“咔”、重型凸轮锁扣“哒”与微弱弹簧回位三段金属模态瞬态；`terminal_alert.ogg`（`0.80 s`）采用 `784 Hz → 622.25 Hz` 下行大三度工业控制室双音警示与短促腔体余韵，末尾均平滑淡出至纯静音。
