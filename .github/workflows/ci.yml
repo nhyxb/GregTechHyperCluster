@@ -12,6 +12,10 @@ on:
 permissions:
   contents: read
 
+# Every step that pipes Gradle through `tee` declares `shell: bash` and enables
+# `pipefail`: GitHub's default `bash -e {0}` reports the LAST command's status,
+# so an unnoticed `| tee` turns a failing build into a green run.
+
 # A newer push to the same PR cancels the older verification. Pushes to main are
 # never cancelled: that run produces the JAR we may later publish.
 concurrency:
@@ -51,7 +55,10 @@ jobs:
       #    before the generator ran (seen during 0.6.2 acceptance).
       # ---------------------------------------------------------------------
       - name: Generate data (runData)
-        run: ./gradlew --stacktrace runData 2>&1 | tee ci-logs/gradle-rundata.log
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew --stacktrace runData 2>&1 | tee ci-logs/gradle-rundata.log
 
       - name: Fail if generated resources are not committed
         run: |
@@ -74,10 +81,16 @@ jobs:
       # 2. Style, then package — a second, independent invocation.
       # ---------------------------------------------------------------------
       - name: Check formatting (spotlessCheck)
-        run: ./gradlew --stacktrace spotlessCheck 2>&1 | tee ci-logs/gradle-spotless.log
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew --stacktrace spotlessCheck 2>&1 | tee ci-logs/gradle-spotless.log
 
       - name: Build
-        run: ./gradlew --stacktrace build 2>&1 | tee ci-logs/gradle-build.log
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew --stacktrace build 2>&1 | tee ci-logs/gradle-build.log
 
       - name: Report build artifacts
         run: |
@@ -121,7 +134,10 @@ jobs:
 
       - name: Run GameTest
         id: gametest
+        shell: bash
         run: |
+          # NB: GitHub's default `bash -e {0}` has no pipefail, so `gradle | tee`
+          # would report tee's status and a failing suite would look green.
           set -uo pipefail
           mkdir -p ci-logs
           ./gradlew --stacktrace runGametest 2>&1 | tee ci-logs/gradle-gametest.log
@@ -233,6 +249,7 @@ jobs:
           sudo apt-get install -y --no-install-recommends xvfb x11-utils imagemagick
 
       - name: Boot the client under Xvfb
+        shell: bash
         run: |
           set -uo pipefail
           mkdir -p ci-logs run/validation

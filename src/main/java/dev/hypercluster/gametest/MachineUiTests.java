@@ -29,7 +29,7 @@ import java.util.Objects;
 @PrefixGameTestTemplate(false)
 public class MachineUiTests {
 
-    private static final String BATCH = "hypercluster_machine_ui";
+    private static final String BATCH = "hypercluster_machine_ui"; private static final int PROBE = 1;
     private static final int MIN_GAP = 3;
 
     @GameTest(template = "hc_floor", batch = BATCH)
