@@ -177,7 +177,7 @@
 
 ## 0.6.3 音效 + MoE 大屏已完成（2026-11-28，0.6.3）
 
-- **交付**：`HyperClusterSounds`（8 个 `SoundEntry`）、`HyperClusterDataGenerators`（`sounds.json` 由 GTCEu `SoundEntryProvider` 生成）、`MachineLoopSound`/`MachineLoopSounds`/`MachineAlerts`、`MoeScreenRender`（6×6 鲸娘大屏）、`SoundRegistrationTests`（4 例）。runGametest **91/91**；四道门禁 + Xvfb 冒烟全绿。报告 `docs/reports/0.6.3_acceptance_report.md`。分支 `feat/0.6.3-audio-screen-docs`。
+- **交付**：`HyperClusterSounds`（8 个 `SoundEntry`）、`HyperClusterDataGenerators`（`sounds.json` 由 GTCEu `SoundEntryProvider` 生成）、`MachineLoopSound`/`MachineLoopSounds`/`MachineAlerts`、`MoeScreenRender`（6×6 鲸娘大屏）、`SoundRegistrationTests`（4 例）。runGametest **91/91**；四道门禁 + Xvfb 冒烟全绿。报告 `docs/reports/0.6.3_acceptance_report.md`。分支 `feat/0.6.3-audio-screen-docs` 已经 PR #5（squash）合入 `main`，合并提交 `22cc7c9`，合并后 `main` 的 validate 门禁通过；特性分支本地与远端均已删除。
 - **⚠️ GTCEu 音效注册时机**：`IGTAddon#registerSounds()` 由 `GTSoundEntries.init()` 调用，**早于** `initializeAddon()`，是唯一可注册窗口（之后 `GTRegistries.SOUNDS` 已 freeze）。`GTRegistry` 的查询方法是 **`containKey`**，不是 `containsKey`。
 - **⚠️ 非配方机器没有原生工作音效**：`RecipeLogic#updateSound()` 只看配方类型的 `setSound`。运行 `DUMMY_RECIPES` 的风冷机柜、液冷机柜和卫星站使用 `AutoReleasedSound`。播放期间每 tick 检查同步的工作态、`IRecipeLogicMachine#shouldWorkingPlaySound()`、当前客户端世界和原机器实例。客户端 `onUnload()` 会立即释放音效。
 - **⚠️ 动态渲染器在 7.4.0 的形态**：接口名不是 `IDynamicRender`——是 `DynamicRender<T,S>` 抽象类（`client/renderer/machine/`）。挂载点为 `GTMachineModels.createWorkableCasingMachineModel(...).andThen(b -> b.addDynamicRenderer(Supplier))`。**类型必须在构造期注册**（`DynamicRenderManager.register`，幂等守卫），否则 **runData 期**解码模型 JSON 的 `dynamic_renders` 就抛 "is not registered"。
