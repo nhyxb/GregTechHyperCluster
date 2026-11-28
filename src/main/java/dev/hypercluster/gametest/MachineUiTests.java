@@ -137,8 +137,8 @@ public class MachineUiTests {
         WidgetGroup controls = checkMultiblockPage(helper, page);
         helper.assertTrue(controls.getWidgetsByType(SlotWidget.class).isEmpty(),
                 "the router controller must leave hardware access to the hatch");
-        helper.assertTrue(controls.getWidgetsByType(SwitchWidget.class).size() == 1,
-                "the router needs the DeepThink toggle");
+        helper.assertTrue(controls.getWidgetsByType(SwitchWidget.class).size() == 2,
+                "the router needs the DeepThink toggle and the display toggle");
         helper.succeed();
     }
 

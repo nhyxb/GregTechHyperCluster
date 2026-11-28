@@ -28,8 +28,11 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.items.IItemHandlerModifiable;
 import net.minecraftforge.items.wrapper.CombinedInvWrapper;
 
+import dev.hypercluster.client.sound.MachineLoopSounds;
+import dev.hypercluster.common.data.HyperClusterSounds;
 import dev.hypercluster.common.item.HyperClusterItems;
 import dev.hypercluster.common.machine.MachineUi;
+import dev.hypercluster.common.sound.MachineAlerts;
 
 import java.util.Collection;
 import java.util.List;
@@ -117,6 +120,8 @@ public class LiquidCooledComputeRackMachine extends WorkableElectricMultiblockMa
     @DescSynced
     protected DerateReason derateReason = DerateReason.NO_BLADES;
     protected boolean providing = false;
+    /** 0.6.3: stamp of the last terminal_alert cue, throttled by {@link MachineAlerts}. */
+    protected long lastAlertTick = MachineAlerts.NEVER;
     @DescSynced
     protected long lastTotalEUt = LiquidDatacenterRating.STANDBY_EU_T;
     @DescSynced
@@ -277,6 +282,12 @@ public class LiquidCooledComputeRackMachine extends WorkableElectricMultiblockMa
             }
         }
 
+        // 0.6.3: a dry cold plate raises the terminal alert (throttled: the starve counter can
+        // flap a fluid gap once per retry, and the cue must not repeat with it).
+        if (reason == DerateReason.NO_COOLANT && this.derateReason != DerateReason.NO_COOLANT) {
+            this.lastAlertTick = MachineAlerts.play(getLevel(), getPos(), this.lastAlertTick,
+                    getOffsetTimer());
+        }
         if (this.derateReason != reason || this.providing != nowProviding) {
             this.derateReason = reason;
             this.providing = nowProviding;
@@ -578,6 +589,11 @@ public class LiquidCooledComputeRackMachine extends WorkableElectricMultiblockMa
     @Override
     public void animateTick(RandomSource random) {
         super.animateTick(random);
+        // 0.6.3: the work loop. These machines run DUMMY_RECIPES, so RecipeLogic never reports
+        // them as working and GTCEu's own sound hook stays silent; drive the same
+        // AutoReleasedSound mechanism explicitly instead.
+        MachineLoopSounds.tick(this, MachineLoopSounds.renderStateWorking(this),
+                () -> HyperClusterSounds.DATACENTER_LIQUID_HUM);
         if (getRenderState().getValue(GTMachineModelProperties.RECIPE_LOGIC_STATUS) != RecipeLogic.Status.WORKING) {
             return;
         }

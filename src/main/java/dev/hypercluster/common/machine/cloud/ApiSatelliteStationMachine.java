@@ -36,14 +36,17 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 
+import dev.hypercluster.client.sound.MachineLoopSounds;
 import dev.hypercluster.common.cloud.CloudModels;
 import dev.hypercluster.common.cloud.CloudPricing;
 import dev.hypercluster.common.cloud.CloudTokenLedger;
+import dev.hypercluster.common.data.HyperClusterSounds;
 import dev.hypercluster.common.item.CredentialCardItem;
 import dev.hypercluster.common.item.HyperClusterItems;
 import dev.hypercluster.common.item.TokenCreditCardItem;
 import dev.hypercluster.common.machine.MachineUi;
 import dev.hypercluster.common.machine.MultiblockItemBuses;
+import dev.hypercluster.common.sound.MachineAlerts;
 
 import java.util.List;
 import java.util.Locale;
@@ -189,6 +192,9 @@ public class ApiSatelliteStationMachine extends WorkableElectricMultiblockMachin
     /** UI-live round-refusal status (synced, never persisted — a restart starts with NONE). */
     @DescSynced
     protected WaitingReason waitingReason = WaitingReason.NO_CREDENTIAL;
+
+    /** 0.6.3: stamp of the last terminal_alert cue, throttled by {@link MachineAlerts}. */
+    protected long lastAlertTick = MachineAlerts.NEVER;
     protected boolean fallbackGatewayAttached = false;
 
     public ApiSatelliteStationMachine(IMachineBlockEntity holder, Object... args) {
@@ -760,6 +766,13 @@ public class ApiSatelliteStationMachine extends WorkableElectricMultiblockMachin
                 renderState.getValue(GTMachineModelProperties.RECIPE_LOGIC_STATUS) != target) {
             setRenderState(renderState.setValue(GTMachineModelProperties.RECIPE_LOGIC_STATUS, target));
         }
+        // 0.6.3: one terminal_alert per throttle window while the uplink is blocked by 429
+        // concurrency or a retired model. Every state transition funnels through this method, so
+        // the cue cannot be missed by a path that forgot to report it.
+        if (reason == WaitingReason.RATE_LIMITED_429 || reason == WaitingReason.MODEL_OFFLINE) {
+            this.lastAlertTick = MachineAlerts.play(getLevel(), getPos(), this.lastAlertTick,
+                    getOffsetTimer());
+        }
     }
 
     @Override
@@ -884,6 +897,11 @@ public class ApiSatelliteStationMachine extends WorkableElectricMultiblockMachin
     @Override
     public void animateTick(RandomSource random) {
         super.animateTick(random);
+        // 0.6.3: the work loop. These machines run DUMMY_RECIPES, so RecipeLogic never reports
+        // them as working and GTCEu's own sound hook stays silent; drive the same
+        // AutoReleasedSound mechanism explicitly instead.
+        MachineLoopSounds.tick(this, MachineLoopSounds.renderStateWorking(this),
+                () -> HyperClusterSounds.SATELLITE_UPLINK);
         if (getRenderState().getValue(GTMachineModelProperties.RECIPE_LOGIC_STATUS) != RecipeLogic.Status.WORKING) {
             return;
         }

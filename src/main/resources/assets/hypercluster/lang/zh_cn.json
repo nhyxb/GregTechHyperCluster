@@ -92,16 +92,13 @@
   "block.hypercluster.api_satellite_station": "API 卫星地面站",
   "hypercluster.machine.api_satellite_station.tooltip": "IV 闭源云卫星地面站：开户领体验金、收购高纯数据集并按订单计费调用本地模拟闭源服务（LV/MV 供电即可，馈源头需露天直视天空）。",
   "hypercluster.machine.api_satellite_station.label.credential": "API 凭据",
-
   "hypercluster.machine.api_satellite_station.label.card": "Token 卡",
   "hypercluster.machine.api_satellite_station.credential_slot": "API 凭据卡：本站操作的账户身份（首次在任意地面站开户自动发放一次性体验 Token）。",
-
   "hypercluster.machine.api_satellite_station.card_slot": "Token 信用卡槽：在卡与绑定账户之间存取 Token。",
   "hypercluster.machine.api_satellite_station.deposit": "存入",
   "hypercluster.machine.api_satellite_station.deposit.tooltip": "存入：把卡内全部 Token 存入绑定账户。",
   "hypercluster.machine.api_satellite_station.withdraw": "取出",
   "hypercluster.machine.api_satellite_station.withdraw.tooltip": "取出：把账户全部余额转移到卡上。",
-
   "hypercluster.machine.api_satellite_station.batch.tooltip": "批处理模式：耗时 ×2，Token 账单 ×0.5（与提示词缓存折扣叠乘）。",
   "hypercluster.machine.api_satellite_station.tier.tooltip": "推理档位：Medium（单价 ×1、速度 ×1）或 Extra High（单价 ×2、耗时 ×0.5）。",
   "hypercluster.machine.api_satellite_station.model.tooltip": "云端模型：循环切换目录中的型号；已下线型号拒绝云端调用。",
@@ -174,7 +171,6 @@
   "hypercluster.machine.ups_power_array.charge": "电池电量：%s（%s EU）",
   "hypercluster.machine.ups_power_array.cover": "剩余备电时长：%s / %s",
   "hypercluster.machine.tensor_pretraining_cluster.tooltip": "张量预训练集群：以高纯数据集执行 LuV 长周期训练，NBT Checkpoint 断点续训、显存（OOM）校验与 UPS 断电保护。",
-
   "hypercluster.machine.tensor_pretraining_cluster.training": "训练中",
   "hypercluster.machine.tensor_pretraining_cluster.progress": "训练进度：%s（Checkpoint %s%%）",
   "hypercluster.machine.tensor_pretraining_cluster.vram": "显存：在线 %s TB / 需要 %s TB",
@@ -216,7 +212,6 @@
   "block.hypercluster.optical_fabric_switch": "高速光交换机",
   "block.hypercluster.moe_router_rack": "MoE 路由控制柜",
   "hypercluster.machine.vram_storage_rack.tooltip": "TB 级集群显存机柜：4 槽 HBM 显存条共同构成集群显存池（IV 条满插 16 TB，LuV 条满插 64 TB）。",
-
   "hypercluster.machine.vram_storage_rack.module_slot": "HBM 显存条槽：IV 条 4 TB，LuV 条 16 TB，4 条装满一柜。",
   "hypercluster.machine.vram_storage_rack.online": "显存在线",
   "hypercluster.machine.vram_storage_rack.pool": "集群显存池：%s TB（单柜上限 %s TB）",
@@ -239,7 +234,6 @@
   "hypercluster.machine.optical_fabric_switch.status.maintenance": "维护仓问题未修复。",
   "hypercluster.machine.optical_fabric_switch.status.serving": "",
   "hypercluster.machine.moe_router_rack.tooltip": "MoE 路由控制柜：把开放权重模型部署进集群显存池，配 4 个 LoRA 扩展槽与 DeepThink 蓄力开关。",
-
   "hypercluster.machine.moe_router_rack.model_slot": "部署槽：放入一枚开放权重模型模块，模型将载入集群显存。",
   "hypercluster.machine.moe_router_rack.lora_slot": "LoRA 扩展槽：矿处或化工 LoRA 卡，每张 +4 TB、+4 CWU/t。",
   "hypercluster.machine.moe_router_rack.deepthink.tooltip": "为支持 DeepThink 的部署预留 16 TB。",
@@ -268,5 +262,16 @@
   "hypercluster.machine.api_satellite_station.status.output_blocked": "等待物品输出总线腾出空间。",
   "hypercluster.machine.tensor_pretraining_cluster.state.output_blocked": "训练已完成，请腾出输出总线的格位以交付权重。",
   "hypercluster.machine.datacenter_hardware_hatch.tooltip": "通过仓口访问已连接机柜的硬件。",
-  "block.hypercluster.datacenter_hardware_hatch": "机房硬件仓"
+  "block.hypercluster.datacenter_hardware_hatch": "机房硬件仓",
+  "hypercluster.machine.moe_router_rack.screen.tooltip": "展示大屏：在机柜顶框上方投射 6×6 鲸娘发光大屏（无需部署 DeepSeek-V6767 也常亮）。",
+  "hypercluster.machine.moe_router_rack.screen.on": "大屏：点亮",
+  "hypercluster.machine.moe_router_rack.screen.off": "大屏：熄灭",
+  "hypercluster.subtitle.datacenter_air_hum": "风冷机柜气流",
+  "hypercluster.subtitle.datacenter_liquid_hum": "液冷机柜泵流",
+  "hypercluster.subtitle.pretraining_cluster": "预训练集群",
+  "hypercluster.subtitle.satellite_uplink": "卫星上行链路",
+  "hypercluster.subtitle.laser_burn": "激光烧录",
+  "hypercluster.subtitle.red_team_scan": "红队扫描",
+  "hypercluster.subtitle.rack_click": "刀片插拔",
+  "hypercluster.subtitle.terminal_alert": "终端告警"
 }

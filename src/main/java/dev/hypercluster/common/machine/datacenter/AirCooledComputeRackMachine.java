@@ -26,6 +26,8 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.items.IItemHandlerModifiable;
 import net.minecraftforge.items.wrapper.CombinedInvWrapper;
 
+import dev.hypercluster.client.sound.MachineLoopSounds;
+import dev.hypercluster.common.data.HyperClusterSounds;
 import dev.hypercluster.common.item.HyperClusterItems;
 import dev.hypercluster.common.machine.MachineUi;
 
@@ -533,6 +535,11 @@ public class AirCooledComputeRackMachine extends WorkableElectricMultiblockMachi
     @Override
     public void animateTick(RandomSource random) {
         super.animateTick(random);
+        // 0.6.3: the work loop. These machines run DUMMY_RECIPES, so RecipeLogic never reports
+        // them as working and GTCEu's own sound hook stays silent; drive the same
+        // AutoReleasedSound mechanism explicitly instead.
+        MachineLoopSounds.tick(this, MachineLoopSounds.renderStateWorking(this),
+                () -> HyperClusterSounds.DATACENTER_AIR_HUM);
         if (getRenderState().getValue(GTMachineModelProperties.RECIPE_LOGIC_STATUS) != RecipeLogic.Status.WORKING) {
             return;
         }
