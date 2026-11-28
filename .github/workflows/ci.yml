@@ -147,8 +147,11 @@ jobs:
           exit "${status}"
 
       # Exit code alone is not proof: a server that never ran a test still exits 0.
+      # Only meaningful once the suite was actually invoked; if an earlier step
+      # failed, the job is already red for that reason and this check would only
+      # add a confusing second error.
       - name: Verify the GameTest summary
-        if: always()
+        if: steps.gametest.outcome == 'success' || steps.gametest.outcome == 'failure'
         run: |
           set -uo pipefail
           LOG=run/gametest/logs/latest.log
@@ -280,22 +283,40 @@ jobs:
           CLIENT_PGID=$!
           trap cleanup EXIT INT TERM
 
-          # "Sound engine started" is the first reliable post-init marker.
+          # Marker selection matters: "Sound engine started" is NOT usable here.
+          # A hosted runner has no audio device, so OpenAL init fails and the sound
+          # engine is switched off ("Error starting SoundSystem"), meaning that
+          # line never appears even though the title screen renders fine.
+          # Any one of these means the client finished booting:
+          #   - the Realms availability check, which spawns only after TitleScreen init
+          #   - the sound engine, on runners that do have audio
+          #   - the resources having been reloaded twice (boot + post-init)
           REACHED=no
-          for _ in $(seq 1 200); do
-            if grep -q 'Sound engine started' "$LOG" 2>/dev/null; then REACHED=yes; break; fi
+          for _ in $(seq 1 240); do
+            if grep -qE 'Could not authorize you against Realms|Sound engine started' "$LOG" 2>/dev/null; then
+              REACHED=yes; break
+            fi
             kill -0 "$CLIENT_PGID" 2>/dev/null || { echo 'client exited early'; break; }
             sleep 3
           done
           echo "MAIN_MENU_REACHED=$REACHED"
-          [ "$REACHED" = yes ] || { echo '::error::Client never reached the main menu'; exit 1; }
 
-          sleep 45   # let the title screen draw and late resource errors surface
-          DISPLAY=:99 import -window root "$SHOT" 2>/dev/null \
-            && identify -format 'shot %wx%h mean=%[mean]\n' "$SHOT" \
-            || { echo '::error::Screenshot failed'; exit 1; }
-
+          # Give the title screen time to draw either way, then always capture:
+          # a screenshot at timeout is what tells "rendered but unlogged apart"
+          # from "hung", which a log-only check cannot distinguish.
+          sleep 45
+          DISPLAY=:99 import -window root "$SHOT" 2>/dev/null || true
+          [ -f "$SHOT" ] && identify -format 'shot %wx%h mean=%[mean] stddev=%[standard-deviation]\n' "$SHOT" || true
           cp -f run/client/logs/latest.log ci-logs/client-latest.log 2>/dev/null || true
+
+          if [ "$REACHED" != yes ]; then
+            echo '::error::Client never reached the main menu'
+            echo '--- last 40 lines of the client log ---'
+            tail -40 "$LOG" 2>/dev/null || true
+            echo '--- last 10 lines of latest.log ---'
+            tail -10 ci-logs/client-latest.log 2>/dev/null || true
+            exit 1
+          fi
 
           # Content errors only: the narrator notice appears on every platform
           # without a native speech library and is not ours.
