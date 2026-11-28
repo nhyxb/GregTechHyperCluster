@@ -6,7 +6,7 @@
 
 ## 1. CC0 1.0 Universal（适用素材）
 
-下列目录中**由本项目原创**的工业贴图、连接纹理（CTM）、动画帧与程序化合成音效，均以 **CC0 1.0 Universal（公共领域贡献）** 发布：
+下列目录中**由本项目原创（含 AI 生成，无外部第三方作者）**的工业贴图、连接纹理（CTM）、动画帧与程序化合成音效，均以 **CC0 1.0 Universal（公共领域贡献）** 发布：
 
 - `Public/` 下的纹理与预览图（`textures/block/`、`textures/item/`、`textures/previews/`、`textures/source/`）
 - `src/main/resources/assets/hypercluster/` 下的全部纹理、模型引用与音频资源
@@ -20,6 +20,7 @@
 | 物品图标 | 遥测日志、数据集、边缘芯片、LoRA 卡、计算刀片、HBM 显存条、权重模块、凭证/晶卡等 |
 | 动画贴图 | 各控制器 `overlay_front_active.png` 多帧竖条 |
 | 预览图 | `Public/textures/previews/` 下的 `contact_sheet.png`、`ctm_preview.png`、`active_animations_sheet.png` |
+| MoE 发光大屏 | `whale_maid_screen_96.png`（96×96）及其 `.aseprite` 源文件与预览图：原始参考图由 OpenAI Image 生成，96×96 像素画由 Gemini + Aseprite MCP 绘制，无外部第三方作者 |
 | 音效 | `Public/sounds/` 与 `assets/hypercluster/sounds/` 下 8 个 `.ogg` |
 
 ### 音效说明
@@ -49,28 +50,7 @@
 
 ## 2. 明确排除条款（NOT CC0）
 
-### 2.1 鲸娘大屏贴图
-
-以下文件系**基于外部参考图重绘**，**不包含在 CC0 1.0 授权范围内**：
-
-- `Public/textures/screens/whale_maid_screen_96.png`（96×96 发光大屏贴图）
-- `Public/textures/source/whale_maid_screen_96.aseprite`（Aseprite 源文件，含分层）
-- `Public/textures/previews/whale_maid_screen_preview.png`（预览图）
-- `src/main/resources/assets/hypercluster/textures/screens/whale_maid_screen_96.png`（运行时副本）
-
-**状态：待原作者授权确认。**
-
-在获得原参考图作者的明确授权之前，上述文件：
-
-- **不适用**本文件第 1 节的 CC0 1.0 授权；
-- 不随本项目代码的 LGPL-3.0 授权一同分发；
-- 保留原始参考图作者的全部潜在权利。
-
-若你是原始参考图的作者并希望主张权利，或希望就该素材达成授权安排，请通过仓库 Issue 联系维护者。若授权确认无法达成，这些文件将在后续版本中移除或替换。
-
-**移除影响**：该贴图仅用于 MoE 路由控制柜上方 `6×6` 发光大屏的显示内容。移除或替换不影响任何游戏机制、配方、机器功能或存档兼容性——大屏会改为显示占位或纯色内容。
-
-### 2.2 第三方内容
+### 2.1 第三方内容
 
 本项目的下列内容**不属于**本项目，各自遵循其原授权：
 
@@ -96,7 +76,6 @@
 | 范围 | 授权 |
 | --- | --- |
 | 代码（Java 源码、构建脚本） | [LGPL-3.0](../LICENSE.MD) |
-| 原创工业贴图 / CTM / 动画 / 预览图 | **CC0 1.0** |
+| 原创工业贴图 / CTM / 动画 / 预览图（含 AI 生成的鲸娘大屏贴图） | **CC0 1.0** |
 | 8 个程序化合成音效 | **CC0 1.0** |
-| 鲸娘大屏贴图及其源文件、预览图 | **排除在 CC0 之外**，待原作者授权 |
 | 第三方依赖 | 各自原授权 |

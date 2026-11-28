@@ -189,4 +189,11 @@
 ## 双许可结构（0.6.3 起，长期有效）
 
 - 代码 [LICENSE.MD](LICENSE.MD) = LGPL-3.0；素材 [Public/ASSETS_LICENSE.md](Public/ASSETS_LICENSE.md) = CC0 1.0。
-- **例外**：`whale_maid_screen_96.png` 及其 `.aseprite` 源与预览图基于外部参考图重绘，**不在 CC0 内**，待原作者授权。新增/搬运该贴图时勿当作 CC0 素材。
+- **⚠️ whale_maid 授权已闭环（原"待原作者授权"条款作废）**：`whale_maid_screen_96.png` 及其 `.aseprite` 源与预览图的原始参考图由 OpenAI Image 生成、96×96 像素画由 Gemini + Aseprite MCP 绘制，**无外部第三方作者，与其他 AI 生成贴图和音效一并适用 CC0 1.0**。新增/搬运该贴图时按 CC0 素材对待，勿再当作排除项。
+
+## 发版工作流（0.6.3 后，长期有效）
+
+- `.github/workflows/release.yml`：推送 `v*` tag 触发。门禁顺序 = 读 `gradle.properties` 的 `mod_version` → 校验 `GITHUB_REF_NAME == "v${mod_version}"`（不一致 fail fast，不跑 Gradle）→ runData + 生成资源漂移检查 → spotlessCheck → build（校验 `build/libs/gregtech-hypercluster-${mod_version}.jar` 存在并生成 `build/libs/SHA256SUMS.txt`）→ 全新平坦世界 runGametest + 日志摘要校验 → Xvfb 客户端冒烟（复用 `.github/scripts/client-smoke.sh`）→ `gh release create --verify-tag`。
+- **Pre-release 自动判定**：tag 为 `v0.*` 或含 `-`（`-alpha`/`-beta`/`-rc`）→ `--prerelease`；否则正式版。Release Notes：curated body（`.github/release-body.md` 由 workflow 生成）+ `--generate-notes`；`docs/reports/${mod_version}_acceptance_report.md` 存在时附绝对链接。
+- **⚠️ GitHub 默认 shell 无 pipefail**（`bash -e {0}` 报最后一个命令的退出码），所有 `gradle | tee` 步骤必须显式 `shell: bash` + `set -o pipefail`——release.yml 与 ci.yml 均已遵守，新增步骤照此办理。
+- 发版只上传主 JAR 与 `SHA256SUMS.txt`；Gradle `build` 默认不产 `-sources` jar，勿手动补充发布。

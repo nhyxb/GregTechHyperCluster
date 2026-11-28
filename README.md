@@ -47,12 +47,13 @@ source env.fish
 
 ## 持续集成
 
-`.github/workflows/ci.yml` 有两个 job，第一个是合并门禁。
+`.github/workflows/ci.yml` 有两个 job，第一个是合并门禁；`.github/workflows/release.yml` 负责 tag 发版。
 
 | 触发时机 | job | 做什么 |
 | --- | --- | --- |
 | PR / `main` 推送 | **`validate`**（`main` 的必需检查） | Ubuntu + Java 17，用仓库自带的 `./gradlew`：`runData` → 生成资源漂移检查 → `spotlessCheck` → `build` → 全新平坦世界的 `runGametest`。通过后上传 JAR 与 SHA-256；失败时上传 Gradle 控制台日志、游戏日志与崩溃报告。 |
 | 手动触发（`workflow_dispatch`） | `client-smoke` | 使用独立游戏目录在 Xvfb 中启动客户端。实际渲染主菜单后保存截图和日志，最后清理本次进程。 |
+| 推送 `v*` tag | **`release`**（发版） | 先校验 tag 名 == `v{gradle.properties 的 mod_version}`（不一致直接失败），然后完整复跑 validate 全部门禁 + Xvfb 客户端冒烟，全绿后创建 GitHub Release：上传同一趟构建的主 JAR 与 `SHA256SUMS.txt`（不带 `-sources`），`v0.*` 或含 `-` 的 tag 自动标记为 pre-release，并自动生成 Release Notes（存在对应验收报告时附链接）。 |
 
 `main` 已设分支保护：`validate` 为必需检查，禁止强推与删分支。本地验证过——故意让 `spotlessCheck` 失败的 PR 会被判 `FAILURE` 并 `BLOCKED`。
 
@@ -61,6 +62,7 @@ source env.fish
 - **`| tee` 会吞掉失败。** GitHub 默认 shell 是 `bash -e {0}`，**没有 `pipefail`**，`gradle | tee` 报的是 `tee` 的退出码（永远是 0）。第一版因此让一次 `spotlessCheck` 失败显示成绿色、PR 仍可合并。凡是把 Gradle 输出 `tee` 出去的步骤，都必须显式 `shell: bash` + `set -o pipefail`。
 - **首次启动与主菜单。** 空白游戏目录默认打开辅助功能引导页。冒烟脚本预写 `onboardAccessibility:false`，用 `ALSOFT_DRIVERS=null` 让 OpenAL 在无音频设备的 runner 上初始化，再等待 Forge 首次实际渲染 `TitleScreen` 的标记。等待失败也会尝试截图，便于定位当时的界面。
 - **先生成，再单独打包。** `runData` 与 `build` 是两次独立调用；生成后比对 `src/generated/resources` 的已跟踪改动**和新文件**，有漂移就失败。这样「同一次调用把旧生成资源打进包里」不可能再发生。
+- **发版 tag 先对版本。** Release 工作流第一步就读 `gradle.properties` 的 `mod_version` 并要求 tag 恰好是 `v{mod_version}`；tag 打错分支或忘了 bump 版本会在跑任何 Gradle 之前失败。Release 附件来自同一趟构建（先 `sha256sum` 生成 `SHA256SUMS.txt`），不存在「验过的 jar 和传上去的 jar 不是同一份」的问题。
 - **每轮全新平坦世界。** CI 自己写 `run/gametest/server.properties`（`level-type=minecraft\:flat`）和 `eula.txt`；`run/` 既被 gitignore 也不进缓存。除了退出码，还要在日志里确认确实跑了测试批次、`GAME TESTS COMPLETE`、以及 `All N required tests passed`；N 从日志读，新增用例不用改 workflow。
 
 > 日志时间戳随 locale 变（`[28Nov2026 …]` / `[2811月2026 …]`），CI 里的匹配一律只锚定消息文本，不用时间戳。
@@ -182,9 +184,9 @@ source env.fish
 
 ### 素材许可
 
-代码遵循根目录 [LICENSE.MD](LICENSE.MD)（**LGPL-3.0**）；AI 生成的工业贴图与音效素材遵循 [Public/ASSETS_LICENSE.md](Public/ASSETS_LICENSE.md)（**CC0 1.0 Universal**）。
+代码遵循根目录 [LICENSE.MD](LICENSE.MD)（**LGPL-3.0**）；AI 生成的工业贴图与音效素材（含 MoE 发光大屏贴图）遵循 [Public/ASSETS_LICENSE.md](Public/ASSETS_LICENSE.md)（**CC0 1.0 Universal**）。
 
-> ⚠️ **例外**：`whale_maid_screen_96.png`（及其 `.aseprite` 源文件与预览图）系基于外部参考图重绘，**不包含在 CC0 1.0 授权范围内**，待原作者授权确认。详见 [ASSETS_LICENSE.md 的排除条款](Public/ASSETS_LICENSE.md#2-明确排除条款not-cc0)。该贴图仅影响大屏显示内容，移除或替换不影响任何游戏机制或存档兼容性。
+> 发光大屏贴图 `whale_maid_screen_96.png` 的原始参考图由 OpenAI Image 生成，96×96 像素画由 Gemini + Aseprite MCP 绘制，无外部第三方作者，与其他 AI 生成贴图和音效一并适用 CC0 1.0。
 
 ## 素材预览
 
