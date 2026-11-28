@@ -5,6 +5,7 @@ import com.gregtechceu.gtceu.api.data.tag.TagPrefix;
 import com.gregtechceu.gtceu.common.data.GTBlocks;
 import com.gregtechceu.gtceu.common.data.GTMachines;
 import com.gregtechceu.gtceu.common.data.GTMaterials;
+import com.gregtechceu.gtceu.common.data.GTRecipeTypes;
 import com.gregtechceu.gtceu.data.recipe.GTCraftingComponents;
 import com.gregtechceu.gtceu.data.recipe.VanillaRecipeHelper;
 
@@ -43,6 +44,17 @@ public final class HyperClusterRecipes {
         registerCloudSurvivalRecipes(provider);
         registerLuVRecipes(provider);
         registerTopologyRecipes(provider);
+        GTRecipeTypes.VACUUM_RECIPES
+                .recipeBuilder(HyperCluster.id("recycle_hot_pcb_coolant"))
+                .inputFluids(HyperClusterFluids.HOT_PCB_COOLANT.getFluid(1000))
+                .outputFluids(GTMaterials.PCBCoolant.getFluid(1000))
+                .EUt(120).duration(100).save(provider);
+        VanillaRecipeHelper.addShapedRecipe(provider, true, HyperCluster.id("hv_telemetry_hatch"),
+                HyperClusterMachines.HV_TELEMETRY_HATCH.asStack(1),
+                "LCL", " B ",
+                'L', HyperClusterItems.BLANK_CARRIER.get(),
+                'C', GTCraftingComponents.CIRCUIT.get(HV),
+                'B', com.gregtechceu.gtceu.common.data.GTMachines.ITEM_EXPORT_BUS[HV].asStack(1));
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////

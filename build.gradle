@@ -114,7 +114,7 @@ dependencies {
     modRuntimeOnly("vazkii.patchouli:Patchouli:${patchouli_version}")
     modRuntimeOnly("maven.modrinth:ae2:${ae2_version}")
     modRuntimeOnly("maven.modrinth:guideme:${guideme_version}")
-    modRuntimeOnly("maven.modrinth:jade:${jade_version}")
+    modImplementation("maven.modrinth:jade:${jade_version}")
 }
 
 apply from: 'gradle/scripts/spotless.gradle'

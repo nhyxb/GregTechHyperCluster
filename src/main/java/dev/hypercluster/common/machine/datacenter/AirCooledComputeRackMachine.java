@@ -252,6 +252,9 @@ public class AirCooledComputeRackMachine extends WorkableElectricMultiblockMachi
             IEnergyContainer energy = getEnergyContainer();
             if (energy != null && energy.getEnergyStored() >= draw) {
                 energy.removeEnergy(draw);
+                if (nowProviding) {
+                    RackHeatRecovery.recoverAir(this, DatacenterRating.itEUt(blades));
+                }
             }
         }
 

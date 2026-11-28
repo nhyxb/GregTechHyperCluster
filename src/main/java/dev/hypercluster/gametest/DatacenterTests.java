@@ -780,8 +780,8 @@ public class DatacenterTests {
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     /** The parts the rack tests drive. */
-    private record RackParts(AirCooledComputeRackMachine controller, BlockPos controllerPos,
-                             EnergyHatchPartMachine energyHatch, MaintenanceHatchPartMachine maintenanceHatch) {}
+    record RackParts(AirCooledComputeRackMachine controller, BlockPos controllerPos,
+                     EnergyHatchPartMachine energyHatch, MaintenanceHatchPartMachine maintenanceHatch) {}
 
     private record StationParts(ResearchStationMachine controller) {}
 
@@ -797,7 +797,7 @@ public class DatacenterTests {
      * the hatch row at controller height - 1. Controller at ({@code bx+1}, {@code by+2},
      * {@code bz}).
      */
-    private static RackParts placeRack(GameTestHelper helper, int bx, int by, int bz) {
+    static RackParts placeRack(GameTestHelper helper, int bx, int by, int bz) {
         // Front (intake) wall at z = bz, controller in the middle.
         for (int x = 0; x < 3; x++) {
             for (int y = 0; y < 5; y++) {
@@ -856,7 +856,7 @@ public class DatacenterTests {
      * consecutive pair explicitly connected (optical pipes never auto-connect to a block placed
      * before them, and the gametest harness does not fire neighbour updates like the real game).
      */
-    private static void placeOpticalPipeRun(GameTestHelper helper, BlockPos from, BlockPos to) {
+    static void placeOpticalPipeRun(GameTestHelper helper, BlockPos from, BlockPos to) {
         int dx = Integer.compare(to.getX(), from.getX());
         int dy = Integer.compare(to.getY(), from.getY());
         int dz = Integer.compare(to.getZ(), from.getZ());
@@ -879,7 +879,7 @@ public class DatacenterTests {
     }
 
     /** Connects the optical pipe at {@code pipePos} toward the block at {@code pipePos + side}. */
-    private static void connectPipeToBlock(GameTestHelper helper, BlockPos pipePos, Direction side) {
+    static void connectPipeToBlock(GameTestHelper helper, BlockPos pipePos, Direction side) {
         OpticalPipeBlockEntity pipe = (OpticalPipeBlockEntity) helper.getBlockEntity(pipePos);
         pipe.setConnection(side, true, false);
     }

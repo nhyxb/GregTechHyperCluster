@@ -27,6 +27,11 @@
       "type": "patchouli:text",
       "title": "Same-Tick Budget & Derating",
       "text": "The rack implements GTCEu's `IOpticalComputationProvider` with a strict same-tick pool across all consumers:$(li)Simulation queries (`simulate=true`) never deduct CWU/t; only real consumption drains the 0–24 CWU/t budget.$(li)Pausing with a soft mallet, unfixed maintenance, 0 blades, or low power drops output to 0 CWU/t and logs the exact derate reason in the GUI.$(li)Cutting the optical pipe zeroes delivered CWU/t on the consumer side."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Air Rack Heat Recovery",
+      "text": "Fit one fluid import and one fluid export hatch on the exhaust wall. Supply water or distilled water to recover steam while the rack provides computation.$(br2)Each mB of water yields up to 160 mB of steam. The IT-load cap keeps GT steam turbine recovery below 25% of the rack’s IT draw."
     }
   ]
 }

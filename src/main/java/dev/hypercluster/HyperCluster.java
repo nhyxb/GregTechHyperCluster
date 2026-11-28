@@ -5,9 +5,11 @@ import com.gregtechceu.gtceu.client.renderer.machine.DynamicRenderManager;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
 import dev.hypercluster.client.renderer.MoeScreenRender;
 import dev.hypercluster.common.data.HyperClusterBlocks;
+import dev.hypercluster.common.data.HyperClusterFluids;
 import dev.hypercluster.common.item.HyperClusterItems;
 
 @Mod(HyperCluster.MOD_ID)
@@ -25,6 +27,7 @@ public final class HyperCluster {
     }
 
     public HyperCluster() {
+        HyperClusterFluids.registerListeners(FMLJavaModLoadingContext.get().getModEventBus());
         // P01: telemetry chain items (mining telemetry log, blank carrier, mining edge chip).
         HyperClusterItems.init();
         // 0.3: IV datacenter structure blocks (raised floor, 42U rack casings).

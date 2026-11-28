@@ -1,12 +1,12 @@
 {
-  "name": "Inference Hatch & Snack Pack",
+  "name": "Inference Maintenance & Snack Pack",
   "category": "hypercluster:03_iv_datacenter",
   "icon": "hypercluster:iv_inference_hatch",
   "sortnum": 2,
   "pages": [
     {
       "type": "patchouli:text",
-      "text": "The $(item)IV Inference Hatch$() is an optional part mounted on the Clean Stainless Steel base of the $(item)Data Scrubbing Tower$() (at most 1 per tower).$(br2)Link it with GT optical cable to a compute rack's transmission hatch and insert an edge chip to trade CWU/t for tower EU/t savings.$(br2)Note: optical pipes do not auto-connect to pre-placed hatches — verify connections with a wrench."
+      "text": "The $(item)IV Inference Maintenance Hatch$() is an optional part mounted on the Clean Stainless Steel base of the $(item)Data Scrubbing Tower$() (at most 1 per tower).$(br2)Link it with GT optical cable to a compute rack's transmission hatch and insert an edge chip to trade CWU/t for tower EU/t savings.$(br2)Note: optical pipes do not auto-connect to pre-placed hatches — verify connections with a wrench."
     },
     {
       "type": "patchouli:crafting",
@@ -24,6 +24,16 @@
       "link_recipe": true,
       "title": "Green Snack Pack Easter Egg",
       "text": "Keep a $(item)Green Snack Pack$() in the $(item)Air-Cooled Compute Rack$()'s snack slot to trim total rack EU/t (IT, cooling, and standby) by $(#0E7490)5%$().$(br2)Enabled by default; server admins can disable it with `-Dhypercluster.snackBonus=false`."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Industrial Inference",
+      "text": "Replace a GT multiblock maintenance hatch with this part. Insert a matching mining or chemical chip, or connect to a MoE router running a local model. Supply CWU/t over optical cable.$(br2)Ordinary chips trade 2 CWU/t for 25% lower EU/t. Aligned chips trade 8 CWU/t for 50%. Demand doubles for each host voltage tier above IV."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "By-products and Maintenance",
+      "text": "A matching LoRA card or DeepSeek-V6767 Pro with DeepThink improves chanced by-product rolls. Guaranteed outputs keep their original quantities.$(br2)Aligned chips and online GLM deployments clear maintenance faults automatically. Right-click the hatch with duct tape to repair it manually."
     }
   ]
 }

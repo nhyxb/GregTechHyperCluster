@@ -36,6 +36,11 @@
       "type": "patchouli:text",
       "title": "Strict Same-Tick Budget",
       "text": "Same rules as the 0.3 air-cooled rack:$(li)Simulation queries only read; they never deduct.$(li)Real allocations share one tick window, so $(bold)a Research Station, a pretraining cluster and an offload node all compete for the same pool$() — nobody gets the same CWU/t twice.$(li)A soft-mallet pause, unfixed maintenance, no blades, low power or a dry cold plate all zero the output and name the reason in the GUI."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Coolant Recovery",
+      "text": "Fit an optional fluid export hatch in a computer casing. While the rack provides CWU, distilled water yields steam up to the IT-load cap, and PCB coolant yields 1 mB of hot coolant per tick.$(br2)Use a Vacuum Freezer to recover 1,000 mB of PCB coolant from 1,000 mB of hot coolant at 120 EU/t for 100 ticks."
     }
   ]
 }

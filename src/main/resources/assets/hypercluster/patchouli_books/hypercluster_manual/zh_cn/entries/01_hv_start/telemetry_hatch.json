@@ -1,0 +1,16 @@
+{
+  "name": "通用遥测仓",
+  "category": "hypercluster:01_hv_start",
+  "icon": "hypercluster:hv_telemetry_hatch",
+  "sortnum": 3,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "将 $(item)HV 通用遥测仓$() 安装在 GT 多方块的物品输出总线位。受支持的矿处或化工配方成功输出常规物品或流体后，每批记一份对应日志。多个仓共用一份结算。$(br2)在仓界面取出日志。日志缓冲可装 64 份，满后新日志自动丢弃。"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/hv_telemetry_hatch"
+    }
+  ]
+}

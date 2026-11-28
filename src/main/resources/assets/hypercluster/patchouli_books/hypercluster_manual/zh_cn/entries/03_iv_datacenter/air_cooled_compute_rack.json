@@ -27,6 +27,11 @@
       "type": "patchouli:text",
       "title": "同 tick 严格预算与降额",
       "text": "机柜实现 GTCEu 原生 `IOpticalComputationProvider`，同 tick 内多个用算设备共享这 0–24 CWU/t 预算池：$(li)预览查询（simulate）不扣额度，真实运转才实时消耗，不会超发。$(li)软锤暂停、维护仓未修、未插刀片或供电不足时，算力直接归零并在界面标明降额原因。$(li)光学管道断开时消费侧同样只能拿到 0 CWU/t。"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "风冷余热回收",
+      "text": "在机柜排风外壳各装一个流体输入仓和输出仓。输入水或蒸馏水，机柜供算时回收蒸汽。$(br2)每毫桶水最多产生 160 mB 蒸汽。按 IT 耗电限制蒸汽流量，经 GT 蒸汽涡轮回收的能量严格低于 IT 耗电的 25%。"
     }
   ]
 }

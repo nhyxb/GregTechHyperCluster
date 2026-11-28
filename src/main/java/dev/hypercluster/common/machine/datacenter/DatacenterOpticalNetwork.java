@@ -11,6 +11,8 @@ import com.gregtechceu.gtceu.common.machine.multiblock.part.OpticalComputationHa
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 
+import dev.hypercluster.common.machine.model.MoeRouterRackMachine;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -100,6 +102,27 @@ public final class DatacenterOpticalNetwork {
             }
         }
         return List.copyOf(links.values());
+    }
+
+    public static List<MoeRouterRackMachine> modelRouters(MultiblockControllerMachine machine) {
+        Set<MoeRouterRackMachine> routers = new LinkedHashSet<>();
+        collectRouters(machine, routers, new LinkedHashSet<>());
+        return List.copyOf(routers);
+    }
+
+    private static void collectRouters(MultiblockControllerMachine machine, Set<MoeRouterRackMachine> routers,
+                                       Set<MultiblockControllerMachine> visited) {
+        if (!visited.add(machine)) {
+            return;
+        }
+        routers.addAll(DatacenterFloorNetwork.adjacentMembers(machine, MoeRouterRackMachine.class));
+        for (Link link : opticalInputs(machine)) {
+            if (link.source() instanceof MoeRouterRackMachine router) {
+                routers.add(router);
+            } else if (link.source() instanceof OpticalFabricSwitchMachine fabric && fabric.canForward()) {
+                collectRouters(fabric, routers, visited);
+            }
+        }
     }
 
     public static int capacity(List<Link> links, Collection<IOpticalComputationProvider> seen) {
