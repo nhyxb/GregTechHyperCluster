@@ -1,0 +1,16 @@
+{
+  "name": "Universal Telemetry Hatch",
+  "category": "hypercluster:01_hv_start",
+  "icon": "hypercluster:hv_telemetry_hatch",
+  "sortnum": 3,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "Install the $(item)HV Telemetry Hatch$() in a GT multiblock item export position. Supported ore-processing and chemical recipes earn one domain log when a batch successfully lands a guaranteed item or fluid. Multiple hatches share one log per batch.$(br2)Collect logs in the hatch UI. The 64-log buffer drops excess logs."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "hypercluster:shaped/hv_telemetry_hatch"
+    }
+  ]
+}

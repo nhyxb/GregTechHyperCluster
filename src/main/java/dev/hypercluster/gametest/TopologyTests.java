@@ -745,7 +745,7 @@ public class TopologyTests {
     }
 
     /** The 5×5×3 VRAM storage rack facing north. */
-    private static VramParts placeVramRack(GameTestHelper helper, int bx, int by, int bz) {
+    static VramParts placeVramRack(GameTestHelper helper, int bx, int by, int bz) {
         String[][] rows = {
                 { "VVVVV", "VVVVV", "VVVVV" },
                 { "VGGGV", "V###V", "VGGGV" },
@@ -791,7 +791,7 @@ public class TopologyTests {
     }
 
     /** The 5×5×5 MoE routing rack facing north. */
-    private static MoE placeMoeRouter(GameTestHelper helper, int bx, int by, int bz) {
+    static MoE placeMoeRouter(GameTestHelper helper, int bx, int by, int bz) {
         String[][] rows = {
                 { "CCCCC", "CCCCC", "CCCCC", "CCCCC", "CCCCC" },
                 { "CCSCC", "CCCCC", "CCCCC", "CCCCC", "CCCCC" },
@@ -815,7 +815,7 @@ public class TopologyTests {
     }
 
     /** The 5×5×3 liquid compute rack facing north (a switch/memory neighbour in these tests). */
-    private static LiquidRackParts placeLiquidRack(GameTestHelper helper, int bx, int by, int bz) {
+    static LiquidRackParts placeLiquidRack(GameTestHelper helper, int bx, int by, int bz) {
         String[][] rows = {
                 { "LLLLL", "LLLLL", "LLLLL" },
                 { "LGGGL", "LGGGL", "LLLLL" },

@@ -191,6 +191,12 @@ public class SurvivalCraftingTests {
                 "iv_inference_hatch recipe output mismatch");
         assertRecipeUses(helper, hatch, "gtceu:iv_sensor", "the inference hatch must use an IV sensor");
 
+        CraftingRecipe telemetry = craftingRecipe(helper, "shaped/hv_telemetry_hatch");
+        helper.assertTrue(telemetry.getResultItem(helper.getLevel().registryAccess())
+                .is(HyperClusterMachines.HV_TELEMETRY_HATCH.getBlock().asItem()),
+                "hv_telemetry_hatch recipe output mismatch");
+        assertRecipeUses(helper, telemetry, "gtceu:hv_output_bus", "telemetry hatch must reuse an HV export bus");
+
         CraftingRecipe crac = craftingRecipe(helper, "shaped/precision_crac");
         helper.assertTrue(crac.getResultItem(helper.getLevel().registryAccess())
                 .is(HyperClusterMachines.PRECISION_CRAC.getBlock().asItem()),
@@ -237,6 +243,7 @@ public class SurvivalCraftingTests {
         // switch recipe_logic_status (front overlay stuck on overlay_front).
         for (MachineDefinition machine : new MachineDefinition[] {
                 HyperClusterMachines.HV_MICRO_BURNER, HyperClusterMachines.HV_TELEMETRY_ORE_WASHER,
+                HyperClusterMachines.HV_TELEMETRY_HATCH,
                 HyperClusterMachines.EV_TELEMETRY_CHEMICAL_REACTOR, HyperClusterMachines.DATA_SCRUBBING_TOWER,
                 HyperClusterMachines.LORA_ENGRAVING_CHAMBER, HyperClusterMachines.RED_TEAM_SANDBOX,
                 HyperClusterMachines.AIR_COOLED_COMPUTE_RACK, HyperClusterMachines.PRECISION_CRAC,
@@ -481,6 +488,7 @@ public class SurvivalCraftingTests {
                 "categories/05_luv_training.json",
                 "categories/06_topology.json",
                 "entries/01_hv_start/telemetry_ore_washer.json",
+                "entries/01_hv_start/telemetry_hatch.json",
                 "entries/01_hv_start/micro_burner_and_circuits.json",
                 "entries/02_ev_workshop/telemetry_chemical_reactor.json",
                 "entries/02_ev_workshop/data_scrubbing_tower.json",

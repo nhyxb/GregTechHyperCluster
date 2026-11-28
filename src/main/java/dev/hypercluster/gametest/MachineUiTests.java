@@ -55,13 +55,14 @@ public class MachineUiTests {
     @GameTest(template = "hc_floor", batch = BATCH)
     public static void inferenceHatchChipBounds(GameTestHelper helper) {
         WidgetGroup page = openPage(helper, HyperClusterMachines.IV_INFERENCE_HATCH);
-        helper.assertTrue(page.widgets.size() == 2, "hatch needs a chip label and slot");
+        helper.assertTrue(page.widgets.size() == 3, "hatch needs a chip label, slot and diagnostic screen");
         Widget label = page.widgets.get(0);
         Widget chip = page.widgets.get(1);
         helper.assertTrue(label instanceof ImageWidget && chip instanceof SlotWidget, "unexpected hatch controls");
         helper.assertTrue(chip.getSelfPositionY() > label.getSelfPositionY(), "chip slot should be below its label");
         checkCentered(helper, page, label);
         checkCentered(helper, page, chip);
+        checkStatusScreen(helper, page.widgets.get(2));
         checkBounds(helper, page);
         helper.succeed();
     }
@@ -139,6 +140,8 @@ public class MachineUiTests {
                 "the router controller must leave hardware access to the hatch");
         helper.assertTrue(controls.getWidgetsByType(SwitchWidget.class).size() == 2,
                 "the router needs the DeepThink toggle and the display toggle");
+        helper.assertTrue(controls.getWidgetsByType(ButtonWidget.class).size() == 1,
+                "the router needs a local model selector");
         helper.succeed();
     }
 

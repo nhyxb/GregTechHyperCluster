@@ -31,6 +31,11 @@
       "type": "patchouli:text",
       "title": "Obtaining the Weights",
       "text": "Feed a high-purity domain dataset into the training cluster import bus and collect the trained weights from its export bus. Install the module in slot 1 of the hardware hatch."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "GLM Shutdown Diagnosis",
+      "text": "Install a trained open-weight module, then use Cycle local model on the router to choose GLM or DeepSeek. Connect inference hatches to a powered GLM-2333 Flash or Max router with online VRAM, using raised flooring or optical cable.$(br2)The hatch, controller and Jade report power, input, output, maintenance or pause issues. The router shows the active alert count and latest reason."
     }
   ]
 }

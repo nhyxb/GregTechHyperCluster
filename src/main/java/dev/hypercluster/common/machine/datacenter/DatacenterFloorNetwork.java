@@ -37,6 +37,7 @@ public final class DatacenterFloorNetwork {
 
     private final Map<BlockPos, Optional<Room>> rooms = new HashMap<>();
     private final Map<MultiblockControllerMachine, List<BlockPos>> footprints = new LinkedHashMap<>();
+    private final Map<Room, List<MultiblockControllerMachine>> roomMembers = new HashMap<>();
     private final Map<MultiblockControllerMachine, List<MultiblockControllerMachine>> peers = new HashMap<>();
     private boolean membershipDirty = true;
 
@@ -52,15 +53,43 @@ public final class DatacenterFloorNetwork {
         if (!(machine.getLevel() instanceof ServerLevel level)) {
             return;
         }
-        // GT's matched positions are already rotated and mirrored. Capture the actual plinth once.
-        Collection<BlockPos> positions = machine.getMultiblockState().getCache();
-        int bottom = positions.stream().mapToInt(BlockPos::getY).min().orElse(machine.getPos().getY());
-        List<BlockPos> footprint = positions.stream()
-                .filter(pos -> pos.getY() == bottom && !level.getBlockState(pos).isAir())
-                .map(BlockPos::below).toList();
+        List<BlockPos> footprint = footprint(machine, level);
         var network = network(level);
         network.footprints.put(machine, footprint);
         network.membershipDirty = true;
+    }
+
+    private static List<BlockPos> footprint(MultiblockControllerMachine machine, ServerLevel level) {
+        // GT's matched positions are already rotated and mirrored. Capture the actual plinth once.
+        Collection<BlockPos> positions = machine.getMultiblockState().getCache();
+        int bottom = positions.stream().mapToInt(BlockPos::getY).min().orElse(machine.getPos().getY());
+        return positions.stream()
+                .filter(pos -> pos.getY() == bottom && !level.getBlockState(pos).isAir())
+                .map(BlockPos::below).toList();
+    }
+
+    public static <T> List<T> adjacentMembers(MultiblockControllerMachine machine, Class<T> type) {
+        if (!(machine.getLevel() instanceof ServerLevel level)) {
+            return List.of();
+        }
+        var network = network(level);
+        if (network.footprints.containsKey(machine)) {
+            return members(machine, type);
+        }
+        var footprint = footprint(machine, level);
+        if (footprint.isEmpty()) {
+            return List.of();
+        }
+        var room = roomAt(level, footprint.get(0));
+        if (room.isEmpty() || footprint.stream().anyMatch(p -> !contains(room.get(), p))) {
+            return List.of();
+        }
+        if (network.membershipDirty) {
+            network.rebuildMembership(level);
+        }
+        return network.roomMembers.getOrDefault(room.get(), List.of()).stream()
+                .filter(peer -> peer.isFormed() && type.isInstance(peer))
+                .map(type::cast).toList();
     }
 
     public static void detached(MultiblockControllerMachine machine) {
@@ -127,19 +156,20 @@ public final class DatacenterFloorNetwork {
 
     private void rebuildMembership(ServerLevel level) {
         peers.clear();
-        Map<Room, List<MultiblockControllerMachine>> byRoom = new HashMap<>();
+        roomMembers.clear();
         for (var entry : footprints.entrySet()) {
             List<BlockPos> footprint = entry.getValue();
             if (!footprint.isEmpty()) {
                 roomAt(level, footprint.get(0)).filter(room -> footprint.stream().allMatch(pos -> contains(room, pos)))
                         .ifPresent(room -> {
-                            var members = byRoom.computeIfAbsent(room, ignored -> new ArrayList<>());
+                            var members = roomMembers.computeIfAbsent(room, ignored -> new ArrayList<>());
                             members.add(entry.getKey());
                             peers.put(entry.getKey(), members);
                         });
             }
         }
-        byRoom.values().forEach(members -> members.sort(Comparator.comparing(MultiblockControllerMachine::getPos)));
+        roomMembers.values()
+                .forEach(members -> members.sort(Comparator.comparing(MultiblockControllerMachine::getPos)));
         membershipDirty = false;
     }
 

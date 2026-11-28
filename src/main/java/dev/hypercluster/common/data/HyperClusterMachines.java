@@ -26,6 +26,7 @@ import dev.hypercluster.common.machine.DataScrubbingTowerMachine;
 import dev.hypercluster.common.machine.LoraEngravingChamberMachine;
 import dev.hypercluster.common.machine.RedTeamSandboxMachine;
 import dev.hypercluster.common.machine.TelemetryChemicalReactorMachine;
+import dev.hypercluster.common.machine.TelemetryHatchMachine;
 import dev.hypercluster.common.machine.TelemetryOreWasherMachine;
 import dev.hypercluster.common.machine.cloud.ApiSatelliteStationMachine;
 import dev.hypercluster.common.machine.cloud.LocalFallbackGatewayMachine;
@@ -71,6 +72,7 @@ public final class HyperClusterMachines {
 
     public static MachineDefinition HV_MICRO_BURNER;
     public static MachineDefinition HV_TELEMETRY_ORE_WASHER;
+    public static MachineDefinition HV_TELEMETRY_HATCH;
     public static MachineDefinition EV_TELEMETRY_CHEMICAL_REACTOR;
     public static MultiblockMachineDefinition DATA_SCRUBBING_TOWER;
     public static MultiblockMachineDefinition LORA_ENGRAVING_CHAMBER;
@@ -169,9 +171,26 @@ public final class HyperClusterMachines {
                 "Derated to 0 CWU/t: not enough energy.");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.iv_inference_hatch.tooltip",
                 "IV inference coprocessor hatch: pulls real CWU/t through optical pipes to run boosted tower recipes (25%/50% less EU/t).");
-        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.iv_inference_hatch.label.chip", "Inference chip");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.hv_telemetry_hatch.label.buffer", "Telemetry logs");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.diagnosis.offline",
+                "Connect a powered GLM router to inspect this machine.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.diagnosis.none", "GLM: Operating normally.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.diagnosis.insufficient_energy", "GLM: Insufficient energy.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.diagnosis.missing_input_or_no_recipe",
+                "GLM: Missing inputs or no matching recipe.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.diagnosis.output_full", "GLM: Output bus or hatch full.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.diagnosis.maintenance_issue", "GLM: Maintenance required.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.diagnosis.suspended", "GLM: Machine paused or disabled.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.select_model", "Cycle local model");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.selected", "Selected model: %s");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.diagnostics",
+                "Active alerts: %s · Latest: %s");
+        HyperCluster.REGISTRATE.addRawLang("config.jade.plugin_hypercluster.shutdown_diagnosis",
+                "HyperCluster shutdown diagnosis");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.iv_inference_hatch.label.chip",
+                "Inference chip or LoRA");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.iv_inference_hatch.chip_slot",
-                "Inference chip: ordinary domain edge chips serve 2 CWU/t recipes, aligned chips up to 8 CWU/t.");
+                "Domain chip or LoRA. Higher-tier hosts need more CWU/t.");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.precision_crac.tooltip",
                 "Precision CRAC: a running unit within 8 blocks upgrades a compute rack room to Tier II (PUE 1.45).");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.precision_crac.running",
@@ -285,6 +304,17 @@ public final class HyperClusterMachines {
                 .tooltips(GTMachineUtils.workableTiered(GTValues.HV, GTValues.V[GTValues.HV],
                         GTValues.V[GTValues.HV] * 64L, HyperClusterRecipeTypes.TELEMETRY_ORE_WASHING_RECIPES,
                         defaultTankSizeFunction.applyAsInt(GTValues.HV), true))
+                .register();
+
+        HV_TELEMETRY_HATCH = HyperCluster.REGISTRATE
+                .machine("hv_telemetry_hatch", TelemetryHatchMachine::new)
+                .tier(GTValues.HV)
+                .langValue("HV Telemetry Hatch")
+                .rotationState(RotationState.ALL)
+                .abilities(PartAbility.EXPORT_ITEMS)
+                .modelProperty(GTMachineModelProperties.IS_FORMED, false)
+                .modelProperty(GTMachineModelProperties.RECIPE_LOGIC_STATUS, RecipeLogic.Status.IDLE)
+                .workableTieredHullModel(HyperCluster.id("block/machines/telemetry_ore_washer"))
                 .register();
 
         // 0.2 — own EV Telemetry Chemical Reactor: same settlement architecture, chemical domain.
@@ -481,7 +511,9 @@ public final class HyperClusterMachines {
                         .where('I', Predicates.blocks(HyperClusterBlocks.RACK_CASING_INTAKE.get())
                                 .or(Predicates.abilities(HyperClusterPartAbilities.DATACENTER_HARDWARE)
                                         .setMaxGlobalLimited(1)))
-                        .where('E', Predicates.blocks(HyperClusterBlocks.RACK_CASING_EXHAUST.get()))
+                        .where('E', Predicates.blocks(HyperClusterBlocks.RACK_CASING_EXHAUST.get())
+                                .or(Predicates.abilities(PartAbility.IMPORT_FLUIDS).setMaxGlobalLimited(1))
+                                .or(Predicates.abilities(PartAbility.EXPORT_FLUIDS).setMaxGlobalLimited(1)))
                         // The hatch row of the exhaust wall: plain casing, the energy hatch(es),
                         // GTCEu's native computation transmission hatch and the maintenance hatch.
                         .where('X', Predicates.blocks(HyperClusterBlocks.RACK_CASING_EXHAUST.get())
@@ -522,9 +554,9 @@ public final class HyperClusterMachines {
         IV_INFERENCE_HATCH = HyperCluster.REGISTRATE
                 .machine("iv_inference_hatch", holder -> new IvInferenceHatchMachine(holder))
                 .tier(GTValues.IV)
-                .langValue("IV Inference Hatch")
+                .langValue("IV Inference Maintenance Hatch")
                 .rotationState(RotationState.ALL)
-                .abilities(HyperClusterPartAbilities.INFERENCE_COMPUTATION)
+                .abilities(HyperClusterPartAbilities.INFERENCE_COMPUTATION, PartAbility.MAINTENANCE)
                 .modelProperty(GTMachineModelProperties.IS_FORMED, false)
                 .modelProperty(GTMachineModelProperties.RECIPE_LOGIC_STATUS, RecipeLogic.Status.IDLE)
                 .workableTieredHullModel(HyperCluster.id("block/machines/inference_hatch"))
@@ -745,6 +777,7 @@ public final class HyperClusterMachines {
                                 .or(Predicates.autoAbilities(true, false, false)))
                         .where('G', Predicates.blocks(GTBlocks.CASING_LAMINATED_GLASS.get()))
                         .where('C', Predicates.blocks(GTBlocks.COMPUTER_CASING.get())
+                                .or(Predicates.abilities(PartAbility.EXPORT_FLUIDS).setMaxGlobalLimited(1))
                                 .or(Predicates.abilities(PartAbility.COMPUTATION_DATA_TRANSMISSION)
                                         .setMinGlobalLimited(0).setMaxGlobalLimited(2))
                                 .or(Predicates.abilities(HyperClusterPartAbilities.CLOUD_OFFLOAD)
@@ -1056,6 +1089,8 @@ public final class HyperClusterMachines {
                                         .setMinGlobalLimited(1).setMaxGlobalLimited(2))
                                 .or(Predicates.abilities(PartAbility.COMPUTATION_DATA_RECEPTION)
                                         .setMinGlobalLimited(0).setMaxGlobalLimited(1))
+                                .or(Predicates.abilities(PartAbility.COMPUTATION_DATA_TRANSMISSION)
+                                        .setMaxGlobalLimited(1))
                                 .or(Predicates.autoAbilities(true, false, false)))
                         .where('G', Predicates.blocks(GTBlocks.CLEANROOM_GLASS.get()))
                         .where('R', Predicates.blocks(GTBlocks.ADVANCED_COMPUTER_CASING.get()))
@@ -1085,6 +1120,7 @@ public final class HyperClusterMachines {
         // switch, leaving the front overlay on its idle texture. Register them explicitly
         // (every machine added to this addon MUST be listed here — asserted by SurvivalCraftingTests).
         for (MachineDefinition machine : new MachineDefinition[] { HV_MICRO_BURNER, HV_TELEMETRY_ORE_WASHER,
+                HV_TELEMETRY_HATCH,
                 EV_TELEMETRY_CHEMICAL_REACTOR, DATA_SCRUBBING_TOWER, LORA_ENGRAVING_CHAMBER,
                 RED_TEAM_SANDBOX, AIR_COOLED_COMPUTE_RACK, PRECISION_CRAC, IV_INFERENCE_HATCH,
                 API_SATELLITE_STATION, LOCAL_FALLBACK_GATEWAY,

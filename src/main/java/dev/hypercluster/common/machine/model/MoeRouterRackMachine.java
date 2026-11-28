@@ -1,6 +1,7 @@
 package dev.hypercluster.common.machine.model;
 
 import com.gregtechceu.gtceu.api.capability.IEnergyContainer;
+import com.gregtechceu.gtceu.api.capability.IOpticalComputationProvider;
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
 import com.gregtechceu.gtceu.api.gui.widget.ToggleButtonWidget;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
@@ -14,6 +15,9 @@ import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
 import com.gregtechceu.gtceu.api.transfer.item.CustomItemStackHandler;
 import com.gregtechceu.gtceu.client.model.machine.MachineRenderState;
 
+import com.lowdragmc.lowdraglib.gui.texture.GuiTextureGroup;
+import com.lowdragmc.lowdraglib.gui.texture.TextTexture;
+import com.lowdragmc.lowdraglib.gui.widget.ButtonWidget;
 import com.lowdragmc.lowdraglib.gui.widget.Widget;
 import com.lowdragmc.lowdraglib.gui.widget.WidgetGroup;
 import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
@@ -35,14 +39,19 @@ import dev.hypercluster.common.machine.MachineUi;
 import dev.hypercluster.common.machine.datacenter.DatacenterFloorNetwork;
 import dev.hypercluster.common.machine.datacenter.DatacenterHardwareHatchMachine;
 import dev.hypercluster.common.machine.datacenter.DatacenterOpticalNetwork;
+import dev.hypercluster.common.machine.datacenter.IvInferenceHatchMachine;
+import dev.hypercluster.common.machine.datacenter.ShutdownDiagnosis;
 import dev.hypercluster.common.machine.datacenter.VramRating;
 import dev.hypercluster.common.machine.datacenter.VramStorageRackMachine;
 import dev.hypercluster.common.model.AIModelDefinition;
 import dev.hypercluster.common.model.AIModels;
 import dev.hypercluster.common.sound.MachineAlerts;
 
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import javax.annotation.Nullable;
 
@@ -75,7 +84,8 @@ import javax.annotation.Nullable;
  * switch; while charged they reserve extra VRAM and force probability by-products to 100%.
  */
 public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine
-                                  implements IMachineLife, DatacenterHardwareHatchMachine.HardwareHost {
+                                  implements IMachineLife, DatacenterHardwareHatchMachine.HardwareHost,
+                                  IOpticalComputationProvider {
 
     protected static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(
             MoeRouterRackMachine.class, WorkableElectricMultiblockMachine.MANAGED_FIELD_HOLDER);
@@ -144,6 +154,12 @@ public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine
 
     /** 0.6.3: stamp of the last terminal_alert cue, throttled by {@link MachineAlerts}. */
     protected long lastAlertTick = MachineAlerts.NEVER;
+
+    @Persisted
+    private String selectedModelId = "";
+
+    private final Map<IvInferenceHatchMachine, ShutdownDiagnosis> alerts = new HashMap<>();
+    private ShutdownDiagnosis lastDiagnosis = ShutdownDiagnosis.NONE;
 
     public MoeRouterRackMachine(IMachineBlockEntity holder, Object... args) {
         super(holder, args);
@@ -246,6 +262,43 @@ public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine
         return energy != null && energy.getEnergyCapacity() > 0 && energy.getEnergyStored() > 0;
     }
 
+    public boolean isInferenceOnline() {
+        var model = loadedModel();
+        return isFormed() && state == State.ONLINE && hasPower() && model != null && model == modelInSlot() &&
+                VramRating.fits(poolTerabytes(), requiredTerabytes());
+    }
+
+    public void updateDiagnostic(IvInferenceHatchMachine hatch, ShutdownDiagnosis reason) {
+        if (reason == ShutdownDiagnosis.NONE) {
+            alerts.remove(hatch);
+        } else if (alerts.put(hatch, reason) != reason) {
+            lastDiagnosis = reason;
+        }
+    }
+
+    @Override
+    public int requestCWUt(int demand, boolean simulate, Collection<IOpticalComputationProvider> seen) {
+        if (seen.contains(this) || !isInferenceOnline()) {
+            return 0;
+        }
+        seen.add(this);
+        return DatacenterOpticalNetwork.request(DatacenterOpticalNetwork.providers(this, true), demand, simulate, seen);
+    }
+
+    @Override
+    public int getMaxCWUt(Collection<IOpticalComputationProvider> seen) {
+        if (seen.contains(this) || !isInferenceOnline()) {
+            return 0;
+        }
+        seen.add(this);
+        return DatacenterOpticalNetwork.capacity(DatacenterOpticalNetwork.providers(this, true), seen);
+    }
+
+    @Override
+    public boolean canBridge(Collection<IOpticalComputationProvider> seen) {
+        return true;
+    }
+
     /** Vertical offset (blocks) from the controller centre to the screen's bottom edge. */
     public float screenCenterUp() {
         return SCREEN_LIFT_BLOCKS;
@@ -291,13 +344,18 @@ public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine
             return null;
         }
         String domain = dev.hypercluster.common.item.OpenWeightModuleItem.domain(stack);
-        // The module's domain decides which open-camp identity it carries.
-        for (AIModelDefinition definition : AIModels.localModels()) {
-            if (definition.servesDomain(domain)) {
-                return definition;
-            }
+        var selected = AIModels.catalog().get(selectedModelId);
+        if (selected != null && selected.camp() == AIModelDefinition.Camp.LOCAL && selected.servesDomain(domain)) {
+            return selected;
         }
-        return null;
+        return AIModels.localModels().stream().filter(model -> model.servesDomain(domain)).findFirst().orElse(null);
+    }
+
+    public void cycleModel() {
+        var models = AIModels.localModels();
+        int current = models.indexOf(modelInSlot());
+        selectedModelId = models.get((current + 1) % models.size()).id().toString();
+        unload("selection_changed");
     }
 
     /** VRAM the current deployment would need, including LoRAs and DeepThink. */
@@ -329,6 +387,7 @@ public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine
 
     @Override
     public void onStructureInvalid() {
+        alerts.clear();
         DatacenterFloorNetwork.detached(this);
         super.onStructureInvalid();
         this.maintenance = null;
@@ -346,6 +405,7 @@ public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine
 
     @Override
     public void onUnload() {
+        alerts.clear();
         DatacenterFloorNetwork.detached(this);
         super.onUnload();
         if (this.tickSubs != null) {
@@ -510,6 +570,14 @@ public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine
                 GuiTextures.BUTTON_POWER, this::isShowScreen, this::setShowScreen);
         screenToggle.setHoverTooltips(Component.translatable(uiKey + "screen.tooltip"));
         controls.addWidget(screenToggle);
+        var label = new TextTexture(uiKey + "select_model").setWidth(109)
+                .setType(TextTexture.TextType.ROLL_ALWAYS).setDropShadow(false).setColor(0xff1d252b);
+        controls.addWidget(new ButtonWidget(60, 0, 115, 18, new GuiTextureGroup(GuiTextures.BUTTON, label),
+                click -> {
+                    if (!click.isRemote) {
+                        cycleModel();
+                    }
+                }));
         return MachineUi.multiblockPage(this, controls);
     }
 
@@ -524,9 +592,10 @@ public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine
                     if (!isFormed()) {
                         return;
                     }
-                    AIModelDefinition model = loadedModel();
+                    lines.add(Component.translatable(uiKey + "diagnostics", alerts.size(), lastDiagnosis.message()));
+                    AIModelDefinition model = modelInSlot();
                     if (model != null) {
-                        lines.add(Component.translatable(uiKey + "model_line",
+                        lines.add(Component.translatable(uiKey + (model == loadedModel() ? "model_line" : "selected"),
                                 Component.translatable(model.displayKey()).withStyle(ChatFormatting.AQUA))
                                 .withStyle(ChatFormatting.GRAY));
                     }

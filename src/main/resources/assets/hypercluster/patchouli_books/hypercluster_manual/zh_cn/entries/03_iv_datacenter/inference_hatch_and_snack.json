@@ -1,12 +1,12 @@
 {
-  "name": "推理协处理器仓与零食彩蛋",
+  "name": "推理维护复合仓与零食彩蛋",
   "category": "hypercluster:03_iv_datacenter",
   "icon": "hypercluster:iv_inference_hatch",
   "sortnum": 2,
   "pages": [
     {
       "type": "patchouli:text",
-      "text": "$(item)IV 推理协处理器仓$()是专门挂在$(item)数据清洗塔$()洁净不锈钢底座上的可选仓室（每座塔最多 1 个）。$(br2)用 GT 光学管道把它连到风冷算力机柜的算力传输仓，再在仓内芯片槽放 1 枚边缘芯片，就能拿算力换清洗塔的耗电折扣。"
+      "text": "$(item)IV 推理维护复合仓$()可挂在$(item)数据清洗塔$()洁净不锈钢底座上的可选仓室（每座塔最多 1 个）。$(br2)插入边缘芯片后，可从同一片架空地板上的算力机柜取算力，也可用 GT 光缆连接算力传输仓。"
     },
     {
       "type": "patchouli:crafting",
@@ -24,6 +24,16 @@
       "link_recipe": true,
       "title": "绿色零食包彩蛋",
       "text": "往$(item)风冷算力机柜$()右侧的零食槽里塞 1 包$(item)绿色零食包$()，机柜整机总耗电（包括 IT、制冷与待机）直接 $(#0E7490)-5%$()。$(br2)这项机房镇宅玄学默认开启，可用启动参数 `-Dhypercluster.snackBonus=false` 关闭。"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "原版工业联动",
+      "text": "原版 GT 多方块可用此仓替换标准维护仓。插入对应的矿处或化工芯片，或接入已部署本地模型的 MoE 路由器，同一片架空地板可直接共享机房的 CWU/t，跨机房可用光缆。$(br2)普通芯片 2 CWU/t 省电 25%，已对齐芯片 8 CWU/t 省电 50%。宿主每高于 IV 一档，算力需求翻倍。"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "副产与维护",
+      "text": "对应领域 LoRA 卡或开启 DeepThink 的 DeepSeek-V6767 Pro 提升概率副产的掉率；确定性产物数量保持原配方设置。$(br2)装入已对齐芯片或接入上线的 GLM，可自动修复维护故障。也可以手持管道胶带右击维修。"
     }
   ]
 }

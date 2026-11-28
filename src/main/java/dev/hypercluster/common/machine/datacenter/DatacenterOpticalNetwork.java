@@ -11,6 +11,8 @@ import com.gregtechceu.gtceu.common.machine.multiblock.part.OpticalComputationHa
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 
+import dev.hypercluster.common.machine.model.MoeRouterRackMachine;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -38,23 +40,43 @@ public final class DatacenterOpticalNetwork {
         }
 
         Map<MetaMachine, Link> links = new LinkedHashMap<>();
-        var switches = useRoomSwitch ? DatacenterFloorNetwork.members(machine, OpticalFabricSwitchMachine.class) :
-                List.<OpticalFabricSwitchMachine>of();
-        if (!switches.isEmpty()) {
-            var fabric = switches.get(0);
-            links.put(fabric, new Link(fabric, fabric));
-        } else {
-            for (var rack : DatacenterFloorNetwork.members(machine, AirCooledComputeRackMachine.class)) {
-                links.put(rack, new Link(rack, rack));
-            }
-            for (var rack : DatacenterFloorNetwork.members(machine, LiquidCooledComputeRackMachine.class)) {
-                links.put(rack, new Link(rack, rack));
-            }
+        for (Link link : roomProviders(DatacenterFloorNetwork.members(machine, MultiblockControllerMachine.class),
+                useRoomSwitch)) {
+            links.put(link.source(), link);
         }
         for (Link link : opticalInputs(machine)) {
             links.putIfAbsent(link.source(), link);
         }
         return List.copyOf(links.values());
+    }
+
+    static List<Link> floorProviders(MultiblockControllerMachine machine) {
+        if (!machine.isFormed()) {
+            return List.of();
+        }
+        return roomProviders(DatacenterFloorNetwork.adjacentMembers(machine, MultiblockControllerMachine.class), true);
+    }
+
+    private static List<Link> roomProviders(List<MultiblockControllerMachine> members, boolean useRoomSwitch) {
+        if (useRoomSwitch) {
+            for (var member : members) {
+                if (member instanceof OpticalFabricSwitchMachine fabric) {
+                    return List.of(new Link(fabric, fabric));
+                }
+            }
+        }
+        List<Link> racks = new ArrayList<>();
+        for (var member : members) {
+            if (member instanceof AirCooledComputeRackMachine rack) {
+                racks.add(new Link(rack, rack));
+            }
+        }
+        for (var member : members) {
+            if (member instanceof LiquidCooledComputeRackMachine rack) {
+                racks.add(new Link(rack, rack));
+            }
+        }
+        return racks;
     }
 
     private static List<Link> opticalInputs(MultiblockControllerMachine machine) {
@@ -100,6 +122,27 @@ public final class DatacenterOpticalNetwork {
             }
         }
         return List.copyOf(links.values());
+    }
+
+    public static List<MoeRouterRackMachine> modelRouters(MultiblockControllerMachine machine) {
+        Set<MoeRouterRackMachine> routers = new LinkedHashSet<>();
+        collectRouters(machine, routers, new LinkedHashSet<>());
+        return List.copyOf(routers);
+    }
+
+    private static void collectRouters(MultiblockControllerMachine machine, Set<MoeRouterRackMachine> routers,
+                                       Set<MultiblockControllerMachine> visited) {
+        if (!visited.add(machine)) {
+            return;
+        }
+        routers.addAll(DatacenterFloorNetwork.adjacentMembers(machine, MoeRouterRackMachine.class));
+        for (Link link : opticalInputs(machine)) {
+            if (link.source() instanceof MoeRouterRackMachine router) {
+                routers.add(router);
+            } else if (link.source() instanceof OpticalFabricSwitchMachine fabric && fabric.canForward()) {
+                collectRouters(fabric, routers, visited);
+            }
+        }
     }
 
     public static int capacity(List<Link> links, Collection<IOpticalComputationProvider> seen) {

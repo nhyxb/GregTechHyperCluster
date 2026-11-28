@@ -2,6 +2,7 @@ package dev.hypercluster.common.machine.datacenter;
 
 import com.gregtechceu.gtceu.api.capability.IEnergyContainer;
 import com.gregtechceu.gtceu.api.capability.IOpticalComputationProvider;
+import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.TickableSubscription;
 import com.gregtechceu.gtceu.api.machine.feature.IMachineLife;
@@ -238,6 +239,7 @@ public class LiquidCooledComputeRackMachine extends WorkableElectricMultiblockMa
         DerateReason reason;
         long draw;
         boolean nowProviding = false;
+        FluidStack coolant = FluidStack.EMPTY;
 
         if (!recipeLogic.isWorkingEnabled()) {
             reason = DerateReason.PAUSED;
@@ -258,11 +260,13 @@ public class LiquidCooledComputeRackMachine extends WorkableElectricMultiblockMa
             IEnergyContainer energy = getEnergyContainer();
             boolean powered = energy != null && energy.getEnergyStored() >= total;
             // Coolant next: a dry cold plate cannot hold a load no matter how much EU it has.
-            boolean cooled = drainCoolant();
+            if (powered) {
+                coolant = drainCoolant();
+            }
             if (!powered) {
                 reason = DerateReason.LOW_POWER;
                 draw = 0;
-            } else if (!cooled) {
+            } else if (coolant.isEmpty()) {
                 // Grace window: a one-tick fluid gap must not flap the whole room to zero.
                 this.coolantStarveTicks++;
                 if (this.coolantStarveTicks >= LiquidDatacenterRating.COOLANT_STARVE_TICKS) {
@@ -285,6 +289,9 @@ public class LiquidCooledComputeRackMachine extends WorkableElectricMultiblockMa
             IEnergyContainer energy = getEnergyContainer();
             if (energy != null && energy.getEnergyStored() >= draw) {
                 energy.removeEnergy(draw);
+                if (nowProviding) {
+                    RackHeatRecovery.recoverLiquid(this, LiquidDatacenterRating.itEUt(blades), coolant);
+                }
             }
         }
 
@@ -306,9 +313,10 @@ public class LiquidCooledComputeRackMachine extends WorkableElectricMultiblockMa
      * Drinks one tick of cold-plate coolant out of the structure's fluid input hatches. The
      * coolant is a real energy-like input: a dry cold plate cannot hold a load.
      */
-    protected boolean drainCoolant() {
+    protected FluidStack drainCoolant() {
         for (var part : getParts()) {
-            if (!(part instanceof com.gregtechceu.gtceu.common.machine.multiblock.part.FluidHatchPartMachine hatch)) {
+            if (!(part instanceof com.gregtechceu.gtceu.common.machine.multiblock.part.FluidHatchPartMachine hatch) ||
+                    hatch.tank.handlerIO != IO.IN) {
                 continue;
             }
             var tank = hatch.tank;
@@ -336,10 +344,10 @@ public class LiquidCooledComputeRackMachine extends WorkableElectricMultiblockMa
                 tank.onContentsChanged();
                 this.coolantEfficiency = efficiency;
                 this.coolantName = id;
-                return true;
+                return new FluidStack(stack, LiquidDatacenterRating.COOLANT_PER_TICK);
             }
         }
-        return false;
+        return FluidStack.EMPTY;
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
