@@ -45,6 +45,28 @@ source env.fish
 
 开发客户端、专服和数据生成分别使用 `run/client/`、`run/server/`、`run/data/`，日志写入各自的 `logs/`。运行 `./gradlew runServer` 首次启动时，Minecraft 会生成 `run/server/eula.txt`。确认同意其中链接的 EULA 后，在该文件设 `eula=true` 并再次启动。
 
+## 持续集成
+
+`.github/workflows/ci.yml` 有两个 job，第一个是合并门禁。
+
+| 触发时机 | job | 做什么 |
+| --- | --- | --- |
+| PR / `main` 推送 | **`validate`**（`main` 的必需检查） | Ubuntu + Java 17，用仓库自带的 `./gradlew`：`runData` → 生成资源漂移检查 → `spotlessCheck` → `build` → 全新平坦世界的 `runGametest`。通过后上传 JAR 与 SHA-256；失败时上传 Gradle 控制台日志、游戏日志与崩溃报告。 |
+| 手动触发（`workflow_dispatch`） | `client-smoke` | 使用独立游戏目录在 Xvfb 中启动客户端。实际渲染主菜单后保存截图和日志，最后清理本次进程。 |
+
+`main` 已设分支保护：`validate` 为必需检查，禁止强推与删分支。本地验证过——故意让 `spotlessCheck` 失败的 PR 会被判 `FAILURE` 并 `BLOCKED`。
+
+### 运行与排障
+
+- **`| tee` 会吞掉失败。** GitHub 默认 shell 是 `bash -e {0}`，**没有 `pipefail`**，`gradle | tee` 报的是 `tee` 的退出码（永远是 0）。第一版因此让一次 `spotlessCheck` 失败显示成绿色、PR 仍可合并。凡是把 Gradle 输出 `tee` 出去的步骤，都必须显式 `shell: bash` + `set -o pipefail`。
+- **首次启动与主菜单。** 空白游戏目录默认打开辅助功能引导页。冒烟脚本预写 `onboardAccessibility:false`，用 `ALSOFT_DRIVERS=null` 让 OpenAL 在无音频设备的 runner 上初始化，再等待 Forge 首次实际渲染 `TitleScreen` 的标记。等待失败也会尝试截图，便于定位当时的界面。
+- **先生成，再单独打包。** `runData` 与 `build` 是两次独立调用；生成后比对 `src/generated/resources` 的已跟踪改动**和新文件**，有漂移就失败。这样「同一次调用把旧生成资源打进包里」不可能再发生。
+- **每轮全新平坦世界。** CI 自己写 `run/gametest/server.properties`（`level-type=minecraft\:flat`）和 `eula.txt`；`run/` 既被 gitignore 也不进缓存。除了退出码，还要在日志里确认确实跑了测试批次、`GAME TESTS COMPLETE`、以及 `All N required tests passed`；N 从日志读，新增用例不用改 workflow。
+
+> 日志时间戳随 locale 变（`[28Nov2026 …]` / `[2811月2026 …]`），CI 里的匹配一律只锚定消息文本，不用时间戳。
+
+本地可在配置好 Java 17、Xvfb 和 ImageMagick 后运行 `bash .github/scripts/client-smoke.sh run/validation/client-smoke`。脚本为每次运行创建独立游戏目录。
+
 ## 0.1.0 内容与支持范围
 
 - **物品**：`mining_telemetry_log` 矿处遥测日志、`blank_carrier` 空白载体、`mining_edge_chip` 矿处边缘芯片（均可堆叠 64，带中英工具提示）。

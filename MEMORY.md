@@ -74,7 +74,7 @@
 
 - **⚠️ Xvfb 与本会话 bash 的 PID 命名空间**：每次 `bash` 调用都在独立的 `bwrap --unshare-pid` 命名空间里（私有 `/tmp`），**上一次调用启动的 Xvfb 已经随之死亡**。因此「先起 Xvfb、再单独调一次 runClient」会以 `glfwInit failed` 失败——不是显卡问题。正确做法是**把启动 Xvfb 与 runClient 写进同一个脚本一次执行**，并在同一脚本内收尾 kill。
   - **私有 `/tmp` 同样不跨调用**：上一次调用写下的 `/tmp/xxx.log` 下一次读到的是「没有那个文件」。中间产物（清洗后的日志、grep 结果）要么在同一次调用内生成并使用，要么写进仓库 `run/validation/`。
-- **冒烟脚本模板**：`run/validation/client-smoke-061.sh` 是当前完整版（Xvfb :99 + `setsid` 起客户端 + 标记轮询 + 45s 稳定期 + `import -window root` 截图 + `run/client/logs/latest.log` 存档 + trap 收尾并自检 `pgrep Xvfb/java`）。新版本号冒烟直接复制改文件名与输出路径即可。
+- **可复用的客户端冒烟入口**是 `bash .github/scripts/client-smoke.sh run/validation/client-smoke`。脚本用独立游戏目录绕过首次辅助功能引导，以 Forge 实际渲染主菜单的标记完成验收。配置和排障见 [README 的持续集成章节](README.md#持续集成)。
 - **日志误报陷阱**：narrator（`flite_cmu_us_kal16`）的堆栈行里内嵌**整条 `-cp` 类路径**，其中含 `ldlib`、`text2speech` 等字样。直接 `grep -i ldlib` 会命中它，看起来像 ldlib 报错。**先剔除 narrator 连续行（以 `[HH:MM:SS]` 起始的行为边界）再 grep**，否则会误判内容资源加载失败。
 - **客户端冒烟测试严禁占用宿主机真实桌面**：所有 `./gradlew runClient` 的自动化冒烟一律在 Xvfb 虚拟屏内跑，例如：
   `env -u WAYLAND_DISPLAY LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew runClient`
