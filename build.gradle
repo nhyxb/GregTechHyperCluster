@@ -60,7 +60,11 @@ legacyForge {
     runs {
         client {
             client()
-            gameDirectory = file('run/client')
+            def smokeDirectory = providers.gradleProperty('hyperclusterClientSmokeDir').orNull
+            gameDirectory = file(smokeDirectory ?: 'run/client')
+            if (smokeDirectory != null) {
+                systemProperty('hypercluster.clientSmoke', 'true')
+            }
         }
         server {
             server()

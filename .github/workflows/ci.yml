@@ -249,94 +249,16 @@ jobs:
       - name: Install Xvfb and screenshot tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends xvfb x11-utils imagemagick
+          sudo apt-get install -y --no-install-recommends xvfb imagemagick
 
       - name: Boot the client under Xvfb
-        shell: bash
-        run: |
-          set -uo pipefail
-          mkdir -p ci-logs run/validation
-          SHOT=run/validation/main-menu-ci.png
-          LOG=ci-logs/client.log
-
-          Xvfb :99 -screen 0 1280x720x24 > ci-logs/xvfb.log 2>&1 &
-          XVFB_PID=$!
-          for _ in $(seq 1 80); do [ -e /tmp/.X11-unix/X99 ] && break; sleep 0.25; done
-          if [ ! -e /tmp/.X11-unix/X99 ]; then
-            echo "::error::Xvfb never came up"; tail -20 ci-logs/xvfb.log; kill -9 "$XVFB_PID"; exit 1
-          fi
-
-          cleanup() {
-            kill -TERM "$CLIENT_PGID" 2>/dev/null
-            sleep 5
-            kill -KILL "$CLIENT_PGID" 2>/dev/null
-            pkill -KILL -f 'net.minecraftforge' 2>/dev/null
-            pkill -KILL -f 'GradleWrapperMain' 2>/dev/null
-            kill -TERM "$XVFB_PID" 2>/dev/null; sleep 2; kill -KILL "$XVFB_PID" 2>/dev/null
-            echo '--- leftover processes ---'
-            pgrep -a Xvfb | grep -v pgrep || echo 'no Xvfb left'
-            pgrep -a java | grep -v pgrep || echo 'no java left'
-          }
-
-          setsid env -u WAYLAND_DISPLAY LIBGL_ALWAYS_SOFTWARE=1 DISPLAY=:99 \
-            ./gradlew runClient > "$LOG" 2>&1 &
-          CLIENT_PGID=$!
-          trap cleanup EXIT INT TERM
-
-          # Marker selection matters: "Sound engine started" is NOT usable here.
-          # A hosted runner has no audio device, so OpenAL init fails and the sound
-          # engine is switched off ("Error starting SoundSystem"), meaning that
-          # line never appears even though the title screen renders fine.
-          # Any one of these means the client finished booting:
-          #   - the Realms availability check, which spawns only after TitleScreen init
-          #   - the sound engine, on runners that do have audio
-          #   - the resources having been reloaded twice (boot + post-init)
-          REACHED=no
-          for _ in $(seq 1 240); do
-            if grep -qE 'Could not authorize you against Realms|Sound engine started' "$LOG" 2>/dev/null; then
-              REACHED=yes; break
-            fi
-            kill -0 "$CLIENT_PGID" 2>/dev/null || { echo 'client exited early'; break; }
-            sleep 3
-          done
-          echo "MAIN_MENU_REACHED=$REACHED"
-
-          # Give the title screen time to draw either way, then always capture:
-          # a screenshot at timeout is what tells "rendered but unlogged apart"
-          # from "hung", which a log-only check cannot distinguish.
-          sleep 45
-          DISPLAY=:99 import -window root "$SHOT" 2>/dev/null || true
-          [ -f "$SHOT" ] && identify -format 'shot %wx%h mean=%[mean] stddev=%[standard-deviation]\n' "$SHOT" || true
-          cp -f run/client/logs/latest.log ci-logs/client-latest.log 2>/dev/null || true
-
-          if [ "$REACHED" != yes ]; then
-            echo '::error::Client never reached the main menu'
-            echo '--- last 40 lines of the client log ---'
-            tail -40 "$LOG" 2>/dev/null || true
-            echo '--- last 10 lines of latest.log ---'
-            tail -10 ci-logs/client-latest.log 2>/dev/null || true
-            exit 1
-          fi
-
-          # Content errors only: the narrator notice appears on every platform
-          # without a native speech library and is not ours.
-          if [ -f ci-logs/client-latest.log ]; then
-            if grep '/ERROR]' ci-logs/client-latest.log \
-                 | grep -viE 'text2speech|Narrator' | grep -q .; then
-              echo '::error::Content errors in the client log:'
-              grep '/ERROR]' ci-logs/client-latest.log | grep -viE 'text2speech|Narrator' | head -30
-              exit 1
-            fi
-            echo 'Client log clean (only the known narrator notice).'
-          fi
+        run: bash .github/scripts/client-smoke.sh
 
       - name: Upload client evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: client-smoke-evidence
-          path: |
-            ci-logs/**
-            run/validation/main-menu-ci.png
+          path: ci-logs/client-smoke/
           if-no-files-found: warn
           retention-days: 14
