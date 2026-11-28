@@ -6,32 +6,32 @@
   "pages": [
     {
       "type": "patchouli:text",
-      "text": "This version replaces the 0.4 $(italic)OmniFlash-72B$() / $(italic)LegacyLlama-8B$() placeholders with real families, split by $(bold)deployment camp$():$(li)$(#0E7490)Open camp$() (LOCAL): deployed into the MoE router, occupies local VRAM, $(bold)zero Tokens$().$(li)$(#0E7490)Closed camp$() (API): dialled through the satellite station, billed in Tokens, $(bold)zero local VRAM$()."
+      "text": "This version replaces the 0.4 $(italic)OmniFlash-72B$() / $(italic)LegacyLlama-8B$() placeholders with real families, split by $(bold)deployment camp$():$(li)$(#0E7490)Open camp$() (LOCAL): deployed into the MoE router, occupies local VRAM, $(bold)zero Tokens$().$(li)$(#0E7490)Closed camp$() (API): dialled through the satellite station, billed in Tokens, $(bold)zero local VRAM$().$(br2)Every family's mechanic runs through the $(bold)machine's own settlement path$() — it really bills, really refuses and really changes the yield."
     },
     {
       "type": "patchouli:text",
       "title": "Open · Qwen 9187 Pro-Max-Ultra",
-      "text": "$(bold)16 TB$() plus $(bold)+4 TB / +4 CWU/t$() per LoRA, up to four slots.$(br2)$(li)Bound to the $(item)local fallback gateway$() its fallback is only $(bold)1.5×$() slower — the model-less case is 4×, a very visible difference.$(li)Mining and chemical runs $(bold)both skip the overfitting penalty$() across domains.$(li)It runs on IV air-cooled rooms, not just liquid cabinets."
+      "text": "$(bold)16 TB$() plus $(bold)+4 TB / +4 CWU/t$() per LoRA, up to four slots. Training gate $(bold)96 TB / 32 CWU/t$().$(br2)$(li)Bound to the $(item)local fallback gateway$() its fallback is only $(bold)1.5×$() slower — without Qwen it is 4×.$(li)With a $(item)mining LoRA card$() or $(item)chemical LoRA card$() inserted, the router $(bold)projects the specialisation onto the inference hatches within 16 blocks$(): that domain's chanced by-product goes $(bold)1/3 → 2/3$() per card, capped at 100%.$(li)Mining and chemical runs both skip the cross-domain overfitting penalty."
     },
     {
       "type": "patchouli:text",
       "title": "Open · DeepSeek-V6767 Flash / Pro",
-      "text": "$(bold)Flash 32 TB$() / $(bold)Pro 64 TB$(), with DeepThink reserving another $(bold)+16 TB$().$(br2)$(li)Both use MoE sparse activation: only $(bold)25%$() of the nominal CWU/t is billed, built for steady high-concurrency runs.$(li)$(bold)Pro$() additionally unlocks $(bold)DeepThink$(): by-products forced to 100%.$(li)Pro is also the model that hits the switch bandwidth ceiling first, tripping $(bold)503 Server Busy$()."
+      "text": "$(bold)Flash 32 TB$() / $(bold)Pro 64 TB$(), with DeepThink reserving another $(bold)+16 TB$(). Training gates: Flash $(bold)64 TB / 24 CWU/t$(), Pro $(bold)128 TB / 48 CWU/t$().$(br2)$(li)Both use MoE sparse activation: only $(bold)25%$() of the nominal CWU/t is really billed — Flash bills 2 of its nominal 8, Pro bills 4 of its 16.$(li)With $(bold)DeepThink$() charged, $(bold)Pro$() projects $(bold)by-products forced to 100%$() onto the linked $(item)inference hatches$(): the wash's cobalt dust stops being a 1/3 gamble and the tower's golden samples are guaranteed.$(li)Not enough memory and the router returns $(bold)OOM$(), refusing to load and billing nothing."
     },
     {
       "type": "patchouli:text",
       "title": "Open · GLM-2333 Flash / Max",
-      "text": "$(bold)Flash 24 TB / 4 CWU/t$(), $(bold)Max 48 TB / 8 CWU/t$().$(br2)$(li)$(bold)Flash$(): machine-room inspection — below $(bold)20%$() stored energy the room auto-sleeps protectively, and maintenance is $(bold)waived$().$(li)$(bold)Max$(): top-tier $(bold)agent tool calling$() — it stops and restarts associated multiblocks automatically, idling on jam or starvation and pulling them back up on recovery. The groundwork for a fully lights-out plant."
+      "text": "$(bold)Flash 24 TB / 4 CWU/t$(), $(bold)Max 48 TB / 8 CWU/t$(). Training gates: Flash $(bold)32 TB / 16 CWU/t$(), Max $(bold)80 TB / 32 CWU/t$().$(br2)$(li)$(bold)Flash$(): machine-room inspection — below $(bold)20%$() stored energy the router enters $(bold)SLEEPING$() and draws $(bold)zero CWU/t$(); it wakes itself the tick the grid recovers.$(li)$(bold)Max$(): top-tier $(bold)agent tool calling$() — it $(bold)really stops the associated multiblocks' recipe logic$() on a jam or a starvation to save standby power, probes them again after 40 ticks and pulls them back up by itself."
     },
     {
       "type": "patchouli:text",
       "title": "Closed · the Three Geminis",
-      "text": "All three dial out through the API station and $(bold)occupy no local VRAM$().$(br2)$(li)$(bold)Gemini-Titanium-4.0$(): carries the $(bold)Leaving Soon$() retirement countdown and refuses new rounds once expired.$(li)$(bold)Gemini-Platinum$(): chemical noise suppression — cheaper reagents.$(li)$(bold)Gemini-Xenon$(): the heavy inert gas route, $(bold)hard zero hallucination$() and fully $(bold)waived maintenance$()."
+      "text": "All three dial out through the API station and $(bold)occupy no local VRAM$().$(br2)$(li)$(bold)Gemini-Titanium-4.0$(): carries the $(bold)Leaving Soon$() retirement countdown and refuses new rounds once expired.$(li)$(bold)Gemini-Platinum$(): chemical noise suppression — $(bold)+1 output on chemical rounds$() (no bonus on mining).$(li)$(bold)Gemini-Xenon$(): the heavy inert gas route, $(bold)hard zero hallucination$() — $(bold)+1 output every round$() and fully $(bold)waived maintenance$()."
     },
     {
       "type": "patchouli:text",
       "title": "Closed · GPT-1145 Multiverse & Grok-420",
-      "text": "$(bold)GPT-1145 Multiverse$(): the $(bold)highest Token price$() buys the best reagent savings and by-product bonus. Whitelisted dangerous chemistry rounds trip its $(bold)moral refusal$() and stop the machine until a $(item)Jailbreak Patch Card$() is inserted.$(br2)$(bold)Grok-420$(): $(bold)completely uncensored$() — it runs the dangerous rounds with no jailbreak card, cheaper than GPT. The price is that its $(bold)rain / thunder attenuation and duration penalty are doubled$(). Great in clear weather, hopeless in a storm."
+      "text": "$(bold)GPT-1145 Multiverse$(): the $(bold)highest Token price$() buys the best reagent savings — $(bold)+2 output$() per round. Arming the $(bold)dangerous round$() without a $(item)Jailbreak Patch Card$() produces a $(bold)real runtime refusal$(): the round does not start, the input is not consumed and $(bold)not a single Token is billed$(); insert the card and the very same round runs.$(br2)$(bold)Grok-420$(): $(bold)completely uncensored$() — it runs the dangerous round with $(bold)no jailbreak card at all$(), cheaper than GPT. The price is a doubled duration penalty: $(bold)rain ×3.0 / thunder ×4.0$() where a normal family takes ×1.5 / ×2.0."
     },
     {
       "type": "patchouli:crafting",

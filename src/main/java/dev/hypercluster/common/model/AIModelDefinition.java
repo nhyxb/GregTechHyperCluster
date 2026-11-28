@@ -81,6 +81,8 @@ public final class AIModelDefinition {
     private final int deepThinkVramTerabytes;
     private final int sparseCwuPercent;
     private final double fallbackSlowdown;
+    private final int trainingVramTerabytes;
+    private final int trainingCwuPerTick;
 
     private AIModelDefinition(Builder builder) {
         this.id = builder.id;
@@ -97,6 +99,8 @@ public final class AIModelDefinition {
         this.deepThinkVramTerabytes = builder.deepThinkVramTerabytes;
         this.sparseCwuPercent = builder.sparseCwuPercent;
         this.fallbackSlowdown = builder.fallbackSlowdown;
+        this.trainingVramTerabytes = builder.trainingVramTerabytes;
+        this.trainingCwuPerTick = builder.trainingCwuPerTick;
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -194,6 +198,43 @@ public final class AIModelDefinition {
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
+    // Training gates (0.6.2) //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * VRAM (TB) a pretraining run for this model must see online before it may start. Each
+     * open-weight family declares its own gate, so choosing a bigger target in the cluster's
+     * selector really costs more memory — it is not a cosmetic label. A model that declares no
+     * gate of its own keeps the version-wide {@code VramRating.TRAINING_JOB_TB} default.
+     */
+    public int trainingVramTerabytes() {
+        if (!isLocal()) {
+            return 0;
+        }
+        return trainingVramTerabytes > 0 ? trainingVramTerabytes :
+                dev.hypercluster.common.machine.datacenter.VramRating.TRAINING_JOB_TB;
+    }
+
+    /**
+     * CWU/t a pretraining run for this model pulls from the optical feed every tick. A bigger
+     * target trains on a wider tensor-parallel mesh, so it demands more computation per tick. A
+     * model that declares no gate of its own keeps the {@code TrainingRating.TRAINING_CWUT}
+     * default.
+     */
+    public int trainingCwuPerTick() {
+        if (!isLocal()) {
+            return 0;
+        }
+        return trainingCwuPerTick > 0 ? trainingCwuPerTick :
+                dev.hypercluster.common.machine.training.TrainingRating.TRAINING_CWUT;
+    }
+
+    /** True when {@code availableTb} memory holds a pretraining run of this model. */
+    public boolean fitsTraining(int availableTb) {
+        return Math.max(0, availableTb) >= trainingVramTerabytes();
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
     // Domains & traits //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -238,6 +279,8 @@ public final class AIModelDefinition {
         private int deepThinkVramTerabytes;
         private int sparseCwuPercent = 100;
         private double fallbackSlowdown;
+        private int trainingVramTerabytes;
+        private int trainingCwuPerTick;
 
         private Builder(String path, String displayKey, Camp camp) {
             this.id = new ResourceLocation("hypercluster", path);
@@ -291,6 +334,16 @@ public final class AIModelDefinition {
         /** Local-fallback slowdown multiplier for this model (default 4.0 = no model). */
         public Builder fallbackSlowdown(double multiplier) {
             this.fallbackSlowdown = multiplier;
+            return this;
+        }
+
+        /**
+         * Pretraining gate of this model: the cluster memory (TB) and the optical CWU/t one run
+         * needs. Both are validated live by the pretraining cluster's start gate.
+         */
+        public Builder trainingGate(int vramTerabytes, int cwuPerTick) {
+            this.trainingVramTerabytes = vramTerabytes;
+            this.trainingCwuPerTick = cwuPerTick;
             return this;
         }
 

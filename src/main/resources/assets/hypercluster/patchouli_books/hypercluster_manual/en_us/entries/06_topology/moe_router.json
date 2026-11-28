@@ -6,7 +6,7 @@
   "pages": [
     {
       "type": "patchouli:text",
-      "text": "The $(item)MoE Routing Rack$() is the open camp's $(bold)central deployment hub$(): insert an $(item)Open-Weight Module$() from a pretraining run and the model becomes resident in cluster memory, with downstream routing configured from here.$(br2)It never bills Tokens — open-camp compute comes out of your own machine room."
+      "text": "The $(item)MoE routing rack$() is the $(bold)central deployment hub$() of the open camp: insert the $(item)open-weight module$() a pretraining run produced and the model becomes resident in cluster memory, routed from one place for every downstream consumer.$(br2)It bills no Tokens — the open camp's compute is your own machine room."
     },
     {
       "type": "patchouli:crafting",
@@ -14,23 +14,28 @@
     },
     {
       "type": "patchouli:text",
-      "title": "The 5×5×5 Stepped Structure",
-      "text": "$(li)$(#0E7490)y=0$(): the heavy $(item)Computer Casing$() base plate carrying the energy, item and maintenance hatches.$(li)$(#0E7490)y=1$(): the deployment console, controller front-centre at $(bold)(2, 1, 0)$(); the deployment slot and the four LoRA slots live in the GUI.$(li)$(#0E7490)y=2$(): the routing core — $(item)Cleanroom Glass$() around an $(item)Advanced Computer Casing$() spine.$(li)$(#0E7490)y=3$(): the re-widened shoulder; $(bold)y=4$() steps in as the roof heat ring."
+      "title": "The 5×5×5 stepped structure",
+      "text": "$(li)$(#0E7490)y=0$(): the heavy $(item)computer casing$() base plate; energy, item and maintenance hatches all ride this layer.$(li)$(#0E7490)y=1$(): the deployment console row. The controller sits front-centre at $(bold)(2, 1, 0)$(); the deployment slot and the four LoRA slots are on its screen.$(li)$(#0E7490)y=2$(): the routing core — $(item)cleanroom glass$() around the $(item)advanced computer casing$() compute spine.$(li)$(#0E7490)y=3$(): the re-widened shoulder; $(bold)y=4$() steps in one block as the roof heat ring."
     },
     {
       "type": "patchouli:text",
-      "title": "Loading, OOM and Going Offline",
-      "text": "After a module is inserted the router asks the cluster pool for the TB the model declares:$(li)Pool is big enough → $(bold)ONLINE$(): the model is resident and bills CWU/t per tick.$(li)Pool is short → $(bold)OOM$(): the load is $(bold)refused$() and not a single CWU/t is charged.$(br2)$(bold)Pulling the card, pulling an HBM module, darkening a memory rack or a chunk reload$() all take the model offline on that very tick (EVICTED/EMPTY) — it never shows online while the memory is already gone."
+      "title": "Model identity: whichever module is inserted is deployed",
+      "text": "The module's $(bold)hc_model_id$() decides which model is deployed:$(li)All five open models $(bold)deploy independently$(); each one asks the pool for its own declared VRAM and bills its own CWU/t.$(li)A very old module without that field $(bold)reads as Qwen 9187$() and does not become junk.$(br2)Swap the module and only that model's cost applies — nothing bleeds into another family."
     },
     {
       "type": "patchouli:text",
-      "title": "LoRA Extensions and DeepThink",
-      "text": "$(bold)LoRA extensions$(): a model with four LoRA slots (Qwen 9187) takes the 0.2.1 $(item)Mining LoRA Card$() or $(item)Chemical LoRA Card$(), each costing $(bold)+4 TB$() and $(bold)+4 CWU/t$() and stacking its by-product specialisation.$(br2)$(bold)DeepThink$(): models with the charge switch (DeepSeek-V6767 Pro) reserve an extra $(bold)+16 TB$() and force probability by-products to $(bold)100%$() — mining cobalt goes from 1/3 to guaranteed, and the scrubbing tower's golden samples get a floor.$(br2)Either can push VRAM past the pool, so stock the TB first."
+      "title": "Loading, OOM and eviction",
+      "text": "Once weights are inserted the router asks the cluster memory pool for the TB the model declares:$(li)Pool big enough → $(bold)ONLINE$(); the model is resident and $(bold)really draws its own CWU/t every tick$() (DeepSeek draws only 25%).$(li)Pool too small → $(bold)OOM$(): the load is $(bold)refused$() and no compute is billed.$(br2)$(bold)Pulling the card, pulling a HBM module, cutting a memory cabinet's power or a chunk reload$() takes the model offline on the very next tick (EVICTED/EMPTY), and every projection it cast on the inference hatches is withdrawn with it."
     },
     {
       "type": "patchouli:text",
-      "title": "Cloning a Copy",
-      "text": "Open-camp master weights can be cloned cheaply in the $(item)Micro Burner$(): one $(item)High-Purity Domain Dataset$() plus one $(item)Blank Carrier$() presses out a fresh $(item)Open-Weight Module$(), so a second machine room never has to re-run 2400 ticks of training."
+      "title": "LoRA extensions & DeepThink",
+      "text": "$(bold)LoRA extensions$(): a model with four slots (Qwen 9187) takes the 0.2.1 $(item)mining LoRA card$() or $(item)chemical LoRA card$() at $(bold)+4 TB / +4 CWU/t$() each. The router $(bold)projects the specialisation onto the inference hatches within 16 blocks$(): that domain's chanced by-product gains 1/3 per card (1/3 → 2/3 → 100%).$(br2)$(bold)DeepThink$(): DeepSeek-V6767 Pro reserves $(bold)+16 TB$() while charged and forces the linked hatches' chanced by-products to $(bold)100%$().$(br2)Either can push the job out of the pool, so buy the TB before switching them on."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Cloned copies",
+      "text": "An open master weight can be cloned cheaply in the $(item)HV micro burner$(): $(bold)1 open-weight module ($(bold)not consumed — the original stays$()) + 1 $(item)blank carrier$() + 600 EU/t for 200 ticks$() yields one copy carrying $(bold)a complete duplicate$() of $()hc_model_id / hc_domain / hc_precision / hc_version$(). A second machine room does not need to re-run the 2400-tick training."
     }
   ]
 }

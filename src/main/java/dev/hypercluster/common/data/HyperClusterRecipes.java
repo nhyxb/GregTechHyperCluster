@@ -77,6 +77,26 @@ public final class HyperClusterRecipes {
                 .inputItems(new ItemStack(HyperClusterItems.BLANK_CARRIER.get()))
                 .outputItems(new ItemStack(HyperClusterItems.CHEMICAL_EDGE_CHIP.get()))
                 .save(provider);
+
+        // 0.6.2 — open-weight cloning: ONE module (not consumed: the original must survive) plus
+        // one blank carrier and HV power mint a duplicate. The duplicate's hc_model_id /
+        // hc_domain / hc_precision / hc_version are stamped by MicroBurnerMachine#fullModifyRecipe
+        // from the module actually sitting in the slot — the output declared here is only the
+        // shape (one module) that the settlement path writes into.
+        //
+        // Item + count rather than an ItemStack: this item's identity lives in NBT, and a stack
+        // carrying tags would make the recipe match only that exact tag — an empty module.
+        HyperClusterRecipeTypes.MICRO_BURNER_RECIPES
+                .recipeBuilder(HyperCluster.id("clone_open_weight_module"))
+                .notConsumable(new ItemStack(HyperClusterItems.OPEN_WEIGHT_MODULE.get()))
+                .inputItems(new ItemStack(HyperClusterItems.BLANK_CARRIER.get()))
+                .outputItems(HyperClusterItems.OPEN_WEIGHT_MODULE.get())
+                .addData(dev.hypercluster.common.machine.MicroBurnerMachine.OPEN_WEIGHT_CLONE_FLAG, 1)
+                // HV ceiling: 480 EU/t is the top of the HV band (512), so the burner itself can
+                // run it. 600 would demand an EV hatch the machine does not have.
+                .EUt(480)
+                .duration(200)
+                .save(provider);
     }
 
     private static void registerTelemetryOreWashingRecipes(java.util.function.Consumer<FinishedRecipe> provider) {

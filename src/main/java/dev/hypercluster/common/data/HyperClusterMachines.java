@@ -259,7 +259,8 @@ public final class HyperClusterMachines {
         // P03 — HV Micro Burner: logging chain (telemetry log + blank carrier -> edge chip).
         HV_MICRO_BURNER = HyperCluster.REGISTRATE
                 .machine("hv_micro_burner",
-                        holder -> new SimpleTieredMachine(holder, GTValues.HV, defaultTankSizeFunction))
+                        holder -> new dev.hypercluster.common.machine.MicroBurnerMachine(holder, GTValues.HV,
+                                defaultTankSizeFunction))
                 .tier(GTValues.HV)
                 .langValue("HV Micro Burner")
                 .editableUI(SimpleTieredMachine.EDITABLE_UI_CREATOR
@@ -935,6 +936,68 @@ public final class HyperClusterMachines {
                 "Paused (soft mallet).");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.state.maintenance",
                 "Maintenance problems unfixed.");
+
+        // ---- 0.6.2 · runtime settlement of the six families ----
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.state.sleeping",
+                "GLM-2333 Flash protective sleep: the room is under 20% stored energy.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.state.agent_idle",
+                "GLM-2333 Max agent: associated multiblocks parked to save standby power.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.agent.on",
+                "Agent tool calls: associated multiblocks stopped, waiting for recovery.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.consumed",
+                "Computation really drawn this tick: %s CWU/t");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.projection.lora",
+                "LoRA specialisation projected onto %s inference hatches");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.projection.force",
+                "DeepThink by-product force projected onto %s inference hatches");
+
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.iv_inference_hatch.lora_projected",
+                "LoRA specialisation: %s (%s cards)");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.iv_inference_hatch.byproducts_forced",
+                "DeepThink by-products forced to 100%");
+
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.local_fallback_gateway.speed.accelerated",
+                "Fallback slowdown: x%s (Qwen 9187 online)");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.local_fallback_gateway.speed.bare",
+                "Fallback slowdown: x%s (no Qwen 9187 deployed)");
+
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.label.jailbreak",
+                "Jailbreak card");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.jailbreak_slot",
+                "Jailbreak patch card: GPT-1145 Multiverse needs it to run whitelisted dangerous chemistry (not consumed).");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.dangerous.on",
+                "Dangerous round: ON");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.dangerous.off",
+                "Dangerous round: OFF");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.dangerous.tooltip",
+                "Whitelisted dangerous chemistry round: Grok-420 runs it uncensored, GPT-1145 needs a jailbreak card, other families cannot.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.family_line",
+                "Family: weather attenuation x%s | yield bonus +%s | jailbreak: %s");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.jailbroken",
+                "inserted");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.jailbreak_bare",
+                "not inserted");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.dangerous_line",
+                "Dangerous round armed: this family may run it.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.status.moral_refusal",
+                "Moral refusal: no jailbreak patch card, the round is refused and nothing is billed.");
+        HyperCluster.REGISTRATE.addRawLang(
+                "hypercluster.machine.api_satellite_station.status.dangerous_round_unsupported",
+                "This family has no dangerous-round capability.");
+
+        // ---- 0.6.2: per-model training gates, the target selector and open-weight cloning ----
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.label.target",
+                "Target model");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.target",
+                "Target family: %s");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.compute",
+                "Optical feed: %s CWU/t demanded");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.target.tooltip",
+                "Target open-weight family. Each family validates its own VRAM and CWU/t gate; the exported module carries this identity.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.hv_micro_burner.tooltip.clone",
+                "Chip route: two inputs plus a blank carrier. Clone route: one open-weight module, kept (not consumed), plus a blank carrier and 600 EU/t.");
+        HyperCluster.REGISTRATE.addRawLang("item.hypercluster.open_weight_module.model",
+                "Weights: %s");
 
         // ---- model catalog display names ----
         HyperCluster.REGISTRATE.addRawLang("hypercluster.model.qwen_9187_pro_max_ultra",

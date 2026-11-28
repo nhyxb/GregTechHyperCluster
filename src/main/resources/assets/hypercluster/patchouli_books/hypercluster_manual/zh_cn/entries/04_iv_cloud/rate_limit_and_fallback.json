@@ -16,12 +16,12 @@
     {
       "type": "patchouli:text",
       "title": "型号目录与 Leaving Soon",
-      "text": "目录里共有两个模型：$(li)$(#0E7490)OmniFlash-72B$()：主力稳定模型，永不下线。$(li)$(#0E7490)LegacyLlama-8B$()：生命周期演示模型，按主世界游戏日（`dayTime / 24000`）推进。默认第 2 天起标出 $(bold)Leaving Soon$()（仍可调用并显示剩余天数），到第 3 天正式下线并拦截新轮次（不计费）。$(br)参数：`-Dhypercluster.legacyRetireDay=3` 与 `leavingSoonDays=1`。"
+      "text": "卫星站可以拨号五台$(bold)闭源模型$()（都是零本地显存、按 Token 计费）：$(li)$(#0E7490)Gemini-Titanium-4.0$()：生命周期演示，按主世界游戏日推进，默认第 2 天起标出 $(bold)Leaving Soon$()（仍可调用并显示剩余天数），第 3 天正式下线并拦截新轮次（不计费）。$(li)$(#0E7490)Gemini-Platinum$()：化工降噪——$(bold)化工轮次产出 +1$()。$(li)$(#0E7490)Gemini-Xenon$()：$(bold)每轮产出 +1$() 且免维护。$(li)$(#0E7490)GPT-1145 Multiverse$()：最高单价，$(bold)每轮产出 +2$()；白名单危险轮次需越狱卡。$(li)$(#0E7490)Grok-420$()：零审查免越狱，但天气惩罚翻倍。$(br)参数：`-Dhypercluster.legacyRetireDay=3` 与 `leavingSoonDays=1`。新建站点默认拨号$(bold)不带生命周期的型号$()，避免开局就撞到已下线模型。"
     },
     {
       "type": "patchouli:text",
       "title": "本地 Fallback 兜底网关",
-      "text": "在卫星地面站的 3×3 底座里装上 1 个$(item)本地兜底网关$()后，遇上 $(#0E7490)429 限流$()、$(#0E7490)Token 余额不足$()或$(#0E7490)模型已下线$()时，任务不会硬卡死，而是自动切给网关本地完成：$(li)本地功耗 60 EU/t，耗时 $(bold)×4$()（基准 400 tick，仍叠加 Batch / 天气 / 海拔）。$(li)$(bold)零 Token 计费$()、不占并发槽。$(br)注意：若馈源上方被实体方块挡住，兜底同样不会启动。"
+      "text": "在卫星地面站的 3×3 底座里装上 1 个$(item)本地兜底网关$()后，遇上 $(#0E7490)429 限流$()、$(#0E7490)Token 余额不足$()或$(#0E7490)模型已下线$()时，任务不会硬卡死，而是自动切给网关本地完成：$(li)本地功耗 60 EU/t，$(bold)零 Token 计费$()、不占并发槽。$(li)耗时倍率$(bold)由机房决定$()：16 格内路由柜$(bold)在线部署了 Qwen 9187 Pro-Max-Ultra$() 时只降速 $(bold)×1.5$()（150 tick）；没部署或已下线则回退 $(bold)×4$()（400 tick）。仍叠加 Batch / 天气 / 海拔。$(br)网关界面会直接显示当前倍率。注意：若馈源上方被实体方块挡住，兜底同样不会启动。"
     }
   ]
 }

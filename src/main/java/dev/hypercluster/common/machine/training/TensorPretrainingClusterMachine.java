@@ -16,6 +16,9 @@ import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
 import com.gregtechceu.gtceu.api.transfer.item.CustomItemStackHandler;
 import com.gregtechceu.gtceu.client.model.machine.MachineRenderState;
 
+import com.lowdragmc.lowdraglib.gui.texture.GuiTextureGroup;
+import com.lowdragmc.lowdraglib.gui.texture.TextTexture;
+import com.lowdragmc.lowdraglib.gui.widget.ButtonWidget;
 import com.lowdragmc.lowdraglib.gui.widget.Widget;
 import com.lowdragmc.lowdraglib.gui.widget.WidgetGroup;
 import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
@@ -36,6 +39,8 @@ import dev.hypercluster.common.item.OpenWeightModuleItem;
 import dev.hypercluster.common.machine.MachineUi;
 import dev.hypercluster.common.machine.datacenter.LiquidCooledComputeRackMachine;
 import dev.hypercluster.common.machine.datacenter.LiquidDatacenterRating;
+import dev.hypercluster.common.model.AIModelDefinition;
+import dev.hypercluster.common.model.AIModels;
 
 import java.util.List;
 import java.util.Locale;
@@ -69,7 +74,11 @@ import javax.annotation.Nullable;
  * window the run survives and resumes from its last checkpoint; when no UPS covers the loss —
  * or the buffer runs dry — the unsaved progress is cleared.</li>
  * <li><b>Export.</b> A completed run mints one {@code hypercluster:open_weight_module} carrying
- * the domain, precision and training version.</li>
+ * the <b>target model identity</b>, the domain, the precision and the training version.</li>
+ * <li><b>Target model</b> (0.6.2). The machine's own selector picks which of the five open-weight
+ * families the run trains: each declares its own VRAM and CWU/t gate, validated live on every
+ * start attempt, and the exported module carries that identity in {@code hc_model_id} so the MoE
+ * router can deploy exactly the family that was trained.</li>
  * </ul>
  *
  * <p>
@@ -129,13 +138,21 @@ public class TensorPretrainingClusterMachine extends WorkableElectricMultiblockM
     @Persisted
     @DescSynced
     protected boolean onBackupPower = false;
+    /**
+     * 0.6.2 · the open-weight family this cluster trains. Persisted so a reload resumes the same
+     * target, and synced so the selector label renders without a round trip.
+     */
+    @Persisted
+    @DescSynced
+    protected int targetModelIndex = 0;
 
     @DescSynced
     protected RunState state = RunState.IDLE;
     @DescSynced
     protected double progressPercent = 0;
 
-    protected int jobVram = JOB_VRAM;
+    /** Explicit VRAM-gate override (TB); 0 means "follow the selected target's own gate". */
+    protected int jobVram = 0;
     @javax.annotation.Nullable
     protected IMaintenanceMachine maintenance;
     @javax.annotation.Nullable
@@ -197,12 +214,59 @@ public class TensorPretrainingClusterMachine extends WorkableElectricMultiblockM
         return onBackupPower;
     }
 
+    /**
+     * The VRAM (TB) a run of the currently selected target needs. 0.6.2 reads this off the model
+     * definition instead of a flat constant, so picking a heavier family really raises the gate.
+     */
     public int getJobVram() {
-        return jobVram;
+        return jobVram > 0 ? jobVram : targetModel().trainingVramTerabytes();
     }
 
+    /**
+     * Overrides the VRAM gate for probe/tests. Kept so the OOM contract can be exercised without
+     * a model whose declared gate happens to match the arena's pool.
+     */
     public void setJobVram(int vram) {
         this.jobVram = Math.max(0, vram);
+    }
+
+    /** The open-weight family this cluster trains (never an API model). */
+    public AIModelDefinition targetModel() {
+        AIModelDefinition model = AIModels.openModels().get(
+                Math.floorMod(targetModelIndex, AIModels.openModels().size()));
+        return model == null ? AIModels.QWEN_9187_PRO_MAX_ULTRA : model;
+    }
+
+    /** The catalog id of the selected target, e.g. {@code deepseek_v6767_pro}. */
+    public String getTargetModelId() {
+        return targetModel().id().getPath();
+    }
+
+    public int getTargetModelIndex() {
+        return Math.floorMod(targetModelIndex, AIModels.openModels().size());
+    }
+
+    /** Selects a target family; the next start attempt re-validates its own gates. */
+    public void selectTargetModel(int index) {
+        int next = Math.floorMod(index, AIModels.openModels().size());
+        if (this.targetModelIndex != next) {
+            this.targetModelIndex = next;
+            // A different target is a different job: never resume the previous family's
+            // checkpoint into a freshly selected one.
+            this.checkpointPercent = 0;
+            this.progressTicks = 0;
+            this.progressPercent = 0;
+        }
+    }
+
+    /** Cycles the target family (UI button). */
+    public void cycleTargetModel() {
+        selectTargetModel(getTargetModelIndex() + 1);
+    }
+
+    /** CWU/t the selected target pulls from the optical feed every tick. */
+    public int requiredCwu() {
+        return targetModel().trainingCwuPerTick();
     }
 
     public CustomItemStackHandler getDatasetSlot() {
@@ -310,7 +374,8 @@ public class TensorPretrainingClusterMachine extends WorkableElectricMultiblockM
             return;
         }
         // VRAM gate: an oversized job refuses to start (OOM) instead of degrading silently.
-        if (!LiquidDatacenterRating.fitsVram(hostVramCapacity(), jobVram)) {
+        // 0.6.2: the requirement comes from the selected target family, not a flat constant.
+        if (!LiquidDatacenterRating.fitsVram(hostVramCapacity(), getJobVram())) {
             state = RunState.OOM;
             return;
         }
@@ -421,9 +486,11 @@ public class TensorPretrainingClusterMachine extends WorkableElectricMultiblockM
     /** A completed run exports one open-weight module and clears its own checkpoint. */
     protected void finishRun() {
         this.completedRuns++;
+        // 0.6.2: the module names the target family it was trained as, so the router can deploy
+        // exactly that model rather than guessing from the domain tag alone.
         ItemStack module = OpenWeightModuleItem.create(
-                new ItemStack(HyperClusterItems.OPEN_WEIGHT_MODULE.get()), domain,
-                TrainingRating.PRECISION, TrainingRating.moduleVersion(100), completedRuns);
+                new ItemStack(HyperClusterItems.OPEN_WEIGHT_MODULE.get()), getTargetModelId(),
+                domain, TrainingRating.PRECISION, TrainingRating.moduleVersion(100), completedRuns);
         insertOrDrop(module);
         this.running = false;
         this.progressTicks = 0;
@@ -500,11 +567,17 @@ public class TensorPretrainingClusterMachine extends WorkableElectricMultiblockM
         return found;
     }
 
+    /**
+     * The optical feed must be able to serve the selected target's CWU/t demand. 0.6.2 replaced
+     * the flat {@code TRAINING_CWUT} probe with the per-model demand, so a heavy target really
+     * fails to start on a thin feed.
+     */
     protected boolean hasComputation() {
         if (computationProvider == null) {
             return false;
         }
-        return computationProvider.requestCWUt(TrainingRating.TRAINING_CWUT, true) >= TrainingRating.TRAINING_CWUT;
+        int demand = requiredCwu();
+        return computationProvider.requestCWUt(demand, true) >= demand;
     }
 
     protected boolean hasCoolant() {
@@ -617,14 +690,37 @@ public class TensorPretrainingClusterMachine extends WorkableElectricMultiblockM
     public Widget createUIWidget() {
         String uiKey = "hypercluster.machine.tensor_pretraining_cluster.";
         WidgetGroup controls = MachineUi.multiblockControls(31);
+        // Three fixed-width bands, each label directly above its own control: dataset (slot),
+        // target family (selector button) and the module output hint. Every pair keeps at least
+        // the MachineUiTests 3 px clearance.
         controls.addWidgets(
-                MachineUi.label(11, 0, 96, uiKey + "label.dataset"),
-                MachineUi.label(123, 0, 58, uiKey + "label.module"));
+                MachineUi.label(4, 0, 56, uiKey + "label.dataset"),
+                MachineUi.label(64, 0, 64, uiKey + "label.target"),
+                MachineUi.label(132, 0, 48, uiKey + "label.module"));
         SlotWidget dataset = new SlotWidget(datasetSlot, 0, 17, 13, true, false);
         dataset.setBackground(GuiTextures.SLOT);
         dataset.setHoverTooltips(Component.translatable(uiKey + "dataset_slot"));
         controls.addWidget(dataset);
+        controls.addWidget(targetSelector(64, 13, 64, uiKey));
         return MachineUi.multiblockPage(this, controls);
+    }
+
+    /** 0.6.2 · the target-family selector: cycles the five open-weight models. */
+    private ButtonWidget targetSelector(int x, int y, int width, String uiKey) {
+        TextTexture text = new TextTexture(() -> targetModel().displayKey())
+                .setWidth(width - 6)
+                .setType(TextTexture.TextType.ROLL_ALWAYS)
+                .setDropShadow(false)
+                .setColor(0xff1d252b);
+        ButtonWidget button = new ButtonWidget(x, y, width, 18,
+                new GuiTextureGroup(GuiTextures.BUTTON, text), click -> {
+                    if (click.isRemote) {
+                        return;
+                    }
+                    cycleTargetModel();
+                });
+        button.setHoverTooltips(Component.translatable(uiKey + "target.tooltip"));
+        return button;
     }
 
     @Override
@@ -644,9 +740,15 @@ public class TensorPretrainingClusterMachine extends WorkableElectricMultiblockM
                             Component.literal(String.valueOf(getCheckpointPercent()))
                                     .withStyle(ChatFormatting.YELLOW))
                             .withStyle(ChatFormatting.GRAY));
+                    lines.add(Component.translatable(uiKey + "target",
+                            Component.translatable(targetModel().displayKey()).withStyle(ChatFormatting.AQUA))
+                            .withStyle(ChatFormatting.GRAY));
                     lines.add(Component.translatable(uiKey + "vram",
                             Component.literal(String.valueOf(hostVramCapacity())).withStyle(ChatFormatting.AQUA),
-                            Component.literal(String.valueOf(jobVram)).withStyle(ChatFormatting.AQUA))
+                            Component.literal(String.valueOf(getJobVram())).withStyle(ChatFormatting.AQUA))
+                            .withStyle(ChatFormatting.GRAY));
+                    lines.add(Component.translatable(uiKey + "compute",
+                            Component.literal(String.valueOf(requiredCwu())).withStyle(ChatFormatting.AQUA))
                             .withStyle(ChatFormatting.GRAY));
                     lines.add(Component.translatable(uiKey + "ups",
                             Component.translatable(uiKey + (hasUpsCover() ? "ups.covered" : "ups.bare"))

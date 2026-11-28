@@ -61,6 +61,8 @@ public final class AIModels {
             .loraSlots(4, 4, 4)
             // With a model bound the gateway degrades 1.5x instead of the modelless 4x.
             .fallbackSlowdown(1.5)
+            // The 0.6.1 baseline gate: two full LuV memory racks of 96 TB, 32 CWU/t feed.
+            .trainingGate(96, 32)
             .build();
 
     /** DeepSeek-V6767 Flash: sparse MoE built for cheap steady throughput. */
@@ -71,6 +73,8 @@ public final class AIModels {
             .domains("mining", "chemical")
             .traits(Trait.MOE_SPARSE)
             .sparseCwuPercent(25)
+            // Sparser but wider: 64 TB of weights fit in one LuV rack's worth, 24 CWU/t feed.
+            .trainingGate(64, 24)
             .build();
 
     /** DeepSeek-V6767 Pro: sparse MoE plus the DeepThink charge switch. */
@@ -82,6 +86,8 @@ public final class AIModels {
             .traits(Trait.MOE_SPARSE, Trait.DEEP_THINK)
             .sparseCwuPercent(25)
             .deepThinkVram(16)
+            // The heaviest open target: 128 TB (two full LuV racks) and a 48 CWU/t feed.
+            .trainingGate(128, 48)
             .build();
 
     /** GLM-2333 Flash: machine-room inspection and brownout auto-protective sleep. */
@@ -91,6 +97,8 @@ public final class AIModels {
             .cwu(4)
             .domains("mining", "chemical")
             .traits(Trait.ROOM_INSPECTION)
+            // Lightweight inspection model: it trains inside a single 32 TB rack.
+            .trainingGate(32, 16)
             .build();
 
     /** GLM-2333 Max: top-tier agent tool calling over associated multiblocks. */
@@ -100,6 +108,8 @@ public final class AIModels {
             .cwu(8)
             .domains("mining", "chemical")
             .traits(Trait.AGENT_TOOL_CALLS)
+            // Agent-grade target: 80 TB (a LuV rack plus an IV rack) and a 32 CWU/t feed.
+            .trainingGate(80, 32)
             .build();
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -162,6 +172,9 @@ public final class AIModels {
             .add(GPT_1145_MULTIVERSE)
             .add(GROK_420);
 
+    private static final java.util.List<AIModelDefinition> OPEN_MODELS = CATALOG.ofCamp(Camp.LOCAL);
+    private static final java.util.List<AIModelDefinition> API_MODELS = CATALOG.ofCamp(Camp.API);
+
     private AIModels() {}
 
     /** The whole catalog, in declaration order. */
@@ -171,12 +184,20 @@ public final class AIModels {
 
     /** Every open-weight model, the only ones a pretraining run can mint. */
     public static java.util.List<AIModelDefinition> localModels() {
-        return CATALOG.ofCamp(Camp.LOCAL);
+        return OPEN_MODELS;
     }
 
     /** Every closed-source model the ground station can dial. */
     public static java.util.List<AIModelDefinition> apiModels() {
-        return CATALOG.ofCamp(Camp.API);
+        return API_MODELS;
+    }
+
+    /**
+     * The open-camp view, cached: the pretraining cluster's target selector and the MoE router's
+     * deployment lookup read it on every tick, so it must not rebuild a stream per call.
+     */
+    public static java.util.List<AIModelDefinition> openModels() {
+        return OPEN_MODELS;
     }
 
     /** The lifecycle demonstrator (the only API model carrying a retirement countdown). */
@@ -207,7 +228,9 @@ public final class AIModels {
      * (1.0 clear / 1.5 rain / 2.0 thunder). A weather-fragile model doubles the penalty.
      */
     public static double weatherAttenuation(AIModelDefinition model, double base) {
-        if (model != null && model.has(Trait.WEATHER_FRAGILE)) {
+        // Only a real attenuation is doubled: clear weather (x1.0) must never become a penalty
+        // just because the model is weather-fragile.
+        if (model != null && model.has(Trait.WEATHER_FRAGILE) && base > 1.0) {
             return base * 2.0;
         }
         return base;

@@ -25,8 +25,8 @@
     },
     {
       "type": "patchouli:text",
-      "title": "The 96 TB Training Gate",
-      "text": "The pretraining OOM gate rises to $(bold)96 TB$() in 0.6.1. The arithmetic is easy against the memory racks:$(li)one fully loaded LuV rack = 64 TB, $(bold)not enough$();$(li)$(bold)two fully loaded LuV racks = 128 TB, comfortably over$();$(li)or one LuV + two IV = 96 TB, exactly on the line.$(br2)If the pool is short the run $(bold)refuses to start$() with an explicit OOM instead of collapsing halfway."
+      "title": "Training gates follow the target model",
+      "text": "$(bold)Since 0.6.2 the pretraining cluster's OOM gate is validated against the target model selected on its screen$(), no longer a flat 96 TB:$(li)$(bold)Qwen 9187 Pro-Max-Ultra$(): 96 TB / 32 CWU/t (one LuV + two IV racks lands exactly on it; two full LuV racks clear it)$(li)$(bold)DeepSeek-V6767 Flash$(): 64 TB / 24 CWU/t (one full LuV rack)$(li)$(bold)DeepSeek-V6767 Pro$(): 128 TB / 48 CWU/t (two full LuV racks)$(li)$(bold)GLM-2333 Flash$(): 32 TB / 16 CWU/t (two IV racks)$(li)$(bold)GLM-2333 Max$(): 80 TB / 32 CWU/t (one LuV + one IV rack)$(br2)The bigger the family, the more TB and CWU/t it needs; short on either and training $(bold)refuses to start$() with an explicit OOM / compute reason instead of collapsing mid-run.$(br2)$(bold)Switching target clears the checkpoint$(): one family's weights cannot resume another's run."
     },
     {
       "type": "patchouli:text",

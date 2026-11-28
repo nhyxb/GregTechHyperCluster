@@ -26,6 +26,8 @@ import net.minecraft.world.item.ItemStack;
 
 import dev.hypercluster.common.item.HyperClusterItems;
 import dev.hypercluster.common.machine.MachineUi;
+import dev.hypercluster.common.model.AIModelDefinition;
+import dev.hypercluster.common.model.ModelRuntime;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -69,6 +71,21 @@ public class IvInferenceHatchMachine extends OpticalComputationHatchMachine impl
 
     @Persisted
     protected final CustomItemStackHandler chipSlot;
+
+    /**
+     * 0.6.2 · the domain a router's LoRA extension currently boosts on this hatch ({@code ""} for
+     * none) and how many LoRA cards stand behind it.
+     */
+    @com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced
+    protected String loraDomain = "";
+    @com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced
+    protected int loraCards = 0;
+    /**
+     * 0.6.2 · true while a DeepSeek-Pro router with DeepThink charged forces this hatch's
+     * probability by-products to 100%.
+     */
+    @com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced
+    protected boolean byproductsForced = false;
 
     @javax.annotation.Nullable
     protected TickableSubscription tickSubs;
@@ -130,6 +147,68 @@ public class IvInferenceHatchMachine extends OpticalComputationHatchMachine impl
         return chipSlot;
     }
 
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // 0.6.2 · projections cast by a linked MoE router //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * Accepts a LoRA specialisation projection. Returns true when this hatch really takes it: an
+     * inference chip must be present, because a LoRA without a base model to specialise is not a
+     * boost. The domain is derived from which domains the router's model serves.
+     */
+    public boolean acceptLoraProjection(AIModelDefinition model, int cards) {
+        if (cards <= 0 || model == null || !ModelRuntime.loraBoostsDomain(model, domainOfChip())) {
+            this.loraDomain = "";
+            this.loraCards = 0;
+            return false;
+        }
+        this.loraDomain = domainOfChip();
+        this.loraCards = cards;
+        return true;
+    }
+
+    /** Accepts a by-product force projection (DeepSeek-Pro DeepThink). Always taken live. */
+    public boolean acceptByproductForce(boolean force) {
+        this.byproductsForced = force;
+        return force;
+    }
+
+    /** The domain the inserted inference chip serves ({@code ""} when there is no chip). */
+    public String domainOfChip() {
+        ItemStack chip = chipSlot.getStackInSlot(0);
+        if (chip.is(HyperClusterItems.MINING_EDGE_CHIP.get()) ||
+                chip.is(HyperClusterItems.ALIGNED_MINING_EDGE_CHIP.get())) {
+            return "mining";
+        }
+        if (chip.is(HyperClusterItems.CHEMICAL_EDGE_CHIP.get()) ||
+                chip.is(HyperClusterItems.ALIGNED_CHEMICAL_EDGE_CHIP.get())) {
+            return "chemical";
+        }
+        return "";
+    }
+
+    /** The domain a router's LoRA extension is boosting here, or {@code ""}. */
+    public String getLoraDomain() {
+        return loraDomain;
+    }
+
+    public int getLoraCards() {
+        return loraCards;
+    }
+
+    public boolean isByproductsForced() {
+        return byproductsForced;
+    }
+
+    /**
+     * 0.6.2 · the LoRA specialisation bonus this hatch's host gets on its by-product chances. A
+     * boosted domain turns the ordinary 1/3 cobalt chance into 2/3 (the 0.2.1 LoRA contract),
+     * applied through {@link #modifyRecipe} as a real recipe rewrite.
+     */
+    public boolean loraBoostsRecipeDomain(java.util.function.Predicate<String> servesDomain) {
+        return !loraDomain.isEmpty() && servesDomain.test(loraDomain);
+    }
+
     @Override
     public void onMachineRemoved() {
         clearInventory(chipSlot);
@@ -170,6 +249,13 @@ public class IvInferenceHatchMachine extends OpticalComputationHatchMachine impl
     @Override
     public GTRecipe modifyRecipe(GTRecipe recipe) {
         recipe = super.modifyRecipe(recipe);
+        if (recipe != null) {
+            // 0.6.2 · a linked router's projections are applied to the recipe the host really runs,
+            // for EVERY recipe — not only the whitelisted boost set. This is where DeepSeek-Pro's
+            // DeepThink really forces probability by-products to 100%.
+            recipe = applyByproductForce(recipe);
+            recipe = applyLoraSpecialisation(recipe);
+        }
         if (recipe == null || !isFormed() || !recipe.data.contains(INFERENCE_BOOST_TAG)) {
             return recipe;
         }
@@ -187,6 +273,126 @@ public class IvInferenceHatchMachine extends OpticalComputationHatchMachine impl
         long boostedEUt = Math.max(1,
                 Math.round(recipeEUt(recipe) * (1.0 - chipDiscount(chip))));
         return boostRecipe(recipe, demand, boostedEUt);
+    }
+
+    /**
+     * 0.6.2 · force every probability output of {@code recipe} to certainty while a linked
+     * DeepSeek-Pro router has DeepThink charged. A by-product forced this way keeps its share of
+     * the total: the chance is raised to the max, which is exactly "概率副产拉满 100%".
+     */
+    public GTRecipe applyByproductForce(GTRecipe recipe) {
+        if (!byproductsForced || recipe == null) {
+            return recipe;
+        }
+        return forceByproducts(recipe);
+    }
+
+    /**
+     * 0.6.2 · the Qwen LoRA projection: while a linked router holds LoRA cards for the domain this
+     * hatch's chip serves, the host's by-product chances get the 0.2.1 LoRA treatment — a
+     * {@code 1/3} rare by-product becomes {@code 2/3}. The boost is capped at certainty and never
+     * touches an output that is already guaranteed.
+     */
+    public GTRecipe applyLoraSpecialisation(GTRecipe recipe) {
+        if (loraCards <= 0 || loraDomain.isEmpty() || recipe == null) {
+            return recipe;
+        }
+        return boostByproducts(recipe, loraCards);
+    }
+
+    /**
+     * Pure rewrite: raise every chanced regular output's probability by {@code 1/3} per LoRA card,
+     * clamped at certainty. Four cards take the classic {@code 1/3} cobalt by-product to 100%.
+     */
+    public static GTRecipe boostByproducts(GTRecipe recipe, int loraCards) {
+        if (recipe == null || loraCards <= 0) {
+            return recipe;
+        }
+        int boost = Math.max(1, loraCards);
+        boolean any = false;
+        for (List<Content> contents : recipe.outputs.values()) {
+            for (Content content : contents) {
+                if (content.chance < content.maxChance) {
+                    any = true;
+                    break;
+                }
+            }
+            if (any) {
+                break;
+            }
+        }
+        if (!any) {
+            return recipe;
+        }
+        GTRecipe copy = recipe.copy();
+        copy.outputs.clear();
+        for (var entry : recipe.outputs.entrySet()) {
+            List<Content> boosted = new ArrayList<>(entry.getValue().size());
+            for (Content content : entry.getValue()) {
+                if (content.chance >= content.maxChance) {
+                    boosted.add(content);
+                    continue;
+                }
+                // Each card adds an equal share of the total chance space.
+                int step = content.maxChance / 3;
+                int raised = Math.min(content.maxChance, content.chance + step * boost);
+                boosted.add(new Content(content.content,
+                        Math.max(content.chance, raised), content.maxChance, content.tierChanceBoost));
+            }
+            copy.outputs.put(entry.getKey(), boosted);
+        }
+        return copy;
+    }
+
+    /**
+     * Pure rewrite: every chanced regular output becomes a guaranteed one. Content is immutable,
+     * so the outputs map is rebuilt rather than mutated in place; the recipe copy keeps the
+     * original registry entry untouched.
+     */
+    public static GTRecipe forceByproducts(GTRecipe recipe) {
+        boolean any = false;
+        for (List<Content> contents : recipe.outputs.values()) {
+            for (Content content : contents) {
+                if (content.chance < content.maxChance) {
+                    any = true;
+                    break;
+                }
+            }
+            if (any) {
+                break;
+            }
+        }
+        if (!any) {
+            return recipe;
+        }
+        GTRecipe copy = recipe.copy();
+        copy.outputs.clear();
+        for (var entry : recipe.outputs.entrySet()) {
+            List<Content> forced = new ArrayList<>(entry.getValue().size());
+            for (Content content : entry.getValue()) {
+                forced.add(content.chance < content.maxChance ?
+                        new Content(content.content, content.maxChance, content.maxChance,
+                                content.tierChanceBoost) :
+                        content);
+            }
+            copy.outputs.put(entry.getKey(), forced);
+        }
+        return copy;
+    }
+
+    /** True when this hatch's host recipe has at least one chanced output worth forcing. */
+    public static boolean hasChancedOutputs(GTRecipe recipe) {
+        if (recipe == null) {
+            return false;
+        }
+        for (List<Content> contents : recipe.outputs.values()) {
+            for (Content content : contents) {
+                if (content.chance < content.maxChance) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /** The recipe's EU/t from its EU tick input (0 if it has none). */
@@ -261,7 +467,7 @@ public class IvInferenceHatchMachine extends OpticalComputationHatchMachine impl
     }
 
     @javax.annotation.Nullable
-    protected com.gregtechceu.gtceu.api.machine.trait.RecipeLogic hostLogic() {
+    public com.gregtechceu.gtceu.api.machine.trait.RecipeLogic hostLogic() {
         for (var controller : getControllers()) {
             if (controller instanceof IWorkableMultiController workable && workable.getRecipeLogic() != null) {
                 return workable.getRecipeLogic();
