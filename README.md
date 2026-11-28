@@ -45,6 +45,25 @@ source env.fish
 
 开发客户端、专服和数据生成分别使用 `run/client/`、`run/server/`、`run/data/`，日志写入各自的 `logs/`。运行 `./gradlew runServer` 首次启动时，Minecraft 会生成 `run/server/eula.txt`。确认同意其中链接的 EULA 后，在该文件设 `eula=true` 并再次启动。
 
+## 持续集成
+
+`.github/workflows/ci.yml` 里有两个 job，第一个是合并门禁。
+
+| 触发时机 | job | 做什么 |
+| --- | --- | --- |
+| PR / `main` 推送 | **`validate`**（必需检查） | Ubuntu + Java 17，用仓库自带的 `./gradlew`：`runData` → 生成资源漂移检查 → `spotlessCheck` → `build` → 全新平坦世界的 `runGametest`。通过后上传 JAR 与 SHA-256；失败时上传 Gradle 控制台日志、游戏日志与崩溃报告。 |
+| 手动触发（`workflow_dispatch`） | `client-smoke` | Xvfb `:99` 启动客户端，等到主菜单、截图、只对非 narrator 内容错误判失败，最后清理进程。 |
+
+三条约定值得记住：
+
+- **先生成，再单独打包。** `runData` 与 `build` 是两次独立调用；生成后比对 `src/generated/resources` 的已跟踪改动**和新文件**，有漂移就失败。这样「同一次调用把旧生成资源打进包里」不可能再发生。
+- **每轮全新平坦世界。** CI 会自己写 `run/gametest/server.properties`（`level-type=minecraft\:flat`）和 `eula.txt`。`run/` 既被 gitignore 也不进缓存，所以每轮都是空机房。除了退出码，还要在日志里确认确实跑了测试批次、`GAME TESTS COMPLETE`、以及 `All N required tests passed`；N 从日志读，新增用例不用改 workflow。
+- **Gradle 缓存，运行世界重建。** 依赖、Wrapper 与构建转换结果走 `gradle/actions/setup-gradle` 缓存；同一 PR 有新提交时取消上一轮验证，`main` 的推送不取消（那一轮要留 JAR）。
+
+> 日志时间戳随 locale 变（`[28Nov2026 …]` / `[2811月2026 …]`），CI 里的匹配一律只锚定消息文本，不用时间戳。
+
+> `validate` 要成为**必需**检查，需在仓库分支保护里勾选（`main` 目前未设保护）。首次 CI 运行后该检查名才会出现在可选列表里。
+
 ## 0.1.0 内容与支持范围
 
 - **物品**：`mining_telemetry_log` 矿处遥测日志、`blank_carrier` 空白载体、`mining_edge_chip` 矿处边缘芯片（均可堆叠 64，带中英工具提示）。
