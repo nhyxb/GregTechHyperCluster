@@ -441,6 +441,10 @@ public class TopologyTests {
                 router.setShowScreen(false);
                 helper.assertTrue(!router.isScreenLit(),
                         "clearing the switch with no model must go dark again");
+
+                router.setShowScreen(true);
+                router.onStructureInvalid();
+                helper.assertTrue(!router.isScreenLit(), "invalidating the structure must extinguish the display");
                 helper.succeed();
             });
         });
@@ -481,8 +485,9 @@ public class TopologyTests {
 
         helper.runAtTickTime(30, () -> {
             ensureFormed(router);
+            parts.energyHatch().energyContainer.addEnergy(parts.energyHatch().energyContainer.getEnergyCapacity());
             router.setShowScreen(true);
-            // No energy was ever primed: an empty hatch means no power.
+            helper.assertTrue(router.isScreenLit(), "a charged hatch must light the enabled display");
             parts.energyHatch().energyContainer.removeEnergy(
                     parts.energyHatch().energyContainer.getEnergyStored());
             helper.runAtTickTime(60, () -> {

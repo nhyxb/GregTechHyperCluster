@@ -22,10 +22,12 @@ import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.items.IItemHandlerModifiable;
 import net.minecraftforge.items.wrapper.CombinedInvWrapper;
+import net.minecraftforge.items.wrapper.RangedWrapper;
 
 import dev.hypercluster.common.data.HyperClusterSounds;
 import dev.hypercluster.common.item.HyperClusterItems;
@@ -106,6 +108,7 @@ public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine
     protected final CustomItemStackHandler modelSlot;
     @Persisted
     protected final CustomItemStackHandler loraSlot;
+    private final IItemHandlerModifiable legacyHardware;
 
     @javax.annotation.Nullable
     protected IMaintenanceMachine maintenance;
@@ -136,6 +139,8 @@ public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine
     @Persisted
     @DescSynced
     protected boolean showScreen = false;
+    @DescSynced
+    protected boolean screenLit;
 
     /** 0.6.3: stamp of the last terminal_alert cue, throttled by {@link MachineAlerts}. */
     protected long lastAlertTick = MachineAlerts.NEVER;
@@ -147,9 +152,10 @@ public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine
         this.loraSlot = DatacenterHardwareHatchMachine.componentSlots(LORA_SLOTS);
         this.loraSlot.setFilter(stack -> stack.is(HyperClusterItems.MINING_LORA_CARD.get()) ||
                 stack.is(HyperClusterItems.CHEMICAL_LORA_CARD.get()));
+        this.legacyHardware = new CombinedInvWrapper(modelSlot, loraSlot);
         // 0.6.3: every hardware movement through the deployment or LoRA slots clicks.
-        this.modelSlot.setOnContentsChanged(this::playRackClick);
-        this.loraSlot.setOnContentsChanged(this::playRackClick);
+        this.modelSlot.setOnContentsChanged(this::onHardwareChanged);
+        this.loraSlot.setOnContentsChanged(this::onHardwareChanged);
     }
 
     @Override
@@ -190,12 +196,12 @@ public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine
         return lastCwu;
     }
 
-    public CustomItemStackHandler getModelSlot() {
-        return modelSlot;
+    public IItemHandlerModifiable getModelSlot() {
+        return new RangedWrapper(hardwareInventory(), 0, 1);
     }
 
-    public CustomItemStackHandler getLoraSlot() {
-        return loraSlot;
+    public IItemHandlerModifiable getLoraSlot() {
+        return new RangedWrapper(hardwareInventory(), 1, LORA_SLOTS + 1);
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -210,11 +216,8 @@ public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine
     }
 
     public void setShowScreen(boolean value) {
-        if (this.showScreen != value) {
-            this.showScreen = value;
-            // The renderer reads the synced flag every frame; no cache to invalidate here.
-            updateRenderState();
-        }
+        this.showScreen = value;
+        updateScreenState();
     }
 
     /**
@@ -226,19 +229,15 @@ public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine
         return model != null && model.id().getPath().startsWith("deepseek_v6767");
     }
 
-    /**
-     * The screen lights when the structure is formed, the cabinet has power, and either a
-     * DeepSeek-V6767 model is deployed or the operator turned the display on by hand. Losing
-     * power or breaking the structure turns it off again.
-     */
     public boolean isScreenLit() {
-        if (!isFormed() || isInValid()) {
-            return false;
+        return screenLit;
+    }
+
+    private void updateScreenState() {
+        // GTCEu assembles the controller's energy capabilities on the server.
+        if (getLevel() instanceof ServerLevel) {
+            screenLit = isFormed() && !isInValid() && (showScreen || hasDeepSeekDeployed()) && hasPower();
         }
-        if (!hasPower()) {
-            return false;
-        }
-        return hasDeepSeekDeployed() || showScreen;
     }
 
     /** True while an energy hatch can actually feed the cabinet. */
@@ -259,9 +258,10 @@ public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine
 
     /** LoRA cards currently inserted. */
     public int getLoraCount() {
+        var slots = hardwareInventory();
         int count = 0;
-        for (int i = 0; i < loraSlot.getSlots(); i++) {
-            if (!loraSlot.getStackInSlot(i).isEmpty()) {
+        for (int i = 1; i <= LORA_SLOTS; i++) {
+            if (!DatacenterHardwareHatchMachine.installedStack(slots, i).isEmpty()) {
                 count++;
             }
         }
@@ -286,7 +286,7 @@ public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine
     }
 
     public AIModelDefinition modelInSlot() {
-        ItemStack stack = modelSlot.getStackInSlot(0);
+        ItemStack stack = DatacenterHardwareHatchMachine.installedStack(hardwareInventory(), 0);
         if (stack.isEmpty()) {
             return null;
         }
@@ -332,13 +332,14 @@ public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine
         DatacenterFloorNetwork.detached(this);
         super.onStructureInvalid();
         this.maintenance = null;
+        updateScreenState();
         unload("unformed");
     }
 
     @Override
     public void onLoad() {
         super.onLoad();
-        if (getLevel() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+        if (getLevel() instanceof ServerLevel serverLevel) {
             serverLevel.getServer().execute(this::updateTickSubscription);
         }
     }
@@ -366,6 +367,7 @@ public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine
         if (!isFormed() || getLevel() == null || getLevel().isClientSide()) {
             return;
         }
+        updateScreenState();
         if (!recipeLogic.isWorkingEnabled()) {
             setState(State.PAUSED);
             return;
@@ -456,7 +458,8 @@ public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine
     }
 
     /** 0.6.3 · clicking cue when hardware moves through the deployment or LoRA slots. */
-    protected void playRackClick() {
+    @Override
+    public void onHardwareChanged() {
         if (getLevel() == null || getLevel().isClientSide()) {
             return;
         }
@@ -484,8 +487,8 @@ public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     @Override
-    public IItemHandlerModifiable hardwareInventory() {
-        return new CombinedInvWrapper(modelSlot, loraSlot);
+    public IItemHandlerModifiable legacyHardwareInventory() {
+        return legacyHardware;
     }
 
     @Override

@@ -368,6 +368,9 @@ public class ApiSatelliteStationMachine extends WorkableElectricMultiblockMachin
 
     @Override
     public void onUnload() {
+        if (isRemote()) {
+            MachineLoopSounds.stop(this);
+        }
         super.onUnload();
         // The chunk unloads: release the runtime session but keep the held order — the ledger
         // persists it and the round resumes on reload.
@@ -900,8 +903,7 @@ public class ApiSatelliteStationMachine extends WorkableElectricMultiblockMachin
         // 0.6.3: the work loop. These machines run DUMMY_RECIPES, so RecipeLogic never reports
         // them as working and GTCEu's own sound hook stays silent; drive the same
         // AutoReleasedSound mechanism explicitly instead.
-        MachineLoopSounds.tick(this, MachineLoopSounds.renderStateWorking(this),
-                () -> HyperClusterSounds.SATELLITE_UPLINK);
+        MachineLoopSounds.tick(this, HyperClusterSounds.SATELLITE_UPLINK);
         if (getRenderState().getValue(GTMachineModelProperties.RECIPE_LOGIC_STATUS) != RecipeLogic.Status.WORKING) {
             return;
         }

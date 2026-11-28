@@ -21,12 +21,8 @@ import java.util.function.BooleanSupplier;
  * same auto-release on stop.
  *
  * <p>
- * <b>Stopping and unloading are the framework's job.</b> {@link AutoReleasedSound} polls its
- * predicate every client tick and releases itself the moment the predicate turns false, so power
- * loss, a broken structure, a chunk unload or the player leaving range all end the loop with no
- * bookkeeping here. The predicate also mirrors GTCEu's own guards ({@code !isInValid()}, level
- * loaded, the same machine still at that position) so a stale instance can never outlive its
- * block entity.
+ * {@link AutoReleasedSound} polls whether the machine can still play every client tick. An
+ * explicit release also stops the loop immediately when the block entity unloads.
  *
  * <p>
  * <b>Muting is safe.</b> Nothing here touches the audio device directly; the instance obeys the
@@ -46,17 +42,9 @@ public final class MachineLoopSound {
     }
 
     /**
-     * Advances the loop: starts it when {@code shouldLoop} is true, stops it otherwise. Safe to
-     * call every client tick.
-     *
-     * @param shouldLoop machine is working right now
-     * @param alive      re-checked by the sound manager; false releases the instance
+     * Starts the loop if needed. The sound manager rechecks the predicate during playback.
      */
-    public void update(boolean shouldLoop, BooleanSupplier alive) {
-        if (!shouldLoop) {
-            release();
-            return;
-        }
+    public void update(BooleanSupplier alive) {
         // Already looping this entry and still audible: nothing to do.
         if (current != null && current.soundEntry == entry && !current.isStopped()) {
             return;

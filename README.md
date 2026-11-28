@@ -39,7 +39,7 @@ source env.fish
 ./gradlew runGametest
 ```
 
-资源生成输出在 `src/generated/resources/`，构建产物在 `build/libs/`。首次构建会下载 Gradle 和开发依赖。在启用命令的测试世界里可用 `/give @s hypercluster:mining_telemetry_log` 验证物品注册和模型。`runGametest` 以 headless 方式跑全部回归（Forge GameTestServer，目前 **91** 个用例：物品/配方、P02 结算探针、P03/P04 闭环与边界、P05/P06 生存配方存在性、0.2 EV 数据工坊全链、0.2.1 微调与红队对齐链、0.3 IV 智算机房全链、0.4 IV 闭源云全链、0.5 视觉与结构、0.6 系列 LuV 智算/拓扑/模型注册表/机房总线、0.6.3 音效注册与 MoE 发光大屏）。
+资源生成输出在 `src/generated/resources/`，构建产物在 `build/libs/`。首次构建会下载 Gradle 和开发依赖。在启用命令的测试世界里可用 `/give @s hypercluster:mining_telemetry_log` 验证物品注册和模型。`runGametest` 以 headless 方式跑全部回归（Forge GameTestServer，目前 **92** 个用例，覆盖物品/配方、P02 结算探针、P03/P04 闭环与边界、P05/P06 生存配方存在性、0.2 EV 数据工坊全链、0.2.1 微调与红队对齐链、0.3 IV 智算机房全链、0.4 IV 闭源云全链、0.5 视觉与结构、0.6 系列 LuV 智算/拓扑/模型注册表/机房总线、0.6.3 音效注册与 MoE 发光大屏）。
 
 > **`runGametest` 环境要求（0.4 起）**：`run/gametest/server.properties` 须为 `level-type=minecraft\:flat`（gametest 场地固定在 y=-60，`normal` 世界会在其上方生成天然岩层，遮挡 0.4 卫星站的馈源露天校验）；且 gametest 世界在多次运行之间持久化，重跑前建议删除 `run/gametest/world` 以清掉历史残留结构与账本状态。
 

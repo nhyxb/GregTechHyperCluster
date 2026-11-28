@@ -27,6 +27,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.items.IItemHandlerModifiable;
 import net.minecraftforge.items.wrapper.CombinedInvWrapper;
+import net.minecraftforge.items.wrapper.RangedWrapper;
 
 import dev.hypercluster.client.sound.MachineLoopSounds;
 import dev.hypercluster.common.data.HyperClusterSounds;
@@ -102,6 +103,7 @@ public class LiquidCooledComputeRackMachine extends WorkableElectricMultiblockMa
     protected final CustomItemStackHandler bladeInventory;
     @Persisted
     protected final CustomItemStackHandler snackSlot;
+    private final IItemHandlerModifiable legacyHardware;
 
     @javax.annotation.Nullable
     protected IMaintenanceMachine maintenance;
@@ -139,6 +141,7 @@ public class LiquidCooledComputeRackMachine extends WorkableElectricMultiblockMa
         this.bladeInventory.setFilter(stack -> stack.is(HyperClusterItems.LUV_LIQUID_BLADE.get()));
         this.snackSlot = DatacenterHardwareHatchMachine.componentSlots(1);
         this.snackSlot.setFilter(stack -> stack.is(HyperClusterItems.GREEN_SNACK_PACK.get()));
+        this.legacyHardware = new CombinedInvWrapper(bladeInventory, snackSlot);
     }
 
     @Override
@@ -189,6 +192,9 @@ public class LiquidCooledComputeRackMachine extends WorkableElectricMultiblockMa
 
     @Override
     public void onUnload() {
+        if (isRemote()) {
+            MachineLoopSounds.stop(this);
+        }
         DatacenterFloorNetwork.detached(this);
         super.onUnload();
         if (this.tickSubs != null) {
@@ -419,9 +425,10 @@ public class LiquidCooledComputeRackMachine extends WorkableElectricMultiblockMa
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     public int getBladeCount() {
+        var slots = hardwareInventory();
         int blades = 0;
-        for (int i = 0; i < bladeInventory.getSlots(); i++) {
-            if (!bladeInventory.getStackInSlot(i).isEmpty()) {
+        for (int i = 0; i < LiquidDatacenterRating.BLADE_SLOTS; i++) {
+            if (!DatacenterHardwareHatchMachine.installedStack(slots, i).isEmpty()) {
                 blades++;
             }
         }
@@ -429,15 +436,17 @@ public class LiquidCooledComputeRackMachine extends WorkableElectricMultiblockMa
     }
 
     public boolean isSnackPresent() {
-        return !snackSlot.getStackInSlot(0).isEmpty();
+        return !DatacenterHardwareHatchMachine.installedStack(hardwareInventory(), LiquidDatacenterRating.BLADE_SLOTS)
+                .isEmpty();
     }
 
-    public CustomItemStackHandler getBladeInventory() {
-        return bladeInventory;
+    public IItemHandlerModifiable getBladeInventory() {
+        return new RangedWrapper(hardwareInventory(), 0, LiquidDatacenterRating.BLADE_SLOTS);
     }
 
-    public CustomItemStackHandler getSnackSlot() {
-        return snackSlot;
+    public IItemHandlerModifiable getSnackSlot() {
+        return new RangedWrapper(hardwareInventory(), LiquidDatacenterRating.BLADE_SLOTS,
+                LiquidDatacenterRating.BLADE_SLOTS + 1);
     }
 
     public DerateReason getDerateReason() {
@@ -503,8 +512,8 @@ public class LiquidCooledComputeRackMachine extends WorkableElectricMultiblockMa
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     @Override
-    public IItemHandlerModifiable hardwareInventory() {
-        return new CombinedInvWrapper(bladeInventory, snackSlot);
+    public IItemHandlerModifiable legacyHardwareInventory() {
+        return legacyHardware;
     }
 
     @Override
@@ -592,8 +601,7 @@ public class LiquidCooledComputeRackMachine extends WorkableElectricMultiblockMa
         // 0.6.3: the work loop. These machines run DUMMY_RECIPES, so RecipeLogic never reports
         // them as working and GTCEu's own sound hook stays silent; drive the same
         // AutoReleasedSound mechanism explicitly instead.
-        MachineLoopSounds.tick(this, MachineLoopSounds.renderStateWorking(this),
-                () -> HyperClusterSounds.DATACENTER_LIQUID_HUM);
+        MachineLoopSounds.tick(this, HyperClusterSounds.DATACENTER_LIQUID_HUM);
         if (getRenderState().getValue(GTMachineModelProperties.RECIPE_LOGIC_STATUS) != RecipeLogic.Status.WORKING) {
             return;
         }
