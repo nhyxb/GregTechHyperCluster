@@ -4,18 +4,22 @@ import com.gregtechceu.gtceu.api.data.chemical.ChemicalHelper;
 import com.gregtechceu.gtceu.api.data.tag.TagPrefix;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.multiblock.WorkableElectricMultiblockMachine;
+import com.gregtechceu.gtceu.common.blockentity.OpticalPipeBlockEntity;
 import com.gregtechceu.gtceu.common.data.GTBlocks;
 import com.gregtechceu.gtceu.common.data.GTMachines;
 import com.gregtechceu.gtceu.common.data.GTMaterials;
+import com.gregtechceu.gtceu.common.data.machines.GTResearchMachines;
 import com.gregtechceu.gtceu.common.machine.multiblock.part.EnergyHatchPartMachine;
 import com.gregtechceu.gtceu.common.machine.multiblock.part.MaintenanceHatchPartMachine;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 
@@ -24,6 +28,8 @@ import dev.hypercluster.common.data.HyperClusterBlocks;
 import dev.hypercluster.common.data.HyperClusterMachines;
 import dev.hypercluster.common.item.HyperClusterItems;
 import dev.hypercluster.common.item.OpenWeightModuleItem;
+import dev.hypercluster.common.machine.datacenter.DatacenterFloorNetwork;
+import dev.hypercluster.common.machine.datacenter.DatacenterHardwareHatchMachine;
 import dev.hypercluster.common.machine.datacenter.OpticalFabricSwitchMachine;
 import dev.hypercluster.common.machine.datacenter.VramRating;
 import dev.hypercluster.common.machine.datacenter.VramStorageRackMachine;
@@ -79,6 +85,8 @@ public class TopologyTests {
 
         VramParts iv = placeVramRack(helper, 1, 1, 1);
         VramParts luv = placeVramRack(helper, 8, 1, 1);
+        BlockPos hardwarePos = new BlockPos(2, 1, 1);
+        helper.setBlock(hardwarePos, HyperClusterMachines.DATACENTER_HARDWARE_HATCH.getBlock().defaultBlockState());
         primeEnergy(iv.energyHatch(), helper, 20, 500);
         primeEnergy(luv.energyHatch(), helper, 20, 500);
 
@@ -91,11 +99,15 @@ public class TopologyTests {
                     "an empty memory rack must provide 0 TB");
             helper.assertTrue(iv.controller().getState() == VramStorageRackMachine.State.EMPTY,
                     "an empty rack reports EMPTY, got " + iv.controller().getState());
-            // IV modules: 4 x 4 TB = 16 TB.
-            for (int i = 0; i < VramRating.HBM_SLOTS; i++) {
-                iv.controller().getModuleSlot()
-                        .setStackInSlot(i, new ItemStack(HyperClusterItems.IV_HBM_MODULE.get()));
+            var hardware = (DatacenterHardwareHatchMachine) metaMachine(helper, hardwarePos);
+            var automation = helper.getBlockEntity(hardwarePos)
+                    .getCapability(ForgeCapabilities.ITEM_HANDLER, hardware.getFrontFacing()).orElseThrow(
+                            () -> new IllegalStateException("missing VRAM hardware port"));
+            ItemStack modules = new ItemStack(HyperClusterItems.IV_HBM_MODULE.get(), 4);
+            for (int slot = 0; slot < VramRating.HBM_SLOTS; slot++) {
+                modules = automation.insertItem(slot, modules, false);
             }
+            helper.assertTrue(modules.isEmpty(), "an automated stack must distribute one HBM per physical bay");
             // LuV modules: 4 x 16 TB = 64 TB.
             for (int i = 0; i < VramRating.HBM_SLOTS; i++) {
                 luv.controller().getModuleSlot()
@@ -168,6 +180,7 @@ public class TopologyTests {
         helper.assertTrue(VramRating.withinSwitchBandwidth(128), "128 CWU/t fits the ceiling");
         helper.assertTrue(!VramRating.withinSwitchBandwidth(129), "129 CWU/t must trip the ceiling");
 
+        fillFloor(helper, 1, 0, 1, 12, 9);
         SwitchParts parts = placeSwitch(helper, 1, 1, 1);
         primeEnergy(parts.energyHatch(), helper, 20, 700);
 
@@ -218,6 +231,8 @@ public class TopologyTests {
             helper.assertTrue(parts.controller().getMaxCWUt(new ArrayList<>()) == 128,
                     "the switch must offer the full 128 CWU/t ceiling, got " +
                             parts.controller().getMaxCWUt(new ArrayList<>()));
+            helper.assertTrue(parts.controller().requestCWUt(Integer.MAX_VALUE, true) == 128 &&
+                    !parts.controller().isBusy(), "the native receiver's availability probe must not trip 503");
             // Exactly the ceiling is served.
             int atCeiling = parts.controller().requestCWUt(128, false, new ArrayList<>());
             helper.assertTrue(atCeiling == 128,
@@ -229,7 +244,8 @@ public class TopologyTests {
 
         // Over the ceiling: the switch refuses and enters the 503 cooldown.
         helper.runAtTickTime(260, () -> {
-            parts.controller().tripBusy();
+            helper.assertTrue(parts.controller().requestCWUt(129, false) == 0,
+                    "the switch must reject a real over-bandwidth request");
             helper.assertTrue(parts.controller().isBusy(),
                     "an over-bandwidth tick must put the switch into 503");
             helper.assertTrue(parts.controller().getStatus() == OpticalFabricSwitchMachine.Status.BUSY_503,
@@ -254,13 +270,151 @@ public class TopologyTests {
         });
     }
 
+    @GameTest(template = "hc_network_field", batch = "hypercluster_062_floor", timeoutTicks = 300)
+    public static void compliantFloorActivatesAndInvalidGeometryBreaksLinks(GameTestHelper helper) {
+        int x = 2, y = 1, z = 2;
+        fillFloor(helper, x, y, z, 6, 6);
+        var switchParts = placeSwitch(helper, x, y + 1, z);
+        var rack = placeLiquidRack(helper, x, y + 1, z + 3);
+        BlockPos hardwarePos = new BlockPos(x, y + 2, z + 3);
+        helper.setBlock(hardwarePos, HyperClusterMachines.DATACENTER_HARDWARE_HATCH.getBlock().defaultBlockState());
+        primeEnergy(switchParts.energyHatch(), helper, 20, 300);
+        primeEnergy(rack.energyHatch(), helper, 20, 300);
+        BlockPos corner = new BlockPos(x + 5, y, z);
+        helper.runAtTickTime(40, () -> {
+            ensureFormed(switchParts.controller());
+            ensureFormed(rack.controller());
+            var part = (DatacenterHardwareHatchMachine) metaMachine(helper, hardwarePos);
+            var automation = helper.getBlockEntity(hardwarePos)
+                    .getCapability(ForgeCapabilities.ITEM_HANDLER, part.getFrontFacing())
+                    .orElseThrow(() -> new IllegalStateException("formed liquid rack must expose its hardware port"));
+            helper.assertTrue(automation.insertItem(0, new ItemStack(HyperClusterItems.LUV_LIQUID_BLADE.get()), false)
+                    .isEmpty(), "automation must install a blade via the dedicated hatch");
+            helper.assertTrue(!automation.insertItem(4, new ItemStack(HyperClusterItems.LUV_LIQUID_BLADE.get()), true)
+                    .isEmpty(), "the ancillary slot must reject blades");
+            rack.fluidHatch().tank.setFluidInTank(0, GTMaterials.DistilledWater.getFluid(32000));
+        });
+        helper.runAtTickTime(70, () -> {
+            helper.assertTrue(switchParts.controller().requestCWUt(16, false) == 16,
+                    "formed plinths sharing a 6×6 floor must share CWU without pipes, got " +
+                            switchParts.controller().aggregateAvailableCwu());
+            helper.setBlock(corner, Blocks.AIR.defaultBlockState());
+        });
+        helper.runAtTickTime(90, () -> {
+            helper.assertTrue(switchParts.controller().aggregateAvailableCwu() == 0,
+                    "a missing corner must invalidate the entire connected floor");
+            helper.setBlock(corner, HyperClusterBlocks.RAISED_FLOOR.get().defaultBlockState());
+        });
+        helper.runAtTickTime(120, () -> {
+            helper.assertTrue(switchParts.controller().aggregateAvailableCwu() == 16,
+                    "repairing the floor must reconnect the room without reforming machines");
+            helper.setBlock(new BlockPos(x, y, z), Blocks.AIR.defaultBlockState());
+            helper.assertTrue(switchParts.controller().aggregateAvailableCwu() == 0,
+                    "breaking a tile directly under the plinth must also detach the machine");
+            helper.setBlock(new BlockPos(x, y, z), HyperClusterBlocks.RAISED_FLOOR.get().defaultBlockState());
+            for (int depth = 0; depth < 6; depth++) {
+                helper.setBlock(new BlockPos(x + 5, y, z + depth), Blocks.AIR.defaultBlockState());
+            }
+            fillFloor(helper, x, y, z + 6, 5, 14);
+        });
+        helper.runAtTickTime(150, () -> {
+            helper.assertTrue(switchParts.controller().aggregateAvailableCwu() == 0,
+                    "a full 5×20 floor under both plinths must still reject hidden links");
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = "hc_network_field", batch = "hypercluster_062_floor_shapes")
+    public static void thinAndOversizedFloorComponentsAreRejected(GameTestHelper helper) {
+        int[][] invalid = { { 1, 12 }, { 2, 12 }, { 5, 20 }, { 8, 25 } };
+        for (int index = 0; index < invalid.length; index++) {
+            int width = invalid[index][0], depth = invalid[index][1], y = index + 1;
+            fillFloor(helper, 1, y, 0, width, depth);
+            var tile = helper.absolutePos(new BlockPos(1, y, 1));
+            helper.assertTrue(DatacenterFloorNetwork.roomAt(helper.getLevel(), tile).isEmpty(),
+                    width + "×" + depth + " must not activate a hidden network");
+        }
+        fillFloor(helper, 2, 6, 2, 18, 8);
+        helper.assertTrue(DatacenterFloorNetwork.roomAt(helper.getLevel(),
+                helper.absolutePos(new BlockPos(2, 6, 2))).isPresent(), "18×8 must activate");
+        helper.succeed();
+    }
+
+    @GameTest(template = "hc_network_field", batch = "hypercluster_062_optical", timeoutTicks = 340)
+    public static void crossRoomRequiresContinuousNativeOpticalPipe(GameTestHelper helper) {
+        fillFloor(helper, 1, 1, 1, 6, 6);
+        fillFloor(helper, 4, 1, 8, 6, 6);
+        var rack = placeLiquidRack(helper, 2, 2, 2);
+        var switchParts = placeSwitch(helper, 4, 2, 9);
+        var receiver = new BlockPos(4, 4, 9);
+        var sourcePipe = new BlockPos(4, 4, 5);
+        var destinationPipe = receiver.north();
+        var cut = sourcePipe.south();
+        helper.setBlock(receiver, GTResearchMachines.COMPUTATION_HATCH_RECEIVER.getBlock().defaultBlockState());
+        primeEnergy(switchParts.energyHatch(), helper, 20, 340);
+        primeEnergy(rack.energyHatch(), helper, 20, 340);
+        helper.runAtTickTime(40, () -> {
+            ensureFormed(rack.controller());
+            ensureFormed(switchParts.controller());
+            rack.controller().getBladeInventory().setStackInSlot(0,
+                    new ItemStack(HyperClusterItems.LUV_LIQUID_BLADE.get()));
+            rack.fluidHatch().tank.setFluidInTank(0, GTMaterials.DistilledWater.getFluid(32000));
+        });
+        helper.runAtTickTime(70, () -> {
+            helper.assertTrue(rack.controller().availableCWUt() == 16 &&
+                    switchParts.controller().aggregateAvailableCwu() == 0,
+                    "nearby machines in different compliant rooms must have zero cross-room CWU without a pipe");
+            TrainingTests.placeOpticalPipeRun(helper, sourcePipe, destinationPipe);
+            TrainingTests.connectPipeToBlock(helper, sourcePipe, Direction.NORTH);
+            TrainingTests.connectPipeToBlock(helper, destinationPipe, Direction.SOUTH);
+        });
+        helper.runAtTickTime(115, () -> {
+            helper.assertTrue(switchParts.controller().aggregateAvailableCwu() == 16 &&
+                    switchParts.controller().requestCWUt(16, false) == 16,
+                    "a native receiver–pipe–transmitter path must carry real CWU, got " +
+                            switchParts.controller().aggregateAvailableCwu());
+            helper.assertTrue(rack.controller().requestCWUt(1, false) == 0,
+                    "the switch must debit the actual remote rack budget");
+            helper.setBlock(cut, Blocks.AIR.defaultBlockState());
+        });
+        helper.runAtTickTime(155, () -> {
+            helper.assertTrue(switchParts.controller().aggregateAvailableCwu() == 0,
+                    "a break in the middle of the pipe must cut cross-room CWU");
+            // The native pipe keeps its wrench openings on the two exposed ends.
+            ((OpticalPipeBlockEntity) helper.getBlockEntity(sourcePipe)).setConnection(Direction.SOUTH, false, false);
+            ((OpticalPipeBlockEntity) helper.getBlockEntity(cut.south())).setConnection(Direction.NORTH, false, false);
+            helper.setBlock(cut, GTBlocks.OPTICAL_PIPES[0].get().defaultBlockState());
+        });
+        helper.runAtTickTime(170, () -> {
+            TrainingTests.connectPipes(helper, sourcePipe, cut);
+            TrainingTests.connectPipes(helper, cut, cut.south());
+        });
+        helper.runAtTickTime(210, () -> {
+            helper.assertTrue(switchParts.controller().aggregateAvailableCwu() == 16,
+                    "repairing the optical pipe must restore CWU");
+            helper.succeed();
+        });
+    }
+
+    static void fillFloor(GameTestHelper helper, int x, int y, int z, int width, int depth) {
+        for (int dx = 0; dx < width; dx++) {
+            for (int dz = 0; dz < depth; dz++) {
+                helper.setBlock(new BlockPos(x + dx, y, z + dz),
+                        HyperClusterBlocks.RAISED_FLOOR.get().defaultBlockState());
+            }
+        }
+    }
+
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // 3. MoE router: deploy, OOM refusal, load and eviction //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     @GameTest(template = "hc_field", batch = TOPOLOGY_BATCH, timeoutTicks = 700)
     public static void moeRouterLoadsAndEvictsModels(GameTestHelper helper) {
+        fillFloor(helper, 1, 0, 1, 14, 13);
         MoE parts = placeMoeRouter(helper, 1, 1, 1);
+        BlockPos hardwarePos = new BlockPos(2, 2, 1);
+        helper.setBlock(hardwarePos, HyperClusterMachines.DATACENTER_HARDWARE_HATCH.getBlock().defaultBlockState());
         primeEnergy(parts.energyHatch(), helper, 20, 700);
         // One IV memory rack only: 16 TB, far below the 20 TB a Qwen + LoRA needs.
         VramParts smallMemory = placeVramRack(helper, 10, 1, 1);
@@ -287,33 +441,36 @@ public class TopologyTests {
                         .setStackInSlot(i, new ItemStack(HyperClusterItems.IV_HBM_MODULE.get()));
             }
             // A Qwen module needs 16 TB, which exactly fits; add a LoRA and it no longer does.
-            parts.controller().getModelSlot().setStackInSlot(0, qwenModule());
+            var hardware = (DatacenterHardwareHatchMachine) metaMachine(helper, hardwarePos);
+            var automation = helper.getBlockEntity(hardwarePos)
+                    .getCapability(ForgeCapabilities.ITEM_HANDLER, hardware.getFrontFacing())
+                    .orElseThrow(() -> new IllegalStateException("formed router must expose a hardware capability"));
+            helper.assertTrue(automation.insertItem(0, qwenModule(), false).isEmpty(),
+                    "the dedicated hatch must deploy the module via automation");
+            helper.assertTrue(!automation.insertItem(1, qwenModule(), true).isEmpty(),
+                    "the LoRA slots must reject weight modules");
         });
 
         // Insert the LoRA and let the router re-evaluate on a LATER tick: machines tick between
         // callbacks, so asserting in the same callback would read the previous tick's verdict.
         helper.runAtTickTime(150, () -> {
-            parts.controller().getLoraSlot()
-                    .setStackInSlot(0, new ItemStack(HyperClusterItems.MINING_LORA_CARD.get()));
+            var hardware = (DatacenterHardwareHatchMachine) metaMachine(helper, hardwarePos);
+            var automation = helper.getBlockEntity(hardwarePos)
+                    .getCapability(ForgeCapabilities.ITEM_HANDLER, hardware.getFrontFacing()).orElseThrow(
+                            () -> new IllegalStateException("missing hardware port"));
+            helper.assertTrue(automation.insertItem(1, new ItemStack(HyperClusterItems.MINING_LORA_CARD.get()), false)
+                    .isEmpty(), "the dedicated hatch must load a LoRA through its second slot");
             helper.assertTrue(parts.controller().requiredTerabytes() == 20,
                     "Qwen + one LoRA must need 20 TB, got " + parts.controller().requiredTerabytes());
         });
 
         helper.runAtTickTime(180, () -> {
-            // The rule under test: residency follows need-vs-pool, never wishful loading.
             int pool = parts.controller().poolTerabytes();
             int need = parts.controller().requiredTerabytes();
-            if (pool < need) {
-                helper.assertTrue(parts.controller().getState() != MoeRouterRackMachine.State.ONLINE,
-                        "a model needing " + need + " TB over a " + pool + " TB pool must not load, got " +
-                                parts.controller().getState());
-                helper.assertTrue(parts.controller().loadedModel() == null,
-                        "a model that does not fit must not be resident");
-            } else {
-                helper.assertTrue(parts.controller().getState() == MoeRouterRackMachine.State.ONLINE,
-                        "a model needing " + need + " TB over a " + pool + " TB pool must load, got " +
-                                parts.controller().getState());
-            }
+            helper.assertTrue(pool == 16 && need == 20 &&
+                    parts.controller().getState() == MoeRouterRackMachine.State.OOM,
+                    "the router must reject a 20 TB model on a 16 TB room, got " + pool + " TB and " +
+                            parts.controller().getState());
             System.out.printf("[HC-061] router: Qwen+LoRA needs %d TB vs %d TB pool -> %s%n",
                     need, pool, parts.controller().getState());
         });

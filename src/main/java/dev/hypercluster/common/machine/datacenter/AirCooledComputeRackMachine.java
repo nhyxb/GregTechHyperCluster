@@ -2,8 +2,6 @@ package dev.hypercluster.common.machine.datacenter;
 
 import com.gregtechceu.gtceu.api.capability.IEnergyContainer;
 import com.gregtechceu.gtceu.api.capability.IOpticalComputationProvider;
-import com.gregtechceu.gtceu.api.gui.GuiTextures;
-import com.gregtechceu.gtceu.api.gui.widget.SlotWidget;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.TickableSubscription;
 import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMaintenanceMachine;
@@ -16,7 +14,6 @@ import com.gregtechceu.gtceu.client.model.machine.MachineRenderState;
 import com.gregtechceu.gtceu.utils.FormattingUtil;
 
 import com.lowdragmc.lowdraglib.gui.widget.Widget;
-import com.lowdragmc.lowdraglib.gui.widget.WidgetGroup;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
@@ -26,6 +23,8 @@ import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraftforge.items.IItemHandlerModifiable;
+import net.minecraftforge.items.wrapper.CombinedInvWrapper;
 
 import dev.hypercluster.common.item.HyperClusterItems;
 import dev.hypercluster.common.machine.MachineUi;
@@ -69,7 +68,8 @@ import java.util.List;
  */
 public class AirCooledComputeRackMachine extends WorkableElectricMultiblockMachine
                                          implements IOpticalComputationProvider,
-                                         com.gregtechceu.gtceu.api.machine.feature.IMachineLife {
+                                         com.gregtechceu.gtceu.api.machine.feature.IMachineLife,
+                                         DatacenterHardwareHatchMachine.HardwareHost {
 
     protected static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(
             AirCooledComputeRackMachine.class, WorkableElectricMultiblockMachine.MANAGED_FIELD_HOLDER);
@@ -117,10 +117,10 @@ public class AirCooledComputeRackMachine extends WorkableElectricMultiblockMachi
 
     public AirCooledComputeRackMachine(IMachineBlockEntity holder, Object... args) {
         super(holder, args);
-        this.bladeInventory = new CustomItemStackHandler(DatacenterRating.BLADE_SLOTS);
+        this.bladeInventory = DatacenterHardwareHatchMachine.componentSlots(DatacenterRating.BLADE_SLOTS);
         this.bladeInventory.setFilter(
                 stack -> stack.is(HyperClusterItems.IV_COMPUTE_BLADE.get()));
-        this.snackSlot = new CustomItemStackHandler(1);
+        this.snackSlot = DatacenterHardwareHatchMachine.componentSlots(1);
         this.snackSlot.setFilter(stack -> stack.is(HyperClusterItems.GREEN_SNACK_PACK.get()));
     }
 
@@ -136,6 +136,7 @@ public class AirCooledComputeRackMachine extends WorkableElectricMultiblockMachi
     @Override
     public void onStructureFormed() {
         super.onStructureFormed();
+        DatacenterFloorNetwork.formed(this);
         this.maintenance = null;
         for (var part : getParts()) {
             if (part instanceof IMaintenanceMachine maintenanceMachine) {
@@ -152,6 +153,7 @@ public class AirCooledComputeRackMachine extends WorkableElectricMultiblockMachi
 
     @Override
     public void onStructureInvalid() {
+        DatacenterFloorNetwork.detached(this);
         super.onStructureInvalid();
         this.maintenance = null;
         this.providing = false;
@@ -171,6 +173,7 @@ public class AirCooledComputeRackMachine extends WorkableElectricMultiblockMachi
 
     @Override
     public void onUnload() {
+        DatacenterFloorNetwork.detached(this);
         super.onUnload();
         if (this.tickSubs != null) {
             this.tickSubs.unsubscribe();
@@ -456,24 +459,19 @@ public class AirCooledComputeRackMachine extends WorkableElectricMultiblockMachi
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     @Override
+    public IItemHandlerModifiable hardwareInventory() {
+        return new CombinedInvWrapper(bladeInventory, snackSlot);
+    }
+
+    @Override
+    public String hardwareSlotKey(int slot) {
+        return "hypercluster.machine.air_cooled_compute_rack." +
+                (slot == DatacenterRating.BLADE_SLOTS ? "snack_slot" : "blade_slot");
+    }
+
+    @Override
     public Widget createUIWidget() {
-        String uiKey = "hypercluster.machine.air_cooled_compute_rack.";
-        int slotY = 13;
-        WidgetGroup controls = MachineUi.multiblockControls(31);
-        controls.addWidgets(
-                MachineUi.label(11, 0, 96, uiKey + "label.blades"),
-                MachineUi.label(123, 0, 58, uiKey + "label.snack"));
-        for (int i = 0; i < DatacenterRating.BLADE_SLOTS; i++) {
-            SlotWidget blade = new SlotWidget(bladeInventory, i, 17 + i * 22, slotY, true, true);
-            blade.setBackground(GuiTextures.SLOT);
-            blade.setHoverTooltips(Component.translatable(uiKey + "blade_slot"));
-            controls.addWidget(blade);
-        }
-        SlotWidget snack = new SlotWidget(snackSlot, 0, 143, slotY, true, true);
-        snack.setBackground(GuiTextures.SLOT);
-        snack.setHoverTooltips(Component.translatable(uiKey + "snack_slot"));
-        controls.addWidget(snack);
-        return MachineUi.multiblockPage(this, controls);
+        return MachineUi.multiblockPage(this, MachineUi.multiblockControls(1));
     }
 
     @Override

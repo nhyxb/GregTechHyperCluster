@@ -30,7 +30,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -44,8 +43,7 @@ import dev.hypercluster.common.item.CredentialCardItem;
 import dev.hypercluster.common.item.HyperClusterItems;
 import dev.hypercluster.common.item.TokenCreditCardItem;
 import dev.hypercluster.common.machine.MachineUi;
-import dev.hypercluster.common.model.AIModelDefinition;
-import dev.hypercluster.common.model.ModelRuntime;
+import dev.hypercluster.common.machine.MultiblockItemBuses;
 
 import java.util.List;
 import java.util.Locale;
@@ -103,16 +101,13 @@ public class ApiSatelliteStationMachine extends WorkableElectricMultiblockMachin
         NONE,
         NO_CREDENTIAL,
         NO_INPUT,
+        OUTPUT_BLOCKED,
         SKY_BLOCKED,
         MODEL_OFFLINE,
         RATE_LIMITED_429,
         INSUFFICIENT_FUNDS,
         LOW_POWER,
-        PAUSED,
-        /** 0.6.2 · GPT-1145 morally refused a whitelisted dangerous round: no jailbreak card. */
-        MORAL_REFUSAL,
-        /** 0.6.2 · the model has no dangerous-round capability at all (ordinary families). */
-        DANGEROUS_ROUND_UNSUPPORTED
+        PAUSED
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -122,7 +117,7 @@ public class ApiSatelliteStationMachine extends WorkableElectricMultiblockMachin
     /** The bound API credential card — whose account this station operates on. */
     @Persisted
     protected final CustomItemStackHandler credentialSlot;
-    /** Upload slot: high-purity datasets are auto-sold for Tokens while a credential is present. */
+    /** Input retained for worlds with datasets previously uploaded through the controller. */
     @Persisted
     protected final CustomItemStackHandler sellSlot;
     /** The Token credit card for deposits / withdrawals. */
@@ -134,6 +129,8 @@ public class ApiSatelliteStationMachine extends WorkableElectricMultiblockMachin
     /** Service output: high-purity mining datasets (withdraw-only). */
     @Persisted
     protected final CustomItemStackHandler outputSlot;
+    @Persisted
+    protected int refundedDatasets;
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // Station settings (persisted, UI-live) //
@@ -182,26 +179,6 @@ public class ApiSatelliteStationMachine extends WorkableElectricMultiblockMachin
     @Persisted
     @DescSynced
     protected int taskTicksRemaining = 0;
-    /** 0.6.2 · the model index the running round was priced and started with (-1 = unset). */
-    @Persisted
-    @DescSynced
-    protected int taskModelIndex = -1;
-
-    /**
-     * 0.6.2 · the jailbreak patch card slot. A {@code gpt_1145_multiverse} station refuses
-     * whitelisted dangerous chemistry rounds until a card is inserted here (道德拒答), and the
-     * card is not consumed.
-     */
-    @Persisted
-    protected final CustomItemStackHandler jailbreakSlot;
-    /**
-     * 0.6.2 · dangerous-round switch. While armed the station runs the whitelisted dangerous
-     * chemistry service instead of the ordinary scrub; whether that is <b>allowed</b> is decided
-     * per model at runtime (Grok never needs a card, GPT always does, everyone else cannot).
-     */
-    @Persisted
-    @DescSynced
-    protected boolean dangerousRound = false;
 
     /** Runtime: does this machine currently hold one cloud session of the account (429 gate). */
     protected boolean sessionHeld = false;
@@ -234,8 +211,6 @@ public class ApiSatelliteStationMachine extends WorkableElectricMultiblockMachin
             }
         };
         this.outputSlot.setFilter(stack -> stack.is(HyperClusterItems.HIGH_PURITY_MINING_DATASET.get()));
-        this.jailbreakSlot = new CustomItemStackHandler(1);
-        this.jailbreakSlot.setFilter(stack -> stack.is(HyperClusterItems.JAILBREAK_CARD.get()));
     }
 
     @Override
@@ -274,28 +249,12 @@ public class ApiSatelliteStationMachine extends WorkableElectricMultiblockMachin
         return CloudPricing.InferenceTier.byOrdinal(selectedTier);
     }
 
-    public AIModelDefinition selectedModel() {
+    public dev.hypercluster.common.model.AIModelDefinition selectedModel() {
         return CloudModels.byIndex(selectedModel);
-    }
-
-    /** The selected model's index in the API catalog (persisted on the round at start). */
-    public int selectedModelIndex() {
-        return Math.floorMod(selectedModel, CloudModels.MODELS.size());
     }
 
     public boolean isFallbackTask() {
         return taskActive && taskMode == 1;
-    }
-
-    /**
-     * The model the <b>active</b> round was started with, captured when the round began. Reading
-     * {@link #selectedModel()} at settlement would credit a model the operator only just picked.
-     */
-    public AIModelDefinition taskModel() {
-        if (taskModelIndex >= 0) {
-            return CloudModels.byIndex(taskModelIndex);
-        }
-        return selectedModel();
     }
 
     /** The account owner the active round belongs to (persisted on the round itself). */
@@ -323,37 +282,8 @@ public class ApiSatelliteStationMachine extends WorkableElectricMultiblockMachin
         return credentialSlot;
     }
 
-    public CustomItemStackHandler getSellSlot() {
-        return sellSlot;
-    }
-
     public CustomItemStackHandler getCardSlot() {
         return cardSlot;
-    }
-
-    public CustomItemStackHandler getInputSlot() {
-        return inputSlot;
-    }
-
-    public CustomItemStackHandler getOutputSlot() {
-        return outputSlot;
-    }
-
-    public CustomItemStackHandler getJailbreakSlot() {
-        return jailbreakSlot;
-    }
-
-    /** True while the jailbreak patch card is inserted (GPT-1145's dangerous-round unlock). */
-    public boolean isJailbroken() {
-        return !jailbreakSlot.getStackInSlot(0).isEmpty();
-    }
-
-    public boolean isDangerousRound() {
-        return dangerousRound;
-    }
-
-    public void setDangerousRound(boolean value) {
-        this.dangerousRound = value;
     }
 
     public boolean isTaskActive() {
@@ -465,7 +395,12 @@ public class ApiSatelliteStationMachine extends WorkableElectricMultiblockMachin
         clearInventory(cardSlot);
         clearInventory(inputSlot);
         clearInventory(outputSlot);
-        clearInventory(jailbreakSlot);
+        if (refundedDatasets > 0) {
+            var recovery = new CustomItemStackHandler(1);
+            recovery.setStackInSlot(0, new ItemStack(HyperClusterItems.CLEAN_DATASET.get(), refundedDatasets));
+            clearInventory(recovery);
+            refundedDatasets = 0;
+        }
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -478,6 +413,10 @@ public class ApiSatelliteStationMachine extends WorkableElectricMultiblockMachin
         }
         CloudTokenLedger ledger = ledger();
         UUID owner = accountOwner();
+        ItemStack legacyOutput = outputSlot.getStackInSlot(0);
+        if (!legacyOutput.isEmpty() && MultiblockItemBuses.export(this, legacyOutput.copyWithCount(1), false)) {
+            outputSlot.extractItem(0, 1, false);
+        }
 
         // 1) The account touchpoints: opening the account grants the welcome bonus exactly
         // once (the ledger flag deduplicates across every station, dimension and reload),
@@ -507,23 +446,25 @@ public class ApiSatelliteStationMachine extends WorkableElectricMultiblockMachin
         }
     }
 
-    /** Upload sale: every high-purity dataset in the sell slot converts to integer Tokens. */
     protected void autoSell(UUID owner, CloudTokenLedger ledger) {
-        ItemStack stack = sellSlot.getStackInSlot(0);
-        if (stack.isEmpty()) {
-            return;
+        ItemStack legacy = sellSlot.extractItem(0, 64, false);
+        if (!legacy.isEmpty()) {
+            creditSale(owner, ledger, legacy);
         }
-        long pricePer;
-        if (stack.is(HyperClusterItems.HIGH_PURITY_MINING_DATASET.get())) {
-            pricePer = CloudPricing.MINING_DATASET_SALE_PRICE;
-        } else if (stack.is(HyperClusterItems.HIGH_PURITY_CHEMICAL_DATASET.get())) {
-            pricePer = CloudPricing.CHEMICAL_DATASET_SALE_PRICE;
-        } else {
-            return;
+
+        ItemStack stack;
+        while (!(stack = MultiblockItemBuses.take(this,
+                candidate -> candidate.is(HyperClusterItems.HIGH_PURITY_MINING_DATASET.get()) ||
+                        candidate.is(HyperClusterItems.HIGH_PURITY_CHEMICAL_DATASET.get()),
+                64, false)).isEmpty()) {
+            creditSale(owner, ledger, stack);
         }
-        long total = pricePer * stack.getCount();
-        ledger.credit(owner, total);
-        sellSlot.setStackInSlot(0, ItemStack.EMPTY);
+    }
+
+    private void creditSale(UUID owner, CloudTokenLedger ledger, ItemStack stack) {
+        long pricePer = stack.is(HyperClusterItems.HIGH_PURITY_MINING_DATASET.get()) ?
+                CloudPricing.MINING_DATASET_SALE_PRICE : CloudPricing.CHEMICAL_DATASET_SALE_PRICE;
+        ledger.credit(owner, pricePer * stack.getCount());
     }
 
     /** One working tick of the active round: EU first, then progress, then completion. */
@@ -531,6 +472,10 @@ public class ApiSatelliteStationMachine extends WorkableElectricMultiblockMachin
         if (!recipeLogic.isWorkingEnabled()) {
             waitingReason = WaitingReason.PAUSED;
             updateRenderStateFor(waitingReason);
+            return;
+        }
+        if (taskTicksRemaining <= 0) {
+            finishRound(ledger);
             return;
         }
         long eut = taskMode == 1 ? CloudPricing.FALLBACK_EU_T : selectedTier().eut();
@@ -560,7 +505,7 @@ public class ApiSatelliteStationMachine extends WorkableElectricMultiblockMachin
             updateRenderStateFor(waitingReason);
             return;
         }
-        if (inputSlot.getStackInSlot(0).isEmpty()) {
+        if (!hasDemoInput()) {
             waitingReason = WaitingReason.NO_INPUT;
             updateRenderStateFor(waitingReason);
             return;
@@ -572,25 +517,10 @@ public class ApiSatelliteStationMachine extends WorkableElectricMultiblockMachin
             updateRenderStateFor(waitingReason);
             return;
         }
-        // 0.6.2 · the weather the round ACTUALLY runs at: Grok-420's fragile uplink doubles the
-        // rain/thunder penalty, everyone else takes the plain attenuation. Applied to duration.
-        double baseWeather = CloudPricing.weatherAt(getLevel(), horn);
-        AIModelDefinition model = selectedModel();
-        double weather = ModelRuntime.effectiveWeather(model, baseWeather);
+        double weather = CloudPricing.weatherAt(getLevel(), horn);
         boolean highAlt = CloudPricing.highAltitudeBonus(getPos());
+        dev.hypercluster.common.model.AIModelDefinition model = selectedModel();
         CloudPricing.InferenceTier tier = selectedTier();
-        // 0.6.2 · the whitelisted dangerous chemistry service: the model decides at runtime.
-        // GPT-1145 refuses without a jailbreak card (MORAL_REFUSAL) — a real refusal, nothing is
-        // held or billed; Grok-420 runs it uncensored; any other family has no such capability.
-        if (dangerousRound) {
-            if (!ModelRuntime.permitsDangerousRound(model, isJailbroken())) {
-                boolean refuses = model.has(AIModelDefinition.Trait.MORAL_REFUSAL);
-                waitingReason = refuses ? WaitingReason.MORAL_REFUSAL :
-                        WaitingReason.DANGEROUS_ROUND_UNSUPPORTED;
-                updateRenderStateFor(waitingReason);
-                return;
-            }
-        }
 
         // Model lifecycle: past the Leaving-Soon countdown the model is offline.
         CloudModels.Lifecycle lifecycle = CloudModels.lifecycle(model, gameDay());
@@ -648,22 +578,27 @@ public class ApiSatelliteStationMachine extends WorkableElectricMultiblockMachin
         }
     }
 
-    /** Consumes one clean dataset from the input slot at round start. */
+    private boolean hasDemoInput() {
+        return refundedDatasets > 0 || !inputSlot.getStackInSlot(0).isEmpty() ||
+                !demoBusInput(true).isEmpty();
+    }
+
     protected void consumeInput() {
-        ItemStack input = inputSlot.getStackInSlot(0);
-        if (!input.isEmpty()) {
-            input.shrink(1);
-            if (input.getCount() <= 0) {
-                inputSlot.setStackInSlot(0, ItemStack.EMPTY);
-            }
+        if (refundedDatasets > 0) {
+            refundedDatasets--;
+        } else if (inputSlot.extractItem(0, 1, false).isEmpty()) {
+            demoBusInput(false);
         }
+    }
+
+    private ItemStack demoBusInput(boolean simulate) {
+        return MultiblockItemBuses.take(this, stack -> stack.is(HyperClusterItems.CLEAN_DATASET.get()), 1, simulate);
     }
 
     protected void startCloudRound(UUID owner, String orderId, long price, String cacheKey,
                                    boolean cacheHit, int ticks) {
         this.taskActive = true;
         this.taskMode = 0;
-        this.taskModelIndex = selectedModelIndex();
         this.taskOrderId = orderId;
         this.taskOwnerUuid = owner.toString();
         this.taskPrice = price;
@@ -675,48 +610,32 @@ public class ApiSatelliteStationMachine extends WorkableElectricMultiblockMachin
         updateRenderStateFor(waitingReason);
     }
 
-    /**
-     * The gateway takes over: same task, local EU, no Token billing.
-     *
-     * <p>
-     * <b>0.6.2</b>: the duration multiplier is no longer hard-coded ×4. The attached gateway asks
-     * the machine room whether a MoE router is really serving {@code qwen_9187_pro_max_ultra}: if
-     * yes the local run degrades only ×1.5, otherwise the model-less ×4 of the 0.4 contract
-     * applies. See {@link LocalFallbackGatewayMachine#fallbackSlowdown()}.
-     */
+    /** The gateway takes over: same task, ×4 duration, local EU, no Token billing. */
     protected void startFallbackRound(UUID owner, double weather, boolean highAlt) {
         consumeInput();
         this.taskActive = true;
         this.taskMode = 1;
-        this.taskModelIndex = selectedModelIndex();
         this.taskOrderId = "";
         this.taskOwnerUuid = owner.toString();
         this.taskPrice = 0;
         this.taskCacheKey = "";
         this.taskCacheHit = false;
-        double slowdown = attachedGatewaySlowdown();
-        this.taskTicksTotal = CloudPricing.taskTicks(CloudPricing.BASE_TASK_TICKS,
-                CloudPricing.InferenceTier.MEDIUM, batchMode, weather, highAlt, slowdown);
+        this.taskTicksTotal = CloudPricing.demoTaskTicks(CloudPricing.InferenceTier.MEDIUM, batchMode,
+                weather, highAlt, true);
         this.taskTicksRemaining = this.taskTicksTotal;
         this.waitingReason = WaitingReason.NONE;
         updateRenderStateFor(waitingReason);
     }
 
-    /**
-     * The slowdown the attached gateway currently offers. Without a gateway part the station never
-     * reaches a fallback round at all, but the model-less ×4 stays the safe answer.
-     */
-    public double attachedGatewaySlowdown() {
-        for (var part : getParts()) {
-            if (part instanceof LocalFallbackGatewayMachine gateway) {
-                return gateway.fallbackSlowdown();
-            }
-        }
-        return ModelRuntime.BARE_FALLBACK_SLOWDOWN;
-    }
-
     /** The round completed: settle the order (cloud) or record the fallback round. */
     protected void finishRound(CloudTokenLedger ledger) {
+        ItemStack output = new ItemStack(HyperClusterItems.HIGH_PURITY_MINING_DATASET.get(),
+                DEMO_OUTPUT_PER_ROUND);
+        if (!MultiblockItemBuses.export(this, output, false)) {
+            waitingReason = WaitingReason.OUTPUT_BLOCKED;
+            updateRenderStateFor(waitingReason);
+            return;
+        }
         if (taskMode == 0) {
             ledger.settle(taskOrderId); // HELD -> SETTLED; the hold becomes final spend.
             UUID roundOwner = taskOwner();
@@ -732,21 +651,10 @@ public class ApiSatelliteStationMachine extends WorkableElectricMultiblockMachin
                 }
             }
         }
-        // 0.6.2 · the model's settlement bonus really lands on the output: Platinum's noise
-        // suppression on chemical rounds, Xenon's zero hallucination and GPT-1145's top reagent
-        // saving on every round. The dangerous chemistry round yields the chemical dataset.
-        AIModelDefinition settledModel = taskModel();
-        int amount = DEMO_OUTPUT_PER_ROUND +
-                ModelRuntime.yieldBonus(settledModel, taskMode == 0 && dangerousRound);
-        ItemStack output = new ItemStack(dangerousRound ?
-                HyperClusterItems.HIGH_PURITY_CHEMICAL_DATASET.get() :
-                HyperClusterItems.HIGH_PURITY_MINING_DATASET.get(), amount);
-        insertOrDrop(output);
         this.taskActive = false;
         this.taskOrderId = "";
         this.taskOwnerUuid = "";
         this.taskPrice = 0;
-        this.taskModelIndex = -1;
         this.waitingReason = WaitingReason.NONE;
         updateRenderStateFor(waitingReason);
     }
@@ -768,41 +676,16 @@ public class ApiSatelliteStationMachine extends WorkableElectricMultiblockMachin
             }
             this.sessionHeld = false;
         }
-        // The consumed input returns to the input slot (overflow drops above the controller).
-        ItemStack input = new ItemStack(HyperClusterItems.CLEAN_DATASET.get());
-        ItemStack existing = inputSlot.getStackInSlot(0);
-        if (existing.isEmpty()) {
-            inputSlot.setStackInSlot(0, input);
-        } else if (ItemStack.isSameItemSameTags(existing, input) &&
-                existing.getCount() < existing.getMaxStackSize()) {
-                    existing.setCount(existing.getCount() + 1);
-                } else {
-                    getLevel().addFreshEntity(new ItemEntity(getLevel(), getPos().getX() + 0.5,
-                            getPos().getY() + 1.5, getPos().getZ() + 0.5, input));
-                }
+        // Keep the refund in saved state if import is full or the part is detached.
+        if (!MultiblockItemBuses.returnInput(this, new ItemStack(HyperClusterItems.CLEAN_DATASET.get()))) {
+            refundedDatasets++;
+        }
         this.taskActive = false;
         this.taskOrderId = "";
         this.taskOwnerUuid = "";
         this.taskPrice = 0;
-        this.taskModelIndex = -1;
         this.waitingReason = WaitingReason.NONE;
         updateRenderStateFor(waitingReason);
-    }
-
-    /** Inserts into the output slot; overflow drops above the controller (never silently voided). */
-    protected void insertOrDrop(ItemStack stack) {
-        ItemStack existing = outputSlot.getStackInSlot(0);
-        if (existing.isEmpty()) {
-            outputSlot.setStackInSlot(0, stack);
-            return;
-        }
-        if (ItemStack.isSameItemSameTags(existing, stack) &&
-                existing.getCount() + stack.getCount() <= existing.getMaxStackSize()) {
-            existing.setCount(existing.getCount() + stack.getCount());
-            return;
-        }
-        getLevel().addFreshEntity(new ItemEntity(getLevel(), getPos().getX() + 0.5,
-                getPos().getY() + 1.5, getPos().getZ() + 0.5, stack));
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -882,28 +765,18 @@ public class ApiSatelliteStationMachine extends WorkableElectricMultiblockMachin
     @Override
     public Widget createUIWidget() {
         String uiKey = "hypercluster.machine.api_satellite_station.";
-        int slotY = 13;
-        int tokenY = 35;
-        int settingsY = 57;
-        // settings band 57..75, dangerous band 79..97 -> 101 leaves the 4 px bottom margin.
-        WidgetGroup controls = MachineUi.multiblockControls(101);
+        int tokenY = 13;
+        int settingsY = 35;
+        WidgetGroup controls = MachineUi.multiblockControls(53);
 
         controls.addWidgets(
-                MachineUi.label(0, 0, 42, uiKey + "label.credential"),
-                MachineUi.label(46, 0, 44, uiKey + "label.sell"),
-                MachineUi.label(94, 0, 42, uiKey + "label.input"),
-                MachineUi.label(140, 0, 42, uiKey + "label.output"),
-                controlSlot(credentialSlot, 12, slotY, true, uiKey + "credential_slot"),
-                controlSlot(sellSlot, 59, slotY, true, uiKey + "sell_slot"),
-                controlSlot(inputSlot, 106, slotY, true, uiKey + "input_slot"),
-                controlSlot(outputSlot, 152, slotY, false, uiKey + "output_slot"));
-
-        controls.addWidgets(
-                controlSlot(cardSlot, 0, tokenY, true, uiKey + "card_slot"),
-                MachineUi.label(22, tokenY + 4, 54, uiKey + "label.card"),
-                controlButton(80, tokenY, 47, () -> Component.translatable(uiKey + "deposit"),
+                MachineUi.label(0, 0, 66, uiKey + "label.credential"),
+                controlSlot(credentialSlot, 12, tokenY, true, uiKey + "credential_slot"),
+                MachineUi.label(70, 0, 58, uiKey + "label.card"),
+                controlSlot(cardSlot, 70, tokenY, true, uiKey + "card_slot"),
+                controlButton(92, tokenY, 42, () -> Component.translatable(uiKey + "deposit"),
                         uiKey + "deposit.tooltip", this::depositCard),
-                controlButton(131, tokenY, 51, () -> Component.translatable(uiKey + "withdraw"),
+                controlButton(138, tokenY, 44, () -> Component.translatable(uiKey + "withdraw"),
                         uiKey + "withdraw.tooltip", this::withdrawToCard));
 
         ToggleButtonWidget batch = new ToggleButtonWidget(0, settingsY, 18, 18, GuiTextures.BUTTON_BATCH,
@@ -916,18 +789,6 @@ public class ApiSatelliteStationMachine extends WorkableElectricMultiblockMachin
                         uiKey + "tier.tooltip", this::cycleTier),
                 controlButton(90, settingsY, 92, () -> Component.translatable(selectedModel().displayKey()),
                         uiKey + "model.tooltip", this::cycleModel));
-        // 0.6.2 · the jailbreak card slot and the dangerous-round switch, on their own band so the
-        // GPT refusal and the Grok bypass are both reachable from the controller UI.
-        int dangerY = settingsY + 18 + 4;
-        controls.addWidgets(
-                controlSlot(jailbreakSlot, 0, dangerY, true, uiKey + "jailbreak_slot"),
-                MachineUi.label(22, dangerY + 4, 54, uiKey + "label.jailbreak"),
-                controlButton(80, dangerY, 102,
-                        () -> Component.translatable(uiKey + (dangerousRound ? "dangerous.on" : "dangerous.off")),
-                        uiKey + "dangerous.tooltip",
-                        () -> {
-                            this.dangerousRound = !this.dangerousRound;
-                        }));
         return MachineUi.multiblockPage(this, controls);
     }
 
@@ -968,7 +829,7 @@ public class ApiSatelliteStationMachine extends WorkableElectricMultiblockMachin
                                 .translatable("hypercluster.machine.api_satellite_station.status." +
                                         waitingReason.name().toLowerCase(Locale.ROOT))
                                 .withStyle(switch (waitingReason) {
-                                    case LOW_POWER, RATE_LIMITED_429, MODEL_OFFLINE, INSUFFICIENT_FUNDS, SKY_BLOCKED, MORAL_REFUSAL, DANGEROUS_ROUND_UNSUPPORTED -> ChatFormatting.RED;
+                                    case LOW_POWER, RATE_LIMITED_429, MODEL_OFFLINE, INSUFFICIENT_FUNDS, SKY_BLOCKED -> ChatFormatting.RED;
                                     default -> ChatFormatting.GRAY;
                                 }));
                     }
@@ -998,26 +859,6 @@ public class ApiSatelliteStationMachine extends WorkableElectricMultiblockMachin
                             Component.literal(String.valueOf(
                                     CloudModels.leavingSoonCountdown(model, gameDay())))
                                     .withStyle(ChatFormatting.YELLOW)));
-                    // 0.6.2 · what the selected family really does at runtime, in one line.
-                    double liveWeather = ModelRuntime.effectiveWeather(model, CloudPricing.weatherAt(
-                            getLevel(), hornPos()));
-                    lines.add(Component.translatable(
-                            "hypercluster.machine.api_satellite_station.family_line",
-                            Component.literal(String.format(Locale.ROOT, "%.2f", liveWeather))
-                                    .withStyle(ChatFormatting.YELLOW),
-                            Component.literal(String.valueOf(ModelRuntime.yieldBonus(model, dangerousRound)))
-                                    .withStyle(ChatFormatting.AQUA),
-                            Component.translatable(isJailbroken() ?
-                                    "hypercluster.machine.api_satellite_station.jailbroken" :
-                                    "hypercluster.machine.api_satellite_station.jailbreak_bare")
-                                    .withStyle(isJailbroken() ? ChatFormatting.GREEN : ChatFormatting.GRAY))
-                            .withStyle(ChatFormatting.GRAY));
-                    if (dangerousRound) {
-                        lines.add(Component.translatable(
-                                "hypercluster.machine.api_satellite_station.dangerous_line")
-                                .withStyle(ModelRuntime.permitsDangerousRound(model, isJailbroken()) ?
-                                        ChatFormatting.GOLD : ChatFormatting.RED));
-                    }
                     if (taskActive) {
                         lines.add(Component.translatable(
                                 taskMode == 1 ? "hypercluster.machine.api_satellite_station.round.fallback" :

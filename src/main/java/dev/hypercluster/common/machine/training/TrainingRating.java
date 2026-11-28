@@ -82,9 +82,6 @@ public final class TrainingRating {
     /** Tokens one CWU/t·tick is worth before the PUE coefficient (integer billing base). */
     public static final long OFFLOAD_TOKEN_PER_CWU = 40L;
 
-    /** How far (Chebyshev blocks) an offload node can reach a datacenter's computation hatch. */
-    public static final int OFFLOAD_RANGE = 12;
-
     /** Highest CWU/t one offload node may rent per tick, whatever the host offers. */
     public static final int OFFLOAD_MAX_CWUT = 64;
 

@@ -36,15 +36,10 @@ public class MachineUiTests {
     public static void satelliteStationControlBounds(GameTestHelper helper) {
         WidgetGroup page = openPage(helper, HyperClusterMachines.API_SATELLITE_STATION);
         WidgetGroup controls = checkMultiblockPage(helper, page);
-        // 0.6.2 added the jailbreak card slot, its label and the dangerous-round switch.
-        helper.assertTrue(controls.getWidgetsByType(SlotWidget.class).size() == 6,
-                "station needs six slots (credential/sell/input/output/card/jailbreak), got " +
-                        controls.getWidgetsByType(SlotWidget.class).size());
-        helper.assertTrue(controls.getWidgetsByType(ImageWidget.class).size() == 6,
-                "station needs six labels, got " + controls.getWidgetsByType(ImageWidget.class).size());
-        helper.assertTrue(controls.getWidgetsByType(ButtonWidget.class).size() == 5,
-                "station needs five text buttons, got " +
-                        controls.getWidgetsByType(ButtonWidget.class).size());
+        helper.assertTrue(controls.getWidgetsByType(SlotWidget.class).size() == 2,
+                "station needs two account configuration slots");
+        helper.assertTrue(controls.getWidgetsByType(ImageWidget.class).size() == 2, "station needs two slot labels");
+        helper.assertTrue(controls.getWidgetsByType(ButtonWidget.class).size() == 4, "station needs four text buttons");
         helper.assertTrue(controls.getWidgetsByType(SwitchWidget.class).size() == 1, "station needs a batch toggle");
         helper.succeed();
     }
@@ -53,9 +48,7 @@ public class MachineUiTests {
     public static void computeRackControlBounds(GameTestHelper helper) {
         WidgetGroup page = openPage(helper, HyperClusterMachines.AIR_COOLED_COMPUTE_RACK);
         WidgetGroup controls = checkMultiblockPage(helper, page);
-        helper.assertTrue(controls.getWidgetsByType(SlotWidget.class).size() == 5,
-                "rack needs four blades and one snack");
-        helper.assertTrue(controls.getWidgetsByType(ImageWidget.class).size() == 2, "rack needs two slot labels");
+        helper.assertTrue(controls.widgets.isEmpty(), "controller must be status-only");
         helper.succeed();
     }
 
@@ -93,10 +86,7 @@ public class MachineUiTests {
     public static void liquidRackControlBounds(GameTestHelper helper) {
         WidgetGroup page = openPage(helper, HyperClusterMachines.LIQUID_COOLED_COMPUTE_RACK);
         WidgetGroup controls = checkMultiblockPage(helper, page);
-        helper.assertTrue(controls.getWidgetsByType(SlotWidget.class).size() == 5,
-                "liquid rack needs four blades and one snack");
-        helper.assertTrue(controls.getWidgetsByType(ImageWidget.class).size() == 2,
-                "liquid rack needs two slot labels");
+        helper.assertTrue(controls.widgets.isEmpty(), "controller must be status-only");
         helper.succeed();
     }
 
@@ -104,30 +94,7 @@ public class MachineUiTests {
     public static void tensorClusterControlBounds(GameTestHelper helper) {
         WidgetGroup page = openPage(helper, HyperClusterMachines.TENSOR_PRETRAINING_CLUSTER);
         WidgetGroup controls = checkMultiblockPage(helper, page);
-        helper.assertTrue(controls.getWidgetsByType(SlotWidget.class).size() == 1,
-                "the training cluster has one dataset slot");
-        // 0.6.2 added the target-family selector: three labels (dataset / target / module) and
-        // exactly one selector button, still inside the same controls strip.
-        helper.assertTrue(controls.getWidgetsByType(ImageWidget.class).size() == 3,
-                "the training cluster needs three labels after the target selector, got " +
-                        controls.getWidgetsByType(ImageWidget.class).size());
-        helper.assertTrue(controls.getWidgetsByType(ButtonWidget.class).size() == 1,
-                "the training cluster needs exactly one target selector button, got " +
-                        controls.getWidgetsByType(ButtonWidget.class).size());
-        // The selector cycles the whole open catalog and never falls off the ends.
-        var cluster = (dev.hypercluster.common.machine.training.TensorPretrainingClusterMachine) ((com.gregtechceu.gtceu.api.machine.IMachineBlockEntity) Objects
-                .requireNonNull(helper.getBlockEntity(new BlockPos(1, 1, 1)))).getMetaMachine();
-        String first = cluster.getTargetModelId();
-        java.util.Set<String> seen = new java.util.LinkedHashSet<>();
-        for (int i = 0; i < dev.hypercluster.common.model.AIModels.openModels().size(); i++) {
-            seen.add(cluster.getTargetModelId());
-            cluster.cycleTargetModel();
-        }
-        helper.assertTrue(seen.size() == dev.hypercluster.common.model.AIModels.openModels().size(),
-                "the selector must reach all " + dev.hypercluster.common.model.AIModels.openModels().size() +
-                        " open families, reached " + seen);
-        helper.assertTrue(cluster.getTargetModelId().equals(first),
-                "cycling the whole catalog must wrap back to the first family");
+        helper.assertTrue(controls.widgets.isEmpty(), "controller must be status-only");
         helper.succeed();
     }
 
@@ -149,10 +116,7 @@ public class MachineUiTests {
     public static void vramRackControlBounds(GameTestHelper helper) {
         WidgetGroup page = openPage(helper, HyperClusterMachines.VRAM_STORAGE_RACK);
         WidgetGroup controls = checkMultiblockPage(helper, page);
-        helper.assertTrue(controls.getWidgetsByType(SlotWidget.class).size() == 4,
-                "the VRAM rack needs four HBM module slots");
-        helper.assertTrue(controls.getWidgetsByType(ImageWidget.class).size() == 1,
-                "the VRAM rack needs one slot label");
+        helper.assertTrue(controls.widgets.isEmpty(), "controller must be status-only");
         helper.succeed();
     }
 
@@ -171,10 +135,8 @@ public class MachineUiTests {
     public static void moeRouterControlBounds(GameTestHelper helper) {
         WidgetGroup page = openPage(helper, HyperClusterMachines.MOE_ROUTER_RACK);
         WidgetGroup controls = checkMultiblockPage(helper, page);
-        helper.assertTrue(controls.getWidgetsByType(SlotWidget.class).size() == 5,
-                "the router needs one deployment slot plus four LoRA slots");
-        helper.assertTrue(controls.getWidgetsByType(ImageWidget.class).size() == 2,
-                "the router needs two slot labels");
+        helper.assertTrue(controls.getWidgetsByType(SlotWidget.class).isEmpty(),
+                "the router controller must leave hardware access to the hatch");
         helper.assertTrue(controls.getWidgetsByType(SwitchWidget.class).size() == 1,
                 "the router needs the DeepThink toggle");
         helper.succeed();

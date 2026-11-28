@@ -159,16 +159,18 @@
 - **交付**：`vram_rack_casing`/`optical_switch_casing`（原生 CTM）、`iv_hbm_module`(4 TB)/`luv_hbm_module`(16 TB)/`jailbreak_card` 物品、`vram_storage_rack`（5×5×3，4 槽，16/64 TB）、`optical_fabric_switch`（5×4×3，聚合 16 格内 IV 24/LuV 64，**带宽 128 CWU/t**，超限 **503 + 300 ticks**）、`moe_router_rack`（5×5×5，部署槽 + 4 LoRA + DeepThink）、`AIModelDefinition`/`AIModels` 十台模型。runGametest **79/79**；手册新增双语第六章。报告 `docs/reports/0.6.1_acceptance_report.md`。
 - **显存口径迁移**：`VRAM_PER_BLADE = 0`（刀片纯算力），集群显存只由 `VramStorageRackMachine` 提供；训练 OOM 门槛 **96 TB**（`VramRating.TRAINING_JOB_TB`），两座满插 LuV 柜过关。显存须 `state == ONLINE` 才计入池。
 - **模型注册表**：`AIModelDefinition` 是**运行时注册表**（非 MC registry），`Camp.LOCAL` 占显存/零 Token、`Camp.API` 零本地显存/计 Token；`Trait` 枚举承载各模型专属机制。`CloudModels.MODELS` 现为 API 阵营视图，`defaultModel()` 跳过带 `LIFECYCLE` 的型号，避免新站启动即 RETIRED。
-- **⚠️ GameTest 场地共享的坑（长期有效）**：`hc_field` 是**单一共享场地**，16 格聚合半径会跨测试串味——光交换机/路由柜/训练集群会看到别的测试摆的机柜。断言必须**基于机器自身读数**（`poolTerabytes()`、`aggregateAvailableCwu()`）而不是写死"应该为 16 TB/0 台"。同理 `tripBusy()` 可用来确定性地复现 503，不必构造真实并发。
+- **GameTest 场地共享**：`hc_field` 由测试批次共享。0.6.1 的 16 格聚合会串场。0.6.2 拓扑测试在各自场地内铺明确的地板，验证具体 CWU、TB 和断链归零。
 - **⚠️ 机器状态在 tick 中刷新**：在同一 `runAtTickTime` 回调里改槽位再读 `state` 会读到**上一 tick** 的判定。改完必须在**后续 tick** 断言（0.6.1 路由柜 OOM/ONLINE 曾因此假失败）。
 - **占位图流程**：美术未到位时可程序化生成 16×16 / 16×64 占位图先行通关；正式素材到位后用 `cmp` 逐字节核对替换，并以 jar 体积变化佐证打进了交付物。
 
-## 0.6.2 运行时结算补齐（2026-11-28，0.6.2）
+## GTCEu 7.4.0 开发与验收补充
 
-- **交付**：`OpenWeightModuleItem` 新增 `hc_model_id`；预训练集群**目标模型选择器** + 五档显存/算力门槛；`hv_micro_burner` 换成 `MicroBurnerMachine` 并新增开源权重克隆（保留全部 NBT、原件不消耗）；`ModelRuntime` 纯函数表把六家族机制接进 `ApiSatelliteStation` / `LocalFallbackGateway` / `MoeRouterRack`+`IvInferenceHatch` 的真实结算路径。runGametest **90/90**；报告 `docs/reports/0.6.2_acceptance_report.md`。
-- **⚠️ 配方 output content 不能塞 `ItemStack`（长期有效，会崩服）**：GTCEu 的 `ItemRecipeCapability.copyInner` 对 output content 做 `Ingredient` 强转。往 `outputs` 写带 NBT 的 `ItemStack` 会在**配方匹配阶段**抛 `ClassCastException: ItemStack cannot be cast to Ingredient` 并**崩掉整个 GameTestServer**（不是单测失败）。要按源物品打 NBT 的产物，正确做法是：配方 output 保持朴素可匹配的生物/物品，NBT 在 `RecipeLogic#onRecipeFinish()` **结算之后**由自定义 RecipeLogic 从输入槽原件复制（原件必须 `notConsumable` 才保证结算时还在）。
-- **⚠️ `GTRecipeBuilder` 重载陷阱**：`outputItems(Object)` / `inputItems(Object)` 会吞掉 `ItemEntry`/`Supplier`，静默产出错误 content；显式传 `.get()` 出来的 `Item`/`ItemStack` 才稳。`notConsumable(Supplier)` 反而是安全重载。
-- **模型 id 是裸路径**：`Catalog#get(String)` 会 `ResourceLocation.tryParse` 成 `minecraft:<path>`，找不到 `hypercluster:` 条目。按裸路径查必须遍历 `catalog().all()` 比对 `id().getPath()`（`OpenWeightModuleItem#byPath`）。`loadedModelId` 存的是**全 id**，两种都要能认。
-- **`EnergyContainerList` 无 `setEnergyStored`**：多方块的聚合能量容器是只读的，测试要制造 brownout 必须对**能量仓本身** `removeEnergy(getEnergyStored())`，并且**停止后续补电**（`primeEnergy` 的补电循环会把它充回去，导致假失败）。
-- **⚠️ 客户端冒烟日志时间戳是中文月份**：本机 `latest.log` 前缀形如 `[2811月2026 13:17:26.597]`，`^\d{2}:\d{2}:\d{2}` 类正则**一行都匹配不到**，会得出「0 条 ERROR」的假阴性。正确做法：按 `/ERROR]` 过滤，再剔除 narrator 连续行。
-- **天气翻倍只在真有衰减时生效**：`weatherAttenuation` 现在 `base > 1.0` 才翻倍，否则晴天（×1.0）会因为 `WEATHER_FRAGILE` 凭空变成惩罚。
+- GT 配方的物品 output content 使用 `Ingredient`。需从输入复制 NBT 的产物可在结算后打标签。用 `GTRecipeBuilder.inputItems/outputItems` 时，显式传物品或 `ItemStack`，避免 `ItemEntry` / `Supplier` 误入 `Object` 重载。
+- 多方块的 `EnergyContainerList` 为聚合视图。GameTest 模拟断电时操作能源仓本身并停止补电回调。
+- 客户端日志时间戳受语言设置影响。冒烟验证用 `/ERROR]` 匹配严重级别，再识别历史 narrator 错误。分步打包时在 `runData` 后另跑一次 `build`，确保 JAR 收入更新的生成资源。
+
+## 机房架构工程规范（0.6.2 起）
+
+- **标准总线与专用仓 I/O**。多方块批量物料经 GTCEu `IMPORT_ITEMS` / `EXPORT_ITEMS`。已完成的任务在输出不可用时保留待结算状态，腾出容量后继续。主控界面用于状态、启停和配置。刀片、HBM、权重、LoRA 等驻留硬件通过支持 Forge 物品能力的机房硬件仓装卸。硬件仓连接原有持久化库存，旧存档安装仓口即可取回已装载硬件。
+- **房内地板暗线与跨房原生光路**。底座全部实心支承格必须直接压在同一片正交连通、同高、无缺口的矩形架空地板上，短边至少 5 格、长边至多 24 格、长宽比至多 3:1。放置、拆除、区块装卸及结构变化触发缓存失效。跨房及对外用算使用 GTCEu 原生算力传输仓、连续光学管道、原生算力接收仓；断链归零。交换机将本地与光路来源聚合至 128 CWU/t，并保留 503 冷却 300 tick。
+- GTCEu 7.4.0 的原生配方接收仓用 `requestCWUt(Integer.MAX_VALUE, true)` 探测可用额度。交换机把这次模拟读取按带宽上限处理，真实超限请求才执行常规 503 判定。测试原生光路时显式连通两个端口及每段管道。

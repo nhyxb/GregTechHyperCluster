@@ -4,6 +4,7 @@ import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.common.data.GTMachines;
 import com.gregtechceu.gtceu.common.machine.multiblock.part.EnergyHatchPartMachine;
+import com.gregtechceu.gtceu.common.machine.multiblock.part.ItemBusPartMachine;
 import com.gregtechceu.gtceu.common.machine.multiblock.part.MaintenanceHatchPartMachine;
 
 import net.minecraft.core.BlockPos;
@@ -13,6 +14,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 
@@ -259,17 +261,23 @@ public class CloudServiceTests {
         });
 
         // Sell 2 high-purity mining datasets: +2 x 50,000.
-        helper.runAtTickTime(70, () -> a.station().getSellSlot()
-                .setStackInSlot(0, new ItemStack(HyperClusterItems.HIGH_PURITY_MINING_DATASET.get(), 2)));
+        helper.runAtTickTime(70, () -> {
+            var automation = helper.getLevel().getBlockEntity(a.input().getPos())
+                    .getCapability(ForgeCapabilities.ITEM_HANDLER, a.input().getFrontFacing()).orElseThrow(
+                            () -> new IllegalStateException("native bus must expose automation capability"));
+            helper.assertTrue(automation.insertItem(0,
+                    new ItemStack(HyperClusterItems.HIGH_PURITY_MINING_DATASET.get(), 2), false).isEmpty(),
+                    "the external item capability must accept two datasets");
+        });
         helper.runAtTickTime(100, () -> {
             helper.assertTrue(ledger.balance(player) == CloudTokenLedger.WELCOME_BONUS + 100_000,
                     "two mining datasets must sell for 100,000, balance=" + ledger.balance(player));
-            helper.assertTrue(a.station().getSellSlot().getStackInSlot(0).isEmpty(),
-                    "the sell slot must be emptied by the sale");
+            helper.assertTrue(a.input().getInventory().getStackInSlot(0).isEmpty(),
+                    "the item import bus must be emptied by the sale");
         });
 
         // Sell 3 chemical datasets: +3 x 50,000.
-        helper.runAtTickTime(120, () -> a.station().getSellSlot()
+        helper.runAtTickTime(120, () -> a.input().getInventory()
                 .setStackInSlot(0, new ItemStack(HyperClusterItems.HIGH_PURITY_CHEMICAL_DATASET.get(), 3)));
         helper.runAtTickTime(150, () -> helper.assertTrue(
                 ledger.balance(player) == CloudTokenLedger.WELCOME_BONUS + 250_000,
@@ -319,7 +327,7 @@ public class CloudServiceTests {
         helper.runAtTickTime(40, () -> {
             ensure(helper, a);
             a.station().getCredentialSlot().setStackInSlot(0, boundCard(player));
-            a.station().getInputSlot()
+            a.input().getInventory()
                     .setStackInSlot(0, new ItemStack(HyperClusterItems.CLEAN_DATASET.get(), 3));
         });
 
@@ -411,7 +419,7 @@ public class CloudServiceTests {
 
         // Drain the account dry BEFORE any input exists, so no round can ever start.
         helper.runAtTickTime(70, () -> ledger.debit(player, ledger.balance(player)));
-        helper.runAtTickTime(90, () -> a.station().getInputSlot()
+        helper.runAtTickTime(90, () -> a.input().getInventory()
                 .setStackInSlot(0, new ItemStack(HyperClusterItems.CLEAN_DATASET.get(), 2)));
         helper.runAtTickTime(120, () -> {
             helper.assertTrue(ledger.balance(player) == 0, "the account must be drained");
@@ -447,16 +455,16 @@ public class CloudServiceTests {
                     "a cancelled round must not count as spend");
             helper.assertTrue(a.station().getTaskOrderId().isEmpty(),
                     "the cancelled round must clear its order reference");
-            helper.assertTrue(a.station().getInputSlot().getStackInSlot(0).getCount() == 2,
+            helper.assertTrue(a.input().getInventory().getStackInSlot(0).getCount() == 2,
                     "the cancelled round must return its consumed input, got " +
-                            a.station().getInputSlot().getStackInSlot(0).getCount());
-            a.station().getInputSlot().setStackInSlot(0, ItemStack.EMPTY);
+                            a.input().getInventory().getStackInSlot(0).getCount());
+            a.input().getInventory().setStackInSlot(0, ItemStack.EMPTY);
         });
 
         // Restart on a changed key (Extra High tier): settles exactly once on completion.
         helper.runAtTickTime(270, () -> {
             a.station().cycleTier(); // MEDIUM -> EXTRA_HIGH: a new cache key, full rate.
-            a.station().getInputSlot()
+            a.input().getInventory()
                     .setStackInSlot(0, new ItemStack(HyperClusterItems.CLEAN_DATASET.get(), 1));
             ledger.credit(player, BASE * 2);
         });
@@ -474,7 +482,7 @@ public class CloudServiceTests {
                     "only the settled round's price may stay deducted, balance=" + ledger.balance(player));
             helper.assertTrue(ledger.totalSpent(player) == BASE * 2,
                     "the settled round must add to the spend");
-            helper.assertTrue(!a.station().getOutputSlot().getStackInSlot(0).isEmpty(),
+            helper.assertTrue(!a.output().getInventory().getStackInSlot(0).isEmpty(),
                     "the settled round must produce its output");
             System.out.printf("[HC-04] billing: refuse on empty, exact refund on cancel, settle on finish%n");
             helper.succeed();
@@ -499,7 +507,7 @@ public class CloudServiceTests {
             ensure(helper, b);
             a.station().getCredentialSlot().setStackInSlot(0, boundCard(player));
             b.station().getCredentialSlot().setStackInSlot(0, boundCard(player));
-            a.station().getInputSlot()
+            a.input().getInventory()
                     .setStackInSlot(0, new ItemStack(HyperClusterItems.CLEAN_DATASET.get(), 6));
         });
 
@@ -523,7 +531,7 @@ public class CloudServiceTests {
                         a.station().getTaskPrice()));
 
         // Change the machinePos dimension: the same account at another station pays full price.
-        helper.runAtTickTime(360, () -> b.station().getInputSlot()
+        helper.runAtTickTime(360, () -> b.input().getInventory()
                 .setStackInSlot(0, new ItemStack(HyperClusterItems.CLEAN_DATASET.get(), 1)));
         helper.runAtTickTime(400, () -> {
             helper.assertTrue(b.station().isTaskActive(), "station B must run its round");
@@ -556,7 +564,7 @@ public class CloudServiceTests {
             ensure(helper, a);
             a.station().getCredentialSlot().setStackInSlot(0, boundCard(player));
             a.station().setBatchMode(true);
-            a.station().getInputSlot()
+            a.input().getInventory()
                     .setStackInSlot(0, new ItemStack(HyperClusterItems.CLEAN_DATASET.get(), 2));
         });
 
@@ -605,12 +613,12 @@ public class CloudServiceTests {
             ensure(helper, b);
             a.station().getCredentialSlot().setStackInSlot(0, boundCard(player));
             b.station().getCredentialSlot().setStackInSlot(0, boundCard(player));
-            a.station().getInputSlot()
+            a.input().getInventory()
                     .setStackInSlot(0, new ItemStack(HyperClusterItems.CLEAN_DATASET.get(), 1));
         });
 
         // A holds the account's only Tier 1 session; B is 429-paused without billing.
-        helper.runAtTickTime(70, () -> b.station().getInputSlot()
+        helper.runAtTickTime(70, () -> b.input().getInventory()
                 .setStackInSlot(0, new ItemStack(HyperClusterItems.CLEAN_DATASET.get(), 1)));
         helper.runAtTickTime(120, () -> {
             helper.assertTrue(a.station().isTaskActive(), "station A must hold the session");
@@ -653,7 +661,7 @@ public class CloudServiceTests {
             // Select the lifecycle demonstrator explicitly: a fresh station now boots into a
             // non-lifecycle model, so cycling once is no longer deterministic.
             a.station().selectModel(CloudModels.lifecycleModel());
-            a.station().getInputSlot()
+            a.input().getInventory()
                     .setStackInSlot(0, new ItemStack(HyperClusterItems.CLEAN_DATASET.get(), 4));
         });
 
@@ -723,7 +731,7 @@ public class CloudServiceTests {
         // Drain the account BEFORE any input exists, then feed the input: instead of stalling
         // with INSUFFICIENT_FUNDS, the round switches to local fallback through the gateway.
         helper.runAtTickTime(70, () -> ledger.debit(player, ledger.balance(player)));
-        helper.runAtTickTime(90, () -> a.station().getInputSlot()
+        helper.runAtTickTime(90, () -> a.input().getInventory()
                 .setStackInSlot(0, new ItemStack(HyperClusterItems.CLEAN_DATASET.get(), 1)));
         helper.runAtTickTime(130, () -> {
             helper.assertTrue(a.station().isTaskActive(),
@@ -741,7 +749,7 @@ public class CloudServiceTests {
             helper.assertTrue(!a.station().isTaskActive(), "the fallback round must complete");
             helper.assertTrue(ledger.balance(player) == 0,
                     "the fallback round must never bill Tokens");
-            helper.assertTrue(!a.station().getOutputSlot().getStackInSlot(0).isEmpty(),
+            helper.assertTrue(!a.output().getInventory().getStackInSlot(0).isEmpty(),
                     "the fallback round must still produce the output");
             helper.assertTrue(a.gateway().getFallbackRounds() == 1,
                     "the gateway must have carried exactly one round, got " +
@@ -765,7 +773,7 @@ public class CloudServiceTests {
         helper.runAtTickTime(40, () -> {
             ensure(helper, a);
             a.station().getCredentialSlot().setStackInSlot(0, boundCard(player));
-            a.station().getInputSlot()
+            a.input().getInventory()
                     .setStackInSlot(0, new ItemStack(HyperClusterItems.CLEAN_DATASET.get(), 1));
         });
         final String[] orderId = new String[1];
@@ -820,7 +828,8 @@ public class CloudServiceTests {
     /** The parts a station test drives. */
     private record StationParts(ApiSatelliteStationMachine station, BlockPos controllerPos,
                                 EnergyHatchPartMachine energyHatch,
-                                LocalFallbackGatewayMachine gateway) {}
+                                LocalFallbackGatewayMachine gateway, ItemBusPartMachine input,
+                                ItemBusPartMachine output) {}
 
     private static ItemStack boundCard(UUID owner) {
         ItemStack card = new ItemStack(HyperClusterItems.API_CREDENTIAL_CARD.get());
@@ -858,6 +867,11 @@ public class CloudServiceTests {
                 .fixAllMaintenanceProblems();
         helper.setBlock(new BlockPos(bx + 1, by, bz + 3), withGateway ?
                 HyperClusterMachines.LOCAL_FALLBACK_GATEWAY.getBlock().defaultBlockState() : frame.defaultBlockState());
+        BlockPos inputPos = new BlockPos(bx + 1, by, bz + 2);
+        BlockPos outputPos = new BlockPos(bx + 3, by, bz + 2);
+        helper.setBlock(inputPos, GTMachines.ITEM_IMPORT_BUS[energyTier].getBlock().defaultBlockState());
+        helper.setBlock(outputPos, GTMachines.ITEM_EXPORT_BUS[energyTier].getBlock().defaultBlockState());
+
         // Build the rising dish independently of the production pattern. Its center panel
         // sits two layers below its outer rim, and a frame mast connects it to the horn.
         for (int dx = -2; dx <= 2; dx++) {
@@ -885,7 +899,9 @@ public class CloudServiceTests {
             gateway = (LocalFallbackGatewayMachine) metaMachine(helper,
                     new BlockPos(bx + 1, by, bz + 3));
         }
-        return new StationParts(station, controllerPos, energy, gateway);
+        return new StationParts(station, controllerPos, energy, gateway,
+                (ItemBusPartMachine) metaMachine(helper, inputPos),
+                (ItemBusPartMachine) metaMachine(helper, outputPos));
     }
 
     private static void setCell(GameTestHelper helper, int x, int y, int z,

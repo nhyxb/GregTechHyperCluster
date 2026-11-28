@@ -20,18 +20,18 @@
     },
     {
       "type": "patchouli:text",
-      "title": "The 5×5×3 Memory Rack",
-      "text": "$(li)$(#0E7490)Layer y=0$(): the full $(item)VRAM Rack Casing$() plinth; the energy and maintenance hatches ride this layer.$(li)$(#0E7490)y=1..3$(): the module bays behind $(item)Reinforced Glass$() doors, with a $(item)Computer Casing$() memory spine at the back.$(li)$(#0E7490)Layer y=4$(): a $(item)Tungstensteel Frame$() cable tray.$(li)$(#0E7490)Controller$(): front face, second layer, $(bold)(2, 1, 0)$().$(br2)Memory only counts while $(bold)online$(): pull a module, leave maintenance unfixed, pause with a soft mallet or cut the power and that cabinet's TB leaves the pool at once — anything loaded into it unloads the same tick."
+      "title": "5×5×3 Memory Rack",
+      "text": "The VRAM rack casing plinth carries energy and maintenance. Mount a $(item)Datacenter Hardware Hatch$() on an exposed VRAM casing. Load its four slots with IV or LuV HBM from the hatch face. Pausing, removing HBM, failed maintenance or loss of power takes the rack out of the online memory pool."
     },
     {
       "type": "patchouli:text",
-      "title": "Training gates follow the target model",
-      "text": "$(bold)Since 0.6.2 the pretraining cluster's OOM gate is validated against the target model selected on its screen$(), no longer a flat 96 TB:$(li)$(bold)Qwen 9187 Pro-Max-Ultra$(): 96 TB / 32 CWU/t (one LuV + two IV racks lands exactly on it; two full LuV racks clear it)$(li)$(bold)DeepSeek-V6767 Flash$(): 64 TB / 24 CWU/t (one full LuV rack)$(li)$(bold)DeepSeek-V6767 Pro$(): 128 TB / 48 CWU/t (two full LuV racks)$(li)$(bold)GLM-2333 Flash$(): 32 TB / 16 CWU/t (two IV racks)$(li)$(bold)GLM-2333 Max$(): 80 TB / 32 CWU/t (one LuV + one IV rack)$(br2)The bigger the family, the more TB and CWU/t it needs; short on either and training $(bold)refuses to start$() with an explicit OOM / compute reason instead of collapsing mid-run.$(br2)$(bold)Switching target clears the checkpoint$(): one family's weights cannot resume another's run."
+      "title": "The 96 TB Training Gate",
+      "text": "The pretraining OOM gate rises to $(bold)96 TB$() in 0.6.1. The arithmetic is easy against the memory racks:$(li)one fully loaded LuV rack = 64 TB, $(bold)not enough$();$(li)$(bold)two fully loaded LuV racks = 128 TB, comfortably over$();$(li)or one LuV + two IV = 96 TB, exactly on the line.$(br2)If the pool is short the run $(bold)refuses to start$() with an explicit OOM instead of collapsing halfway."
     },
     {
       "type": "patchouli:text",
-      "title": "Optical Fabric Switch: Many Cabinets, One Pool",
-      "text": "Loose cabinets do not make a cluster. The $(item)Optical Fabric Switch$() aggregates every compute and memory rack within $(bold)16 blocks$() into one pool:$(li)each IV air-cooled rack contributes $(bold)24 CWU/t$();$(li)each LuV liquid-cooled rack contributes $(bold)64 CWU/t$();$(li)the memory cabinets' TB is summed for the router and the training cluster.$(br2)It is also a $(bold)hard ceiling$(): demand above $(bold)128 CWU/t$() in one tick trips $(bold)503 Server Busy$() for a $(bold)15-second (300-tick)$() cooldown, during which nobody is served."
+      "title": "Hidden Wiring on Raised Floors",
+      "text": "Each machine’s entire base must rest directly on one connected $(item)Raised Floor$() rectangle. Every tile must be present. The short side must be at least 5, the long side at most 24, and the ratio at most 3:1. $(bold)6×6 and 18×8$() qualify. 1×12, 2×12, 5×20, holes and protruding strips invalidate the component."
     },
     {
       "type": "patchouli:crafting",
@@ -40,8 +40,13 @@
     },
     {
       "type": "patchouli:text",
-      "title": "The 5×4×3 Backplane Cabinet",
-      "text": "$(li)$(#0E7490)y=0$(): the heavy backplane plinth with the energy and maintenance hatches.$(li)$(#0E7490)y=1$(): the port row, controller front-centre at $(bold)(2, 1, 0)$().$(li)$(#0E7490)y=2$(): the exposed fibre tray behind $(item)Reinforced Glass$().$(li)$(#0E7490)y=3$(): a $(item)Steel Frame$() overhead bridge.$(br2)The GUI reports member count, aggregated CWU/t, aggregated TB and the remaining 503 cooldown."
+      "title": "The 5×4×3 Backplane",
+      "text": "The plinth takes energy and maintenance. The cabinet casing also accepts up to four native computation receivers and four transmitters. The switch aggregates racks on its own floor and remote optical inputs. It offers up to $(bold)128 CWU/t$(). Over-bandwidth demand triggers $(bold)503$() for $(bold)300 ticks$()."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Cross-Room Optical Wiring",
+      "text": "Run GT optical pipe from the source $(item)Computation Transmitter Hatch$() to the destination $(item)Computation Receiver Hatch$(). Check both connections with a wrench. Use a room switch as the source to forward its memory pool as well as compute. Research Stations, scrubbing-tower inference hatches and other external consumers receive zero CWU/t when the pipe is absent or broken."
     }
   ]
 }

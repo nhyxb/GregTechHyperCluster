@@ -20,7 +20,7 @@
     {
       "type": "patchouli:text",
       "title": "The 5×5×3 Structure",
-      "text": "$(li)$(#0E7490)Layer y=0$(): a full plinth of $(item)Cold-Plate Liquid Rack Casing$(); the Energy Hatch, Fluid Input Hatch and Maintenance Hatch all ride this layer's wall.$(li)$(#0E7490)Layers y=1..3$(): $(item)Reinforced Glass$() cold/hot aisle doors front and back with an open airflow core; the y=2 rear wall is $(item)Computer Casing$() hosting $(bold)1–2 GT Computation Data Transmission Hatches$().$(li)$(#0E7490)Layer y=4$(): $(item)Tungstensteel Frame$() cable tray and heat grates.$(li)$(#0E7490)Controller$(): front face, second layer, $(bold)(2, 2, 0)$() — clickable standing up."
+      "text": "The liquid casing plinth carries the energy, fluid and maintenance hatches. Put a $(item)Datacenter Hardware Hatch$() in an exposed liquid casing cell and face its port outward. Load four blades and the optional snack there. The y=2 rear computer-casing row accepts up to two native transmitters for external optical links. The roof carries frames and grating."
     },
     {
       "type": "patchouli:text",

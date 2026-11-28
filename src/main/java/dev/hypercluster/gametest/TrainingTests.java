@@ -11,6 +11,7 @@ import com.gregtechceu.gtceu.common.data.GTMaterials;
 import com.gregtechceu.gtceu.common.data.machines.GTResearchMachines;
 import com.gregtechceu.gtceu.common.machine.multiblock.part.EnergyHatchPartMachine;
 import com.gregtechceu.gtceu.common.machine.multiblock.part.FluidHatchPartMachine;
+import com.gregtechceu.gtceu.common.machine.multiblock.part.ItemBusPartMachine;
 import com.gregtechceu.gtceu.common.machine.multiblock.part.MaintenanceHatchPartMachine;
 
 import net.minecraft.core.BlockPos;
@@ -19,9 +20,13 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.phys.AABB;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 
@@ -270,10 +275,11 @@ public class TrainingTests {
         LiquidRackParts rack = placeLiquidRack(helper, 1, 1, 1);
         ClusterParts cluster = placeTensorCluster(helper, 8, 1, 1);
         UpsParts ups = placeUps(helper, 1, 1, 10);
+        TopologyTests.fillFloor(helper, 1, 0, 1, 14, 14);
         // 0.6.1: cluster memory lives in VRAM racks, so the cluster needs two full LuV racks.
         VramParts[] memory = new VramParts[2];
         for (int i = 0; i < 2; i++) {
-            memory[i] = placeVramRack(helper, 8, 1, 8 + i * 5);
+            memory[i] = placeVramRack(helper, 8, 1, 8 + i * 4);
             for (int slot = 0; slot < 4; slot++) {
                 memory[i].controller().getModuleSlot()
                         .setStackInSlot(slot, new ItemStack(HyperClusterItems.LUV_HBM_MODULE.get()));
@@ -297,7 +303,7 @@ public class TrainingTests {
             }
             rack.fluidHatch().tank.setFluidInTank(0, GTMaterials.DistilledWater.getFluid(32000));
             cluster.fluidHatch().tank.setFluidInTank(0, GTMaterials.DistilledWater.getFluid(32000));
-            cluster.controller().getDatasetSlot()
+            cluster.inputBus().getInventory()
                     .setStackInSlot(0, new ItemStack(HyperClusterItems.HIGH_PURITY_MINING_DATASET.get(), 2));
         });
 
@@ -360,45 +366,38 @@ public class TrainingTests {
 
         ClusterParts cluster = placeTensorCluster(helper, 1, 1, 1);
         primeEnergy(cluster.energyHatch(), helper, 20, 500);
+        TopologyTests.fillFloor(helper, 1, 0, 1, 12, 11);
+        VramParts[] memory = new VramParts[2];
+        for (int rack = 0; rack < memory.length; rack++) {
+            memory[rack] = placeVramRack(helper, 8, 1, 1 + rack * 8);
+            primeEnergy(memory[rack].energyHatch(), helper, 200, 500);
+        }
 
         helper.runAtTickTime(40, () -> {
             ensureFormed(cluster.controller());
             cluster.controller().setJobVram(96);
-            cluster.controller().getDatasetSlot()
+            cluster.inputBus().getInventory()
                     .setStackInSlot(0, new ItemStack(HyperClusterItems.HIGH_PURITY_MINING_DATASET.get()));
             cluster.fluidHatch().tank.setFluidInTank(0, GTMaterials.DistilledWater.getFluid(32000));
         });
 
         helper.runAtTickTime(160, () -> {
-            // The gametest arena is shared, so other tests' memory cabinets can be in range. The
-            // gate itself was already asserted purely above; here we only need the *decision* to
-            // be OOM whenever the pool is short, and RUNNING/LOADING when it is not.
             int pool = cluster.controller().hostVramCapacity();
-            if (pool < dev.hypercluster.common.machine.datacenter.VramRating.TRAINING_JOB_TB) {
-                helper.assertTrue(
-                        cluster.controller().getState() == TensorPretrainingClusterMachine.RunState.OOM,
-                        "a 96 TB job under a " + pool + " TB pool must be refused with OOM, got " +
-                                cluster.controller().getState());
-                helper.assertTrue(!cluster.controller().isRunning(), "an OOM job must not start a run");
-            } else {
-                helper.assertTrue(
-                        cluster.controller().getState() != TensorPretrainingClusterMachine.RunState.OOM,
-                        "a 96 TB job over a " + pool + " TB pool must not be refused with OOM");
-            }
+            helper.assertTrue(pool == 0, "empty memory bays must contribute zero TB");
+            helper.assertTrue(cluster.controller().getState() == TensorPretrainingClusterMachine.RunState.OOM,
+                    "a 96 TB job under a zero TB pool must be refused with OOM");
+            helper.assertTrue(!cluster.controller().isRunning(), "an OOM job must not start a run");
             System.out.printf("[HC-06] OOM gate: pool=%d TB, state=%s%n", pool,
                     cluster.controller().getState());
         });
 
         // Two full LuV memory racks (2 × 64 TB) clear the 96 TB gate: a gate, not a wall.
         helper.runAtTickTime(180, () -> {
-            for (int rack = 0; rack < 2; rack++) {
-                // 5 wide x 3 deep: step 8 blocks along z so the two footprints never touch.
-                VramParts vram = placeVramRack(helper, 8, 1, 1 + rack * 8);
+            for (VramParts vram : memory) {
                 for (int i = 0; i < 4; i++) {
                     vram.controller().getModuleSlot()
                             .setStackInSlot(i, new ItemStack(HyperClusterItems.LUV_HBM_MODULE.get()));
                 }
-                primeEnergy(vram.energyHatch(), helper, 200, 500);
                 ensureFormed(vram.controller());
             }
         });
@@ -489,7 +488,7 @@ public class TrainingTests {
 
         helper.runAtTickTime(40, () -> {
             ensureFormed(cluster.controller());
-            cluster.controller().getDatasetSlot()
+            cluster.inputBus().getInventory()
                     .setStackInSlot(0, new ItemStack(HyperClusterItems.HIGH_PURITY_CHEMICAL_DATASET.get()));
             cluster.fluidHatch().tank.setFluidInTank(0, GTMaterials.DistilledWater.getFluid(32000));
         });
@@ -529,6 +528,86 @@ public class TrainingTests {
         });
     }
 
+    @GameTest(template = "hc_field", batch = "hypercluster_062_training_io", timeoutTicks = 2700)
+    public static void trainingUsesBusesAndWaitsAtFullOutput(GameTestHelper helper) {
+        TopologyTests.fillFloor(helper, 1, 0, 1, 14, 14);
+        var compute = placeLiquidRack(helper, 1, 1, 1);
+        var cluster = placeTensorCluster(helper, 8, 1, 1);
+        var memoryA = placeVramRack(helper, 8, 1, 8);
+        var memoryB = placeVramRack(helper, 8, 1, 12);
+        for (var energy : new EnergyHatchPartMachine[] { compute.energyHatch(), cluster.energyHatch(),
+                memoryA.energyHatch(), memoryB.energyHatch() }) {
+            primeEnergy(energy, helper, 20, 2640);
+        }
+        helper.runAtTickTime(40, () -> {
+            ensureFormed(compute.controller());
+            ensureFormed(memoryA.controller());
+            ensureFormed(memoryB.controller());
+            ensureFormed(cluster.controller());
+            for (int slot = 0; slot < 4; slot++) {
+                compute.controller().getBladeInventory().setStackInSlot(slot,
+                        new ItemStack(HyperClusterItems.LUV_LIQUID_BLADE.get()));
+                for (var rack : new VramParts[] { memoryA, memoryB }) {
+                    rack.controller().getModuleSlot().setStackInSlot(slot,
+                            new ItemStack(HyperClusterItems.LUV_HBM_MODULE.get()));
+                }
+            }
+            compute.fluidHatch().tank.setFluidInTank(0, GTMaterials.DistilledWater.getFluid(32000));
+            cluster.fluidHatch().tank.setFluidInTank(0, GTMaterials.DistilledWater.getFluid(32000));
+            var input = helper.getLevel().getBlockEntity(cluster.inputBus().getPos())
+                    .getCapability(ForgeCapabilities.ITEM_HANDLER, cluster.inputBus().getFrontFacing()).orElseThrow(
+                            () -> new IllegalStateException("missing input bus capability"));
+            helper.assertTrue(
+                    input.insertItem(0, new ItemStack(HyperClusterItems.HIGH_PURITY_CHEMICAL_DATASET.get()), false)
+                            .isEmpty(),
+                    "the input bus must accept an automated dataset");
+            var output = cluster.outputBus().getInventory();
+            for (int slot = 0; slot < output.getSlots(); slot++) {
+                output.setStackInSlot(slot, new ItemStack(Items.COBBLESTONE, 64));
+            }
+        });
+        helper.runAtTickTime(100, () -> {
+            helper.assertTrue(cluster.controller().isRunning(), "training must start with only floor links, got " +
+                    cluster.controller().getState() + ", memory=" + cluster.controller().hostVramCapacity());
+            helper.assertTrue(cluster.inputBus().getInventory().getStackInSlot(0).isEmpty(),
+                    "training must consume exactly one dataset from import");
+        });
+        helper.runAtTickTime(2490, () -> {
+            var machine = cluster.controller();
+            helper.assertTrue(machine.getState() == TensorPretrainingClusterMachine.RunState.OUTPUT_BLOCKED &&
+                    machine.getProgressPercent() == 100.0 && machine.getCompletedRuns() == 0,
+                    "full output must hold the completed job at 100%, got " + machine.getState() +
+                            " " + machine.getProgressPercent());
+            helper.assertTrue(helper.getLevel().getEntitiesOfClass(ItemEntity.class,
+                    new AABB(machine.getPos()).inflate(10)).isEmpty(), "a blocked job must not spawn item entities");
+            var blockEntity = helper.getBlockEntity(cluster.controllerPos());
+            blockEntity.load(blockEntity.saveWithFullMetadata());
+        });
+        helper.runAtTickTime(2510, () -> {
+            helper.assertTrue(
+                    cluster.controller().getState() == TensorPretrainingClusterMachine.RunState.OUTPUT_BLOCKED,
+                    "blocked output must survive a save/load round-trip");
+            var output = helper.getLevel().getBlockEntity(cluster.outputBus().getPos())
+                    .getCapability(ForgeCapabilities.ITEM_HANDLER, cluster.outputBus().getFrontFacing()).orElseThrow(
+                            () -> new IllegalStateException("missing output bus capability"));
+            helper.assertTrue(output.extractItem(0, 64, false).is(Items.COBBLESTONE),
+                    "external extraction must free one export slot");
+        });
+        helper.runAtTickTime(2540, () -> {
+            var machine = cluster.controller();
+            var module = cluster.outputBus().getInventory().getStackInSlot(0);
+            helper.assertTrue(machine.getCompletedRuns() == 1 && !machine.isRunning(),
+                    "freeing export must settle the job once");
+            helper.assertTrue(module.is(HyperClusterItems.OPEN_WEIGHT_MODULE.get()) && module.getCount() == 1 &&
+                    TrainingRating.DOMAIN_CHEMICAL.equals(OpenWeightModuleItem.domain(module)) &&
+                    TrainingRating.PRECISION.equals(OpenWeightModuleItem.precision(module)) &&
+                    OpenWeightModuleItem.runs(module) == 1, "export must hold exactly one tagged trained module");
+            helper.assertTrue(helper.getLevel().getEntitiesOfClass(ItemEntity.class,
+                    new AABB(machine.getPos()).inflate(10)).isEmpty(), "export must not spawn item entities");
+            helper.succeed();
+        });
+    }
+
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // Structures & helpers //
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -538,7 +617,8 @@ public class TrainingTests {
                            MaintenanceHatchPartMachine maintenanceHatch, BlockPos transmitterPos) {}
 
     record ClusterParts(TensorPretrainingClusterMachine controller, BlockPos controllerPos,
-                        EnergyHatchPartMachine energyHatch, FluidHatchPartMachine fluidHatch) {}
+                        EnergyHatchPartMachine energyHatch, FluidHatchPartMachine fluidHatch,
+                        ItemBusPartMachine inputBus, ItemBusPartMachine outputBus) {}
 
     record UpsParts(UpsPowerArrayMachine controller, EnergyHatchPartMachine energyHatch) {}
 
@@ -712,7 +792,9 @@ public class TrainingTests {
         FluidHatchPartMachine fluid = (FluidHatchPartMachine) metaMachine(helper, new BlockPos(bx, by, bz + 6));
         TensorPretrainingClusterMachine controller = (TensorPretrainingClusterMachine) metaMachine(helper,
                 placed.controllerPos());
-        return new ClusterParts(controller, placed.controllerPos(), energy, fluid);
+        return new ClusterParts(controller, placed.controllerPos(), energy, fluid,
+                (ItemBusPartMachine) metaMachine(helper, new BlockPos(bx + 4, by, bz)),
+                (ItemBusPartMachine) metaMachine(helper, new BlockPos(bx + 6, by, bz + 6)));
     }
 
     /** Replaces a rear 'C' cell of the rack's blade bay with the cloud offload node. */

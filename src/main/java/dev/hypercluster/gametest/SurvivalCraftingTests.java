@@ -248,7 +248,7 @@ public class SurvivalCraftingTests {
                 HyperClusterMachines.CLOUD_OFFLOAD_NODE,
                 // 0.6.1 — machine-room topology, TB memory and model deployment.
                 HyperClusterMachines.VRAM_STORAGE_RACK, HyperClusterMachines.OPTICAL_FABRIC_SWITCH,
-                HyperClusterMachines.MOE_ROUTER_RACK }) {
+                HyperClusterMachines.MOE_ROUTER_RACK, HyperClusterMachines.DATACENTER_HARDWARE_HATCH }) {
             int expected = 0;
             int registered = 0;
             for (com.gregtechceu.gtceu.client.model.machine.MachineRenderState state : machine

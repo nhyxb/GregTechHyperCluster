@@ -28,6 +28,7 @@ import dev.hypercluster.common.machine.TelemetryOreWasherMachine;
 import dev.hypercluster.common.machine.cloud.ApiSatelliteStationMachine;
 import dev.hypercluster.common.machine.cloud.LocalFallbackGatewayMachine;
 import dev.hypercluster.common.machine.datacenter.AirCooledComputeRackMachine;
+import dev.hypercluster.common.machine.datacenter.DatacenterHardwareHatchMachine;
 import dev.hypercluster.common.machine.datacenter.IvInferenceHatchMachine;
 import dev.hypercluster.common.machine.datacenter.LiquidCooledComputeRackMachine;
 import dev.hypercluster.common.machine.datacenter.OpticalFabricSwitchMachine;
@@ -86,6 +87,7 @@ public final class HyperClusterMachines {
     public static MultiblockMachineDefinition VRAM_STORAGE_RACK;
     public static MultiblockMachineDefinition OPTICAL_FABRIC_SWITCH;
     public static MultiblockMachineDefinition MOE_ROUTER_RACK;
+    public static MachineDefinition DATACENTER_HARDWARE_HATCH;
 
     private HyperClusterMachines() {}
 
@@ -177,16 +179,11 @@ public final class HyperClusterMachines {
 
         // 0.4 — the API satellite ground station: the closed-source cloud.
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.tooltip",
-                "IV closed-source cloud ground station: opens Token accounts, buys high-purity datasets and runs billable cloud service rounds (LV/MV power, feed horn must see open sky).");
+                "IV closed-source cloud ground station: opens Token accounts, buys high-purity datasets through an item import bus and runs billable cloud service rounds (LV/MV power, feed horn must see open sky).");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.label.credential", "API key");
-        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.label.sell", "Sell");
-        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.label.input", "Input");
-        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.label.output", "Output");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.label.card", "Token");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.credential_slot",
                 "API credential card: binds the account this station operates on (first open anywhere grants the welcome Tokens).");
-        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.sell_slot",
-                "Upload slot: high-purity datasets auto-sell for Tokens while a credential card is present.");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.card_slot",
                 "Token credit card slot: deposit / withdraw Tokens between the card and the bound account.");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.deposit",
@@ -197,10 +194,6 @@ public final class HyperClusterMachines {
                 "Withdraw");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.withdraw.tooltip",
                 "Withdraw: move the account's whole balance onto the card.");
-        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.input_slot",
-                "Service input: one clean dataset per cloud round.");
-        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.output_slot",
-                "Service output: the high-purity mining datasets the cloud rounds produce.");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.batch.tooltip",
                 "Batch mode: duration x2, Token bill x0.5 (stacks with the prompt-cache discount).");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.tier.tooltip",
@@ -230,7 +223,9 @@ public final class HyperClusterMachines {
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.status.no_credential",
                 "Insert an API credential card to open the account.");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.status.no_input",
-                "Insert a clean dataset to start a cloud round.");
+                "Feed a clean dataset into the item import bus to start a cloud round.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.status.output_blocked",
+                "Waiting for space in the item export bus.");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.status.sky_blocked",
                 "Uplink refused: the feed horn must see open sky.");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.status.model_offline",
@@ -259,8 +254,7 @@ public final class HyperClusterMachines {
         // P03 — HV Micro Burner: logging chain (telemetry log + blank carrier -> edge chip).
         HV_MICRO_BURNER = HyperCluster.REGISTRATE
                 .machine("hv_micro_burner",
-                        holder -> new dev.hypercluster.common.machine.MicroBurnerMachine(holder, GTValues.HV,
-                                defaultTankSizeFunction))
+                        holder -> new SimpleTieredMachine(holder, GTValues.HV, defaultTankSizeFunction))
                 .tier(GTValues.HV)
                 .langValue("HV Micro Burner")
                 .editableUI(SimpleTieredMachine.EDITABLE_UI_CREATOR
@@ -482,7 +476,9 @@ public final class HyperClusterMachines {
                         .aisle("III", "III", "ISI", "III", "III")
                         .aisle("EEE", "XXX", "EEE", "EEE", "EEE")
                         .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
-                        .where('I', Predicates.blocks(HyperClusterBlocks.RACK_CASING_INTAKE.get()))
+                        .where('I', Predicates.blocks(HyperClusterBlocks.RACK_CASING_INTAKE.get())
+                                .or(Predicates.abilities(HyperClusterPartAbilities.DATACENTER_HARDWARE)
+                                        .setMaxGlobalLimited(1)))
                         .where('E', Predicates.blocks(HyperClusterBlocks.RACK_CASING_EXHAUST.get()))
                         // The hatch row of the exhaust wall: plain casing, the energy hatch(es),
                         // GTCEu's native computation transmission hatch and the maintenance hatch.
@@ -490,7 +486,7 @@ public final class HyperClusterMachines {
                                 .or(Predicates.abilities(PartAbility.INPUT_ENERGY)
                                         .setMinGlobalLimited(1).setMaxGlobalLimited(2))
                                 .or(Predicates.abilities(PartAbility.COMPUTATION_DATA_TRANSMISSION)
-                                        .setExactLimit(1))
+                                        .setMaxGlobalLimited(1))
                                 .or(Predicates.autoAbilities(true, false, false)))
                         .build())
                 .allowExtendedFacing(false)
@@ -556,6 +552,8 @@ public final class HyperClusterMachines {
                         .where('T', Predicates.blocks(HyperClusterBlocks.SATELLITE_DISH_FRAME.get()))
                         .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
                         .where('F', Predicates.blocks(HyperClusterBlocks.SATELLITE_DISH_FRAME.get())
+                                .or(Predicates.abilities(PartAbility.IMPORT_ITEMS).setMaxGlobalLimited(2))
+                                .or(Predicates.abilities(PartAbility.EXPORT_ITEMS).setMaxGlobalLimited(2))
                                 .or(Predicates.abilities(PartAbility.INPUT_ENERGY)
                                         .setMinGlobalLimited(1).setMaxGlobalLimited(2))
                                 .or(Predicates.abilities(
@@ -643,12 +641,6 @@ public final class HyperClusterMachines {
 
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.tooltip",
                 "Tensor pretraining cluster: long LuV runs over high-purity datasets with NBT checkpoints, a VRAM (OOM) gate and UPS-protected resume.");
-        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.label.dataset",
-                "Training dataset");
-        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.label.module",
-                "Modules");
-        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.dataset_slot",
-                "High-purity mining or chemical dataset: one per training run.");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.training",
                 "Training");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.progress",
@@ -665,11 +657,13 @@ public final class HyperClusterMachines {
                 "Running on UPS backup power — the checkpoint survives this brownout.");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.state.idle", "");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.state.no_dataset",
-                "Insert a high-purity dataset to start a run.");
+                "Feed a high-purity dataset into the item import bus to start a run.");
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.state.output_blocked",
+                "Training complete: extract an item from the export bus to release the module.");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.state.no_computation",
-                "No CWU/t on the optical link: connect a liquid rack's computation hatch.");
+                "No connected CWU/t: check the raised floor or the optical pipe.");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.state.oom",
-                "OOM: the racks in range do not provide enough VRAM to start this job.");
+                "OOM: connected racks do not provide enough VRAM to start this job.");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.state.no_coolant",
                 "No distilled water or PCB coolant in the fluid hatches.");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.state.low_power",
@@ -736,6 +730,8 @@ public final class HyperClusterMachines {
                         .aisle("TTTTT", "T###T", "THHHT")
                         .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
                         .where('L', Predicates.blocks(HyperClusterBlocks.LIQUID_RACK_CASING.get())
+                                .or(Predicates.abilities(HyperClusterPartAbilities.DATACENTER_HARDWARE)
+                                        .setMaxGlobalLimited(1))
                                 .or(Predicates.abilities(PartAbility.IMPORT_FLUIDS)
                                         .setMinGlobalLimited(1).setMaxGlobalLimited(2))
                                 .or(Predicates.abilities(PartAbility.INPUT_ENERGY)
@@ -748,7 +744,7 @@ public final class HyperClusterMachines {
                         .where('G', Predicates.blocks(GTBlocks.CASING_LAMINATED_GLASS.get()))
                         .where('C', Predicates.blocks(GTBlocks.COMPUTER_CASING.get())
                                 .or(Predicates.abilities(PartAbility.COMPUTATION_DATA_TRANSMISSION)
-                                        .setMinGlobalLimited(1).setMaxGlobalLimited(2))
+                                        .setMinGlobalLimited(0).setMaxGlobalLimited(2))
                                 .or(Predicates.abilities(HyperClusterPartAbilities.CLOUD_OFFLOAD)
                                         .setMinGlobalLimited(0).setMaxGlobalLimited(1)))
                         .where('T', Predicates.frames(GTMaterials.TungstenSteel))
@@ -818,13 +814,13 @@ public final class HyperClusterMachines {
                                 .or(Predicates.abilities(PartAbility.IMPORT_ITEMS)
                                         .setMinGlobalLimited(1).setMaxGlobalLimited(2))
                                 .or(Predicates.abilities(PartAbility.EXPORT_ITEMS)
-                                        .setMinGlobalLimited(0).setMaxGlobalLimited(2))
+                                        .setMinGlobalLimited(1).setMaxGlobalLimited(2))
                                 .or(Predicates.abilities(PartAbility.IMPORT_FLUIDS)
                                         .setMinGlobalLimited(1).setMaxGlobalLimited(2))
                                 .or(Predicates.abilities(PartAbility.INPUT_ENERGY)
                                         .setMinGlobalLimited(1).setMaxGlobalLimited(2))
                                 .or(Predicates.abilities(PartAbility.COMPUTATION_DATA_RECEPTION)
-                                        .setMinGlobalLimited(1).setMaxGlobalLimited(1))
+                                        .setMinGlobalLimited(0).setMaxGlobalLimited(1))
                                 .or(Predicates.autoAbilities(true, false, false)))
                         .where('G', Predicates.blocks(GTBlocks.CLEANROOM_GLASS.get()))
                         .where('C', Predicates.blocks(GTBlocks.ADVANCED_COMPUTER_CASING.get()))
@@ -854,11 +850,22 @@ public final class HyperClusterMachines {
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     private static void initTopologyMachines() {
+        DATACENTER_HARDWARE_HATCH = HyperCluster.REGISTRATE
+                .machine("datacenter_hardware_hatch", DatacenterHardwareHatchMachine::new)
+                .tier(GTValues.IV)
+                .langValue("Datacenter Hardware Hatch")
+                .rotationState(RotationState.ALL)
+                .abilities(HyperClusterPartAbilities.DATACENTER_HARDWARE)
+                .modelProperty(GTMachineModelProperties.IS_FORMED, false)
+                .workableTieredHullModel(HyperCluster.id("block/machines/inference_hatch"))
+                .register();
+
+        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.datacenter_hardware_hatch.tooltip",
+                "Access the attached rack's installed hardware from the hatch face.");
+
         // ---- lang: TB memory items, the three new machines and the model catalog ----
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.vram_storage_rack.tooltip",
                 "TB-scale cluster memory cabinet: four HBM modules expose the cluster VRAM pool (16 TB with IV modules, 64 TB with LuV).");
-        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.vram_storage_rack.label.modules",
-                "HBM modules");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.vram_storage_rack.module_slot",
                 "HBM module slot: IV gives 4 TB, LuV gives 16 TB. Four modules fill the rack.");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.vram_storage_rack.online",
@@ -878,7 +885,7 @@ public final class HyperClusterMachines {
                 "Memory offline: not enough energy to refresh the modules.");
 
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.optical_fabric_switch.tooltip",
-                "Optical fabric switch: aggregates nearby IV/LuV compute racks and memory cabinets into one cluster pool with a hard bandwidth ceiling.");
+                "Optical fabric switch: aggregates rack resources over compliant raised floors and native optical links.");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.optical_fabric_switch.serving",
                 "Serving the cluster");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.optical_fabric_switch.members",
@@ -890,7 +897,7 @@ public final class HyperClusterMachines {
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.optical_fabric_switch.busy",
                 "503 Server Busy: over the bandwidth ceiling, cooling down (%ss).");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.optical_fabric_switch.status.no_members",
-                "No compute racks in range.");
+                "No connected computation providers.");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.optical_fabric_switch.status.busy_503",
                 "503 Server Busy: over the bandwidth ceiling.");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.optical_fabric_switch.status.low_power",
@@ -903,16 +910,12 @@ public final class HyperClusterMachines {
 
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.tooltip",
                 "MoE routing rack: deploys open-weight models into the cluster memory pool, with four LoRA slots and the DeepThink charge switch.");
-        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.label.model",
-                "Model weights");
-        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.label.lora",
-                "LoRA extensions");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.model_slot",
                 "Deployment slot: one open-weight module. The model loads into cluster memory.");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.lora_slot",
                 "LoRA extension slot: mining or chemical LoRA card, +4 TB and +4 CWU/t each.");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.deepthink.tooltip",
-                "DeepThink: reserve +16 TB and force probability by-products to 100%.");
+                "DeepThink: reserve 16 TB for supported models.");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.online",
                 "Model online");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.model_line",
@@ -936,68 +939,6 @@ public final class HyperClusterMachines {
                 "Paused (soft mallet).");
         HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.state.maintenance",
                 "Maintenance problems unfixed.");
-
-        // ---- 0.6.2 · runtime settlement of the six families ----
-        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.state.sleeping",
-                "GLM-2333 Flash protective sleep: the room is under 20% stored energy.");
-        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.state.agent_idle",
-                "GLM-2333 Max agent: associated multiblocks parked to save standby power.");
-        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.agent.on",
-                "Agent tool calls: associated multiblocks stopped, waiting for recovery.");
-        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.consumed",
-                "Computation really drawn this tick: %s CWU/t");
-        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.projection.lora",
-                "LoRA specialisation projected onto %s inference hatches");
-        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.moe_router_rack.projection.force",
-                "DeepThink by-product force projected onto %s inference hatches");
-
-        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.iv_inference_hatch.lora_projected",
-                "LoRA specialisation: %s (%s cards)");
-        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.iv_inference_hatch.byproducts_forced",
-                "DeepThink by-products forced to 100%");
-
-        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.local_fallback_gateway.speed.accelerated",
-                "Fallback slowdown: x%s (Qwen 9187 online)");
-        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.local_fallback_gateway.speed.bare",
-                "Fallback slowdown: x%s (no Qwen 9187 deployed)");
-
-        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.label.jailbreak",
-                "Jailbreak card");
-        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.jailbreak_slot",
-                "Jailbreak patch card: GPT-1145 Multiverse needs it to run whitelisted dangerous chemistry (not consumed).");
-        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.dangerous.on",
-                "Dangerous round: ON");
-        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.dangerous.off",
-                "Dangerous round: OFF");
-        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.dangerous.tooltip",
-                "Whitelisted dangerous chemistry round: Grok-420 runs it uncensored, GPT-1145 needs a jailbreak card, other families cannot.");
-        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.family_line",
-                "Family: weather attenuation x%s | yield bonus +%s | jailbreak: %s");
-        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.jailbroken",
-                "inserted");
-        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.jailbreak_bare",
-                "not inserted");
-        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.dangerous_line",
-                "Dangerous round armed: this family may run it.");
-        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.api_satellite_station.status.moral_refusal",
-                "Moral refusal: no jailbreak patch card, the round is refused and nothing is billed.");
-        HyperCluster.REGISTRATE.addRawLang(
-                "hypercluster.machine.api_satellite_station.status.dangerous_round_unsupported",
-                "This family has no dangerous-round capability.");
-
-        // ---- 0.6.2: per-model training gates, the target selector and open-weight cloning ----
-        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.label.target",
-                "Target model");
-        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.target",
-                "Target family: %s");
-        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.compute",
-                "Optical feed: %s CWU/t demanded");
-        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.tensor_pretraining_cluster.target.tooltip",
-                "Target open-weight family. Each family validates its own VRAM and CWU/t gate; the exported module carries this identity.");
-        HyperCluster.REGISTRATE.addRawLang("hypercluster.machine.hv_micro_burner.tooltip.clone",
-                "Chip route: two inputs plus a blank carrier. Clone route: one open-weight module, kept (not consumed), plus a blank carrier and 600 EU/t.");
-        HyperCluster.REGISTRATE.addRawLang("item.hypercluster.open_weight_module.model",
-                "Weights: %s");
 
         // ---- model catalog display names ----
         HyperCluster.REGISTRATE.addRawLang("hypercluster.model.qwen_9187_pro_max_ultra",
@@ -1036,6 +977,8 @@ public final class HyperClusterMachines {
                         .aisle("TTTTT", "T###T", "TTTTT")
                         .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
                         .where('V', Predicates.blocks(HyperClusterBlocks.VRAM_RACK_CASING.get())
+                                .or(Predicates.abilities(HyperClusterPartAbilities.DATACENTER_HARDWARE)
+                                        .setMaxGlobalLimited(1))
                                 .or(Predicates.abilities(PartAbility.INPUT_ENERGY)
                                         .setMinGlobalLimited(1).setMaxGlobalLimited(2))
                                 .or(Predicates.autoAbilities(true, false, false)))
@@ -1068,6 +1011,10 @@ public final class HyperClusterMachines {
                         .aisle("TTTTT", "T###T", "T###T")
                         .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
                         .where('O', Predicates.blocks(HyperClusterBlocks.OPTICAL_SWITCH_CASING.get())
+                                .or(Predicates.abilities(PartAbility.COMPUTATION_DATA_RECEPTION)
+                                        .setMaxGlobalLimited(4))
+                                .or(Predicates.abilities(PartAbility.COMPUTATION_DATA_TRANSMISSION)
+                                        .setMaxGlobalLimited(4))
                                 .or(Predicates.abilities(PartAbility.INPUT_ENERGY)
                                         .setMinGlobalLimited(1).setMaxGlobalLimited(2))
                                 .or(Predicates.autoAbilities(true, false, false)))
@@ -1101,10 +1048,8 @@ public final class HyperClusterMachines {
                         .aisle("#####", "#TTT#", "#TTT#", "#TTT#", "#####")
                         .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
                         .where('C', Predicates.blocks(GTBlocks.COMPUTER_CASING.get())
-                                .or(Predicates.abilities(PartAbility.IMPORT_ITEMS)
-                                        .setMinGlobalLimited(0).setMaxGlobalLimited(2))
-                                .or(Predicates.abilities(PartAbility.EXPORT_ITEMS)
-                                        .setMinGlobalLimited(0).setMaxGlobalLimited(2))
+                                .or(Predicates.abilities(HyperClusterPartAbilities.DATACENTER_HARDWARE)
+                                        .setMaxGlobalLimited(1))
                                 .or(Predicates.abilities(PartAbility.INPUT_ENERGY)
                                         .setMinGlobalLimited(1).setMaxGlobalLimited(2))
                                 .or(Predicates.abilities(PartAbility.COMPUTATION_DATA_RECEPTION)
@@ -1134,7 +1079,7 @@ public final class HyperClusterMachines {
                 API_SATELLITE_STATION, LOCAL_FALLBACK_GATEWAY,
                 LIQUID_COOLED_COMPUTE_RACK, UPS_POWER_ARRAY, TENSOR_PRETRAINING_CLUSTER,
                 CLOUD_OFFLOAD_NODE,
-                VRAM_STORAGE_RACK, OPTICAL_FABRIC_SWITCH, MOE_ROUTER_RACK }) {
+                VRAM_STORAGE_RACK, OPTICAL_FABRIC_SWITCH, MOE_ROUTER_RACK, DATACENTER_HARDWARE_HATCH }) {
             for (com.gregtechceu.gtceu.client.model.machine.MachineRenderState renderState : machine
                     .getStateDefinition().getPossibleStates()) {
                 MachineDefinition.RENDER_STATE_REGISTRY.add(renderState);

@@ -6,7 +6,7 @@
   "pages": [
     {
       "type": "patchouli:text",
-      "text": "The $(item)Tensor Pretraining Cluster$() ties the earlier chapters into one line:$(li)LuV power$(li)a sustained $(bold)32 CWU/t$() native optical feed$(li)distilled water or PCB coolant$(li)one $(item)High-Purity Domain Dataset$() (mining or chemical)$(br2)After $(bold)2400 ticks$() it exports one $(item)Open-Weight Module$()."
+      "text": "The $(item)Tensor Pretraining Cluster$() needs LuV power, coolant, $(bold)32 CWU/t$() and $(bold)96 TB$() of online memory. Its whole base can share a compliant raised floor with the room racks. For a different room, connect its native computation receiver by optical pipe to a source switch or compute rack transmitter. A remote switch also publishes its room memory."
     },
     {
       "type": "patchouli:crafting",
@@ -24,8 +24,13 @@
     },
     {
       "type": "patchouli:text",
-      "title": "The Open-Weight Module",
-      "text": "The finished artifact is an $(item)Open-Weight Module$() carrying three NBT fields:$(li)$(#0E7490)Domain$(): mining or chemical, decided by which high-purity dataset went in.$(li)$(#0E7490)Precision$(): fixed at $(bold)fp16$() in this version.$(li)$(#0E7490)Version$(): which checkpoint count the module was exported from.$(br2)All three show on hover, and the module stacks, stores and travels like any normal item."
+      "title": "Standard Training I/O",
+      "text": "Fit standard $(item)Item Import and Export Buses$() on the computer casing. Import consumes one high-purity mining or chemical dataset. The export bus receives one $(item)Open-Weight Module$() stamped with domain, fp16 precision, version and run count. A full bus holds the completed checkpoint at 100%. Extract an item to let the cluster finish the export."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Training Status",
+      "text": "The controller shows progress, the latest checkpoint, online TB, UPS cover and stop reasons. Use a soft mallet to toggle work. Pipes, hoppers or AE2 can supply the input bus and collect the finished weights from the output bus."
     }
   ]
 }

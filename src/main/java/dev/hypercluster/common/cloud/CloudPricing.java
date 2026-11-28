@@ -31,10 +31,8 @@ import net.minecraft.world.level.Level;
  * <li><b>Batch mode</b>: ×2 (the batch waits for its peers).</li>
  * <li><b>Weather attenuation</b> (信号衰减): clear ×1.0, rain ×1.5, thunder ×2.0.</li>
  * <li><b>High altitude bonus</b> ({@code Y > 120}): ×0.9 (small latency optimization).</li>
- * <li><b>Local fallback mode</b>: ×4 with no open model in the room, <b>×1.5</b> while a MoE
- * router really serves {@code qwen_9187_pro_max_ultra} — the fallback gateway deliberately runs
- * the same task locally at degraded speed (0.6.2 made the multiplier a live machine-room
- * property instead of a constant).</li>
+ * <li><b>Local fallback mode</b>: ×4 — the fallback gateway deliberately runs the same task
+ * locally at degraded speed.</li>
  * </ol>
  *
  * <p>
@@ -176,21 +174,6 @@ public final class CloudPricing {
      */
     public static int taskTicks(int base, InferenceTier tier, boolean batch, double weather,
                                 boolean highAlt, boolean fallback) {
-        return taskTicks(base, tier, batch, weather, highAlt,
-                fallback ? FALLBACK_DURATION : 1.0);
-    }
-
-    /**
-     * The same duration pipeline with an <b>explicit</b> local-fallback multiplier.
-     *
-     * <p>
-     * 0.6.2 · the multiplier is a property of the machine room, not a constant: a local fallback
-     * carried with {@code qwen_9187_pro_max_ultra} online degrades only
-     * {@value dev.hypercluster.common.model.ModelRuntime#QWEN_FALLBACK_SLOWDOWN}×, while a room
-     * with no Qwen deployed keeps the model-less {@value #FALLBACK_DURATION}×.
-     */
-    public static int taskTicks(int base, InferenceTier tier, boolean batch, double weather,
-                                boolean highAlt, double fallbackSlowdown) {
         double ticks = base * tier.durationRate();
         if (batch) {
             ticks *= 2.0;
@@ -199,8 +182,8 @@ public final class CloudPricing {
         if (highAlt) {
             ticks *= HIGH_ALTITUDE_DURATION;
         }
-        if (fallbackSlowdown > 0) {
-            ticks *= fallbackSlowdown;
+        if (fallback) {
+            ticks *= FALLBACK_DURATION;
         }
         return Math.max(1, (int) Math.round(ticks));
     }

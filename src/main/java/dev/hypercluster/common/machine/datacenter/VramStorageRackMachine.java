@@ -1,7 +1,5 @@
 package dev.hypercluster.common.machine.datacenter;
 
-import com.gregtechceu.gtceu.api.gui.GuiTextures;
-import com.gregtechceu.gtceu.api.gui.widget.SlotWidget;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.TickableSubscription;
 import com.gregtechceu.gtceu.api.machine.feature.IMachineLife;
@@ -14,7 +12,6 @@ import com.gregtechceu.gtceu.api.transfer.item.CustomItemStackHandler;
 import com.gregtechceu.gtceu.client.model.machine.MachineRenderState;
 
 import com.lowdragmc.lowdraglib.gui.widget.Widget;
-import com.lowdragmc.lowdraglib.gui.widget.WidgetGroup;
 import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
@@ -23,6 +20,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.items.IItemHandlerModifiable;
 
 import dev.hypercluster.common.item.HyperClusterItems;
 import dev.hypercluster.common.machine.MachineUi;
@@ -50,7 +48,8 @@ import java.util.List;
  * memory at all: this rack is the only place cluster VRAM exists, so pulling a module (or losing
  * power here) takes the memory offline immediately and every dependent model unloads.
  */
-public class VramStorageRackMachine extends WorkableElectricMultiblockMachine implements IMachineLife {
+public class VramStorageRackMachine extends WorkableElectricMultiblockMachine
+                                    implements IMachineLife, DatacenterHardwareHatchMachine.HardwareHost {
 
     protected static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(
             VramStorageRackMachine.class, WorkableElectricMultiblockMachine.MANAGED_FIELD_HOLDER);
@@ -86,7 +85,7 @@ public class VramStorageRackMachine extends WorkableElectricMultiblockMachine im
 
     public VramStorageRackMachine(IMachineBlockEntity holder, Object... args) {
         super(holder, args);
-        this.moduleSlot = new CustomItemStackHandler(VramRating.HBM_SLOTS);
+        this.moduleSlot = DatacenterHardwareHatchMachine.componentSlots(VramRating.HBM_SLOTS);
         this.moduleSlot.setFilter(stack -> stack.is(HyperClusterItems.IV_HBM_MODULE.get()) ||
                 stack.is(HyperClusterItems.LUV_HBM_MODULE.get()));
     }
@@ -145,6 +144,7 @@ public class VramStorageRackMachine extends WorkableElectricMultiblockMachine im
     @Override
     public void onStructureFormed() {
         super.onStructureFormed();
+        DatacenterFloorNetwork.formed(this);
         this.maintenance = null;
         for (var part : getParts()) {
             if (part instanceof IMaintenanceMachine maintenanceMachine) {
@@ -157,6 +157,7 @@ public class VramStorageRackMachine extends WorkableElectricMultiblockMachine im
 
     @Override
     public void onStructureInvalid() {
+        DatacenterFloorNetwork.detached(this);
         super.onStructureInvalid();
         this.maintenance = null;
         setState(State.EMPTY);
@@ -172,6 +173,7 @@ public class VramStorageRackMachine extends WorkableElectricMultiblockMachine im
 
     @Override
     public void onUnload() {
+        DatacenterFloorNetwork.detached(this);
         super.onUnload();
         if (this.tickSubs != null) {
             this.tickSubs.unsubscribe();
@@ -233,17 +235,18 @@ public class VramStorageRackMachine extends WorkableElectricMultiblockMachine im
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     @Override
+    public IItemHandlerModifiable hardwareInventory() {
+        return moduleSlot;
+    }
+
+    @Override
+    public String hardwareSlotKey(int slot) {
+        return "hypercluster.machine.vram_storage_rack.module_slot";
+    }
+
+    @Override
     public Widget createUIWidget() {
-        String uiKey = "hypercluster.machine.vram_storage_rack.";
-        WidgetGroup controls = MachineUi.multiblockControls(31);
-        controls.addWidget(MachineUi.label(11, 0, 168, uiKey + "label.modules"));
-        for (int i = 0; i < VramRating.HBM_SLOTS; i++) {
-            SlotWidget slot = new SlotWidget(moduleSlot, i, 17 + i * 22, 13, true, true);
-            slot.setBackground(GuiTextures.SLOT);
-            slot.setHoverTooltips(Component.translatable(uiKey + "module_slot"));
-            controls.addWidget(slot);
-        }
-        return MachineUi.multiblockPage(this, controls);
+        return MachineUi.multiblockPage(this, MachineUi.multiblockControls(1));
     }
 
     @Override

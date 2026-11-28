@@ -6,32 +6,32 @@
   "pages": [
     {
       "type": "patchouli:text",
-      "text": "本版把 0.4 的 $(italic)OmniFlash-72B$() / $(italic)LegacyLlama-8B$() 占位名换成正式家族。按$(bold)部署阵营$()分两类：$(li)$(#0E7490)开源阵营$()（LOCAL）：插进 MoE 路由柜，占本地显存，$(bold)零 Token$()。$(li)$(#0E7490)闭源阵营$()（API）：走卫星地面站扣 Token，$(bold)零本地显存$()。$(br2)家族的机制都走$(bold)机器运行时结算$()——不是说明文字，是真的扣、真的拦、真的改产出。"
+      "text": "注册表包含开源权重与闭源 API 两类型号。0.6.2 的路由柜和卫星站提供部署状态与型号选项。本节各家族页面介绍计划于 0.6.3 接通的结算机制。"
     },
     {
       "type": "patchouli:text",
       "title": "开源 · Qwen 9187 Pro-Max-Ultra",
-      "text": "$(bold)16 TB$() + 每张 LoRA $(bold)+4 TB / +4 CWU/t$()，最多 4 个 LoRA 槽。训练门槛 $(bold)96 TB / 32 CWU/t$()。$(br2)$(li)挂到$(item)本地兜底网关$()时，兜底只降速 $(bold)1.5×$()——没有 Qwen 时是 4×。$(li)LoRA 槽里插$(item)矿处 LoRA 卡$()或$(item)化工 LoRA 卡$()后，路由柜会向 16 格内关联的$(item)推理仓$()投射专精：该领域概率副产 $(bold)1/3 → 2/3$()（每张卡 +1/3，封顶 100%）。$(li)矿处与化工$(bold)跨领域都不吃过拟合惩罚$()。"
+      "text": "$(bold)16 TB$() + 每张 LoRA $(bold)+4 TB / +4 CWU/t$()，最多 4 个 LoRA 槽。$(br2)$(li)挂到$(item)本地兜底网关$()时，兜底只降速 $(bold)1.5×$()——没有模型时是 4×，差别很直观。$(li)矿处与化工$(bold)跨领域都不吃过拟合惩罚$()。$(li)兼容 IV 风冷机房，不一定非要液冷柜。"
     },
     {
       "type": "patchouli:text",
       "title": "开源 · DeepSeek-V6767 Flash / Pro",
-      "text": "$(bold)Flash 32 TB$() / $(bold)Pro 64 TB$()，开 DeepThink 再占 $(bold)+16 TB$()。训练门槛：Flash $(bold)64 TB / 24 CWU/t$()，Pro $(bold)128 TB / 48 CWU/t$()。$(br2)$(li)两者都吃 MoE 稀疏激活：实扣只有名义 CWU/t 的 $(bold)25%$()——Flash 名义 8 扣 2，Pro 名义 16 扣 4。$(li)$(bold)Pro$() 开 $(bold)DeepThink$() 后，向关联$(item)推理仓$()投射$(bold)副产拉满 100%$()：洗矿钴粉从 1/3 变必出，清洗塔黄金样本也不再有赌运气成分。$(li)显存不够就 $(bold)OOM 拒绝加载$()，一点算力都不扣。"
+      "text": "$(bold)Flash 32 TB$() / $(bold)Pro 64 TB$()，开 DeepThink 再占 $(bold)+16 TB$()。$(br2)$(li)两者都吃 MoE 稀疏激活，实耗只有名义 CWU/t 的 $(bold)25%$()，主打高并发省算力稳跑。$(li)$(bold)Pro$() 额外解锁 $(bold)DeepThink 蓄力$()：副产强制 100%。$(li)Pro 也是最先撞上交换机带宽、触发 $(bold)503 服务器繁忙$()的那台。"
     },
     {
       "type": "patchouli:text",
       "title": "开源 · GLM-2333 Flash / Max",
-      "text": "$(bold)Flash 24 TB / 4 CWU/t$()，$(bold)Max 48 TB / 8 CWU/t$()。训练门槛：Flash $(bold)32 TB / 16 CWU/t$()，Max $(bold)64 TB / 32 CWU/t$()。$(br2)$(li)$(bold)Flash$()：机房巡检——路由柜储能低于 $(bold)20%$() 自动保护休眠，进入 $(bold)SLEEPING$()，$(bold)零 CWU/t 实扣$()；电网恢复当 tick 自动唤醒。$(li)$(bold)Max$()：顶级 $(bold)Agent 工具调用$()——关联多方块满仓或缺料时，$(bold)真的把它们的配方逻辑停机$()省待机电，40 tick 后探测一次，能干活就自动拉起。"
+      "text": "$(bold)Flash 24 TB / 4 CWU/t$()，$(bold)Max 48 TB / 8 CWU/t$()。$(br2)$(li)$(bold)Flash$()：机房基础状态巡检，储能低于 $(bold)20%$() 自动保护休眠，并且$(bold)免维护$()。$(li)$(bold)Max$()：顶级 $(bold)Agent 工具调用$()，自动联动同集群关联多方块的启停——满仓或缺料时停机省待机电，恢复后自动拉起。为后续全厂黑灯控阀打底。"
     },
     {
       "type": "patchouli:text",
       "title": "闭源 · Gemini 三兄弟",
-      "text": "都走 API 卫星站扣 Token，$(bold)不占本地显存$()。$(br2)$(li)$(bold)Gemini-Titanium-4.0$()：承担 $(bold)Leaving Soon$() 倒计时下线机制，到期后拒跑新轮次。$(li)$(bold)Gemini-Platinum$()：专精化工降噪——$(bold)化工轮次产出 +1$()（矿处轮次无加成）。$(li)$(bold)Gemini-Xenon$()：重惰性气体路线，$(bold)强制 0 幻觉$()：每轮产出 +1 且$(bold)免维护$()。"
+      "text": "都走 API 卫星站扣 Token，$(bold)不占本地显存$()。$(br2)$(li)$(bold)Gemini-Titanium-4.0$()：承担 $(bold)Leaving Soon$() 倒计时下线机制，到期后拒跑新轮次。$(li)$(bold)Gemini-Platinum$()：专精化工降噪省料。$(li)$(bold)Gemini-Xenon$()：重惰性气体路线，$(bold)强制 0 幻觉$()且$(bold)免维护$()。"
     },
     {
       "type": "patchouli:text",
       "title": "闭源 · GPT-1145 Multiverse 与 Grok-420",
-      "text": "$(bold)GPT-1145 Multiverse$()：$(bold)最高 Token 单价$()换最高省料——每轮产出 $(bold)+2$()。开$(bold)危险轮次$()开关跑白名单配方时，未插$(item)越狱补丁卡$()会$(bold)运行时真实拒答$()：轮次不启动、输入不消耗、$(bold)一个 Token 都不扣$()；插卡后同一轮次正常放行。$(br2)$(bold)Grok-420$()：$(bold)完全零审查$()——$(bold)不用越狱卡$()直接跑危险轮次，单价还比 GPT 低。代价是$(bold)雨天 ×3.0 / 雷暴 ×4.0$()的耗时惩罚（普通家族是 ×1.5 / ×2.0）。"
+      "text": "$(bold)GPT-1145 Multiverse$()：$(bold)最高 Token 单价$()换最高省料与副产加成。跑白名单危险化工配方会触发$(bold)道德拒答$()停机，插一张$(item)越狱补丁卡$()才放行。$(br2)$(bold)Grok-420$()：$(bold)完全零审查$()，不用越狱卡就能跑危险配方，单价还比 GPT 低。代价是$(bold)雨天/雷暴信号衰减与耗时惩罚翻倍$()——晴天用得爽，坏天气别指望它。"
     },
     {
       "type": "patchouli:crafting",

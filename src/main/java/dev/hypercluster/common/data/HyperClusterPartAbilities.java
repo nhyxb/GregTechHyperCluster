@@ -27,5 +27,7 @@ public final class HyperClusterPartAbilities {
      */
     public static final PartAbility CLOUD_OFFLOAD = new PartAbility("cloud_offload");
 
+    public static final PartAbility DATACENTER_HARDWARE = new PartAbility("datacenter_hardware");
+
     private HyperClusterPartAbilities() {}
 }

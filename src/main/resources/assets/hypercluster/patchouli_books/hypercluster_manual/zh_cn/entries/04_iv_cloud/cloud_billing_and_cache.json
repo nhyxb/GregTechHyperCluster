@@ -6,7 +6,7 @@
   "pages": [
     {
       "type": "patchouli:text",
-      "text": "闭源云演示服务消耗 1 份$(item)清洁数据集$()，在输出槽产出 1 份$(item)高纯矿处数据集$()（基准 100 tick、单价 25,000 Token）。$(br2)每轮都按唯一订单 ID 走三态账本：开跑预扣（HELD），跑完扣实（SETTLED），拆结构或拔卡取消时精确退回（REFUNDED），不吞单也不双扣；余额不足直接拒启。"
+      "text": "闭源示范从标准物品输入总线消耗 1 份$(item)清洁数据集$()，向标准物品输出总线交付 1 份$(item)高纯矿业数据集$()。Medium 基准 25,000 Token、100 tick。输出堵满时暂停结算，抽走后继续。主控只放凭据卡、Token 晶卡，并设置推理选项。"
     },
     {
       "type": "patchouli:crafting",

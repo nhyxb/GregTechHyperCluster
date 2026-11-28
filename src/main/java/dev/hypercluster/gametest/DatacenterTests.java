@@ -25,6 +25,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 
@@ -33,6 +34,7 @@ import dev.hypercluster.common.data.HyperClusterBlocks;
 import dev.hypercluster.common.data.HyperClusterMachines;
 import dev.hypercluster.common.item.HyperClusterItems;
 import dev.hypercluster.common.machine.datacenter.AirCooledComputeRackMachine;
+import dev.hypercluster.common.machine.datacenter.DatacenterHardwareHatchMachine;
 import dev.hypercluster.common.machine.datacenter.DatacenterRating;
 import dev.hypercluster.common.machine.datacenter.IvInferenceHatchMachine;
 import dev.hypercluster.common.machine.datacenter.PrecisionCracMachine;
@@ -77,6 +79,8 @@ public class DatacenterTests {
     @GameTest(template = "hc_field", batch = DATACENTER_BATCH, timeoutTicks = 400)
     public static void rackFormsAndBladesScaleCwuLinearly(GameTestHelper helper) {
         RackParts parts = placeRack(helper, 4, 1, 4);
+        BlockPos hardwarePos = new BlockPos(4, 2, 4);
+        helper.setBlock(hardwarePos, HyperClusterMachines.DATACENTER_HARDWARE_HATCH.getBlock().defaultBlockState());
         primeRackEnergy(parts, helper, 1, 20, 320);
 
         helper.runAtTickTime(40, () -> {
@@ -94,8 +98,15 @@ public class DatacenterTests {
             final int expected = blades * DatacenterRating.CWU_PER_BLADE;
             final int slot = blades - 1;
             helper.runAtTickTime(60 + blades * 4, () -> {
-                parts.controller().getBladeInventory()
-                        .setStackInSlot(slot, new ItemStack(HyperClusterItems.IV_COMPUTE_BLADE.get()));
+                var hardware = (DatacenterHardwareHatchMachine) ((IMachineBlockEntity) helper
+                        .getBlockEntity(hardwarePos)).getMetaMachine();
+                var automation = helper.getBlockEntity(hardwarePos)
+                        .getCapability(ForgeCapabilities.ITEM_HANDLER, hardware.getFrontFacing()).orElseThrow(
+                                () -> new IllegalStateException("missing air-cooled hardware port"));
+                helper.assertTrue(
+                        automation.insertItem(slot, new ItemStack(HyperClusterItems.IV_COMPUTE_BLADE.get()), false)
+                                .isEmpty(),
+                        "the air-cooled hardware hatch must accept a blade");
             });
             helper.runAtTickTime(62 + blades * 4, () -> {
                 helper.assertTrue(parts.controller().getBladeCount() == slot + 1,

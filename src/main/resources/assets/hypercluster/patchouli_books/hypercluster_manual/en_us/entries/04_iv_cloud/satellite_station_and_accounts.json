@@ -25,8 +25,13 @@
     },
     {
       "type": "patchouli:text",
-      "title": "5M Welcome Tokens & Uploads",
-      "text": "$(li)$(#0E7490)Account & 5M Bonus$(): $(bold)right-click$() any station controller with an $(item)API Credential Card$() to bind your UUID, then insert it into the API key slot. Opening your account anywhere in the save grants a one-time $(bold)5,000,000 Token$() welcome balance (shared overworld ledger across dimensions).$(li)$(#0E7490)Sell High-Purity Data$(): with a credential card inserted, $(item)High-Purity Datasets$() in the Sell slot auto-convert at $(bold)50,000 Tokens$() each.$(li)Use a $(item)Token Credit Card$() to deposit or withdraw full balances."
+      "title": "Account and Automated Sales",
+      "text": "Bind an $(item)API Credential Card$() by right-clicking the controller, then put it in the API key slot. The save-wide ledger grants a one-time $(bold)5,000,000 Token$() welcome balance. Use a $(item)Token Credit Card$() to deposit or withdraw the balance."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Item Buses",
+      "text": "Fit a standard $(item)Item Import Bus$() in the 3×3 base. With a bound credential installed, mining and chemical $(item)High-Purity Datasets$() sell for $(bold)50,000 Tokens each$(). Feed the bus with pipes, hoppers or an AE2 export bus. Clean Datasets fed to the same import bus start demo rounds. A standard $(item)Item Export Bus$() collects the demo output."
     }
   ]
 }

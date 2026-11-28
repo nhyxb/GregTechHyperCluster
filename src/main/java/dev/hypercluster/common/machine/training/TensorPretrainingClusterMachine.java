@@ -1,10 +1,6 @@
 package dev.hypercluster.common.machine.training;
 
 import com.gregtechceu.gtceu.api.capability.IEnergyContainer;
-import com.gregtechceu.gtceu.api.capability.IOpticalComputationProvider;
-import com.gregtechceu.gtceu.api.capability.IOpticalComputationReceiver;
-import com.gregtechceu.gtceu.api.gui.GuiTextures;
-import com.gregtechceu.gtceu.api.gui.widget.SlotWidget;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.TickableSubscription;
 import com.gregtechceu.gtceu.api.machine.feature.IMachineLife;
@@ -16,11 +12,7 @@ import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
 import com.gregtechceu.gtceu.api.transfer.item.CustomItemStackHandler;
 import com.gregtechceu.gtceu.client.model.machine.MachineRenderState;
 
-import com.lowdragmc.lowdraglib.gui.texture.GuiTextureGroup;
-import com.lowdragmc.lowdraglib.gui.texture.TextTexture;
-import com.lowdragmc.lowdraglib.gui.widget.ButtonWidget;
 import com.lowdragmc.lowdraglib.gui.widget.Widget;
-import com.lowdragmc.lowdraglib.gui.widget.WidgetGroup;
 import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
@@ -30,17 +22,17 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 import dev.hypercluster.common.item.HyperClusterItems;
 import dev.hypercluster.common.item.OpenWeightModuleItem;
 import dev.hypercluster.common.machine.MachineUi;
-import dev.hypercluster.common.machine.datacenter.LiquidCooledComputeRackMachine;
+import dev.hypercluster.common.machine.MultiblockItemBuses;
+import dev.hypercluster.common.machine.datacenter.DatacenterFloorNetwork;
+import dev.hypercluster.common.machine.datacenter.DatacenterOpticalNetwork;
 import dev.hypercluster.common.machine.datacenter.LiquidDatacenterRating;
-import dev.hypercluster.common.model.AIModelDefinition;
-import dev.hypercluster.common.model.AIModels;
+import dev.hypercluster.common.machine.datacenter.VramStorageRackMachine;
 
 import java.util.List;
 import java.util.Locale;
@@ -61,9 +53,9 @@ import javax.annotation.Nullable;
  *
  * <ul>
  * <li><b>Inputs.</b> LuV power ({@value TrainingRating#TRAINING_EU_T} EU/t), a live
- * {@value TrainingRating#TRAINING_CWUT} CWU/t optical feed, distilled water coolant
+ * {@value TrainingRating#TRAINING_CWUT} CWU/t through the room floor or an optical pipe, distilled water coolant
  * ({@value TrainingRating#COOLANT_PER_TICK} mB/t) and one high-purity domain dataset in the
- * input slot. A run takes {@value TrainingRating#BASE_TRAINING_TICKS} ticks.</li>
+ * item import bus. A run takes {@value TrainingRating#BASE_TRAINING_TICKS} ticks.</li>
  * <li><b>VRAM gate (OOM).</b> The job declares a VRAM requirement; a cluster whose host racks
  * bring less than that online <b>refuses to start</b> with an explicit OOM reason instead of
  * degrading.</li>
@@ -74,11 +66,7 @@ import javax.annotation.Nullable;
  * window the run survives and resumes from its last checkpoint; when no UPS covers the loss —
  * or the buffer runs dry — the unsaved progress is cleared.</li>
  * <li><b>Export.</b> A completed run mints one {@code hypercluster:open_weight_module} carrying
- * the <b>target model identity</b>, the domain, the precision and the training version.</li>
- * <li><b>Target model</b> (0.6.2). The machine's own selector picks which of the five open-weight
- * families the run trains: each declares its own VRAM and CWU/t gate, validated live on every
- * start attempt, and the exported module carries that identity in {@code hc_model_id} so the MoE
- * router can deploy exactly the family that was trained.</li>
+ * the domain, precision and training version in the item export bus.</li>
  * </ul>
  *
  * <p>
@@ -102,6 +90,7 @@ public class TensorPretrainingClusterMachine extends WorkableElectricMultiblockM
         LOW_POWER,
         NO_POWER_CHECKPOINT_LOST,
         TRAINING,
+        OUTPUT_BLOCKED,
         PAUSED
     }
 
@@ -111,7 +100,7 @@ public class TensorPretrainingClusterMachine extends WorkableElectricMultiblockM
      */
     public static final int JOB_VRAM = dev.hypercluster.common.machine.datacenter.VramRating.TRAINING_JOB_TB;
 
-    // Inputs / settings.
+    // Old controller input is drained first when upgrading existing worlds.
     @Persisted
     protected final CustomItemStackHandler datasetSlot;
 
@@ -129,6 +118,8 @@ public class TensorPretrainingClusterMachine extends WorkableElectricMultiblockM
     @DescSynced
     protected boolean running = false;
     @Persisted
+    protected boolean outputPending;
+    @Persisted
     @DescSynced
     protected String domain = "";
     @Persisted
@@ -138,27 +129,17 @@ public class TensorPretrainingClusterMachine extends WorkableElectricMultiblockM
     @Persisted
     @DescSynced
     protected boolean onBackupPower = false;
-    /**
-     * 0.6.2 · the open-weight family this cluster trains. Persisted so a reload resumes the same
-     * target, and synced so the selector label renders without a round trip.
-     */
-    @Persisted
-    @DescSynced
-    protected int targetModelIndex = 0;
 
     @DescSynced
     protected RunState state = RunState.IDLE;
     @DescSynced
     protected double progressPercent = 0;
 
-    /** Explicit VRAM-gate override (TB); 0 means "follow the selected target's own gate". */
-    protected int jobVram = 0;
+    protected int jobVram = JOB_VRAM;
     @javax.annotation.Nullable
     protected IMaintenanceMachine maintenance;
     @javax.annotation.Nullable
     protected TickableSubscription tickSubs;
-    @javax.annotation.Nullable
-    protected IOpticalComputationProvider computationProvider;
 
     private int recheckCountdown = 1;
 
@@ -214,63 +195,12 @@ public class TensorPretrainingClusterMachine extends WorkableElectricMultiblockM
         return onBackupPower;
     }
 
-    /**
-     * The VRAM (TB) a run of the currently selected target needs. 0.6.2 reads this off the model
-     * definition instead of a flat constant, so picking a heavier family really raises the gate.
-     */
     public int getJobVram() {
-        return jobVram > 0 ? jobVram : targetModel().trainingVramTerabytes();
+        return jobVram;
     }
 
-    /**
-     * Overrides the VRAM gate for probe/tests. Kept so the OOM contract can be exercised without
-     * a model whose declared gate happens to match the arena's pool.
-     */
     public void setJobVram(int vram) {
         this.jobVram = Math.max(0, vram);
-    }
-
-    /** The open-weight family this cluster trains (never an API model). */
-    public AIModelDefinition targetModel() {
-        AIModelDefinition model = AIModels.openModels().get(
-                Math.floorMod(targetModelIndex, AIModels.openModels().size()));
-        return model == null ? AIModels.QWEN_9187_PRO_MAX_ULTRA : model;
-    }
-
-    /** The catalog id of the selected target, e.g. {@code deepseek_v6767_pro}. */
-    public String getTargetModelId() {
-        return targetModel().id().getPath();
-    }
-
-    public int getTargetModelIndex() {
-        return Math.floorMod(targetModelIndex, AIModels.openModels().size());
-    }
-
-    /** Selects a target family; the next start attempt re-validates its own gates. */
-    public void selectTargetModel(int index) {
-        int next = Math.floorMod(index, AIModels.openModels().size());
-        if (this.targetModelIndex != next) {
-            this.targetModelIndex = next;
-            // A different target is a different job: never resume the previous family's
-            // checkpoint into a freshly selected one.
-            this.checkpointPercent = 0;
-            this.progressTicks = 0;
-            this.progressPercent = 0;
-        }
-    }
-
-    /** Cycles the target family (UI button). */
-    public void cycleTargetModel() {
-        selectTargetModel(getTargetModelIndex() + 1);
-    }
-
-    /** CWU/t the selected target pulls from the optical feed every tick. */
-    public int requiredCwu() {
-        return targetModel().trainingCwuPerTick();
-    }
-
-    public CustomItemStackHandler getDatasetSlot() {
-        return datasetSlot;
     }
 
     public boolean hasUpsCover() {
@@ -284,13 +214,11 @@ public class TensorPretrainingClusterMachine extends WorkableElectricMultiblockM
     @Override
     public void onStructureFormed() {
         super.onStructureFormed();
+        DatacenterFloorNetwork.formed(this);
         this.maintenance = null;
         for (var part : getParts()) {
             if (part instanceof IMaintenanceMachine maintenanceMachine) {
                 this.maintenance = maintenanceMachine;
-            }
-            if (part instanceof IOpticalComputationReceiver receiver) {
-                this.computationProvider = receiver.getComputationProvider();
             }
         }
         this.recheckCountdown = 1;
@@ -300,10 +228,10 @@ public class TensorPretrainingClusterMachine extends WorkableElectricMultiblockM
 
     @Override
     public void onStructureInvalid() {
+        DatacenterFloorNetwork.detached(this);
         super.onStructureInvalid();
         this.maintenance = null;
-        this.computationProvider = null;
-        if (running) {
+        if (running && !outputPending) {
             failRun(false); // a broken structure loses the unsaved progress, checkpoints survive
         }
         updateRenderState();
@@ -319,6 +247,7 @@ public class TensorPretrainingClusterMachine extends WorkableElectricMultiblockM
 
     @Override
     public void onUnload() {
+        DatacenterFloorNetwork.detached(this);
         super.onUnload();
         if (this.tickSubs != null) {
             this.tickSubs.unsubscribe();
@@ -347,7 +276,9 @@ public class TensorPretrainingClusterMachine extends WorkableElectricMultiblockM
             rescanUpsCover();
             this.recheckCountdown = 40;
         }
-        if (running) {
+        if (outputPending) {
+            finishRun();
+        } else if (running) {
             stepRun();
         } else {
             tryStartRun();
@@ -364,7 +295,7 @@ public class TensorPretrainingClusterMachine extends WorkableElectricMultiblockM
             state = RunState.PAUSED;
             return;
         }
-        ItemStack dataset = datasetSlot.getStackInSlot(0);
+        ItemStack dataset = dataset(true);
         if (dataset.isEmpty()) {
             state = RunState.NO_DATASET;
             return;
@@ -374,8 +305,7 @@ public class TensorPretrainingClusterMachine extends WorkableElectricMultiblockM
             return;
         }
         // VRAM gate: an oversized job refuses to start (OOM) instead of degrading silently.
-        // 0.6.2: the requirement comes from the selected target family, not a flat constant.
-        if (!LiquidDatacenterRating.fitsVram(hostVramCapacity(), getJobVram())) {
+        if (!LiquidDatacenterRating.fitsVram(hostVramCapacity(), jobVram)) {
             state = RunState.OOM;
             return;
         }
@@ -398,10 +328,7 @@ public class TensorPretrainingClusterMachine extends WorkableElectricMultiblockM
         this.running = true;
         this.onBackupPower = false;
         this.state = RunState.TRAINING;
-        dataset.shrink(1);
-        if (dataset.getCount() <= 0) {
-            datasetSlot.setStackInSlot(0, ItemStack.EMPTY);
-        }
+        dataset(false);
         updateRenderState();
     }
 
@@ -420,11 +347,10 @@ public class TensorPretrainingClusterMachine extends WorkableElectricMultiblockM
             failRun(true);
             return;
         }
-        if (!hasComputation()) {
-            failRun(true);
-            return;
-        }
-        if (!drainCoolant()) {
+        if (!hasComputation() || !hasCoolant() ||
+                DatacenterOpticalNetwork.request(this, TrainingRating.TRAINING_CWUT, false) <
+                        TrainingRating.TRAINING_CWUT ||
+                !drainCoolant()) {
             failRun(true);
             return;
         }
@@ -435,6 +361,7 @@ public class TensorPretrainingClusterMachine extends WorkableElectricMultiblockM
             this.checkpointPercent = TrainingRating.checkpointPercent(progressTicks, totalTicks);
         }
         if (progressTicks >= totalTicks) {
+            this.outputPending = true;
             finishRun();
             return;
         }
@@ -483,15 +410,17 @@ public class TensorPretrainingClusterMachine extends WorkableElectricMultiblockM
         updateRenderState();
     }
 
-    /** A completed run exports one open-weight module and clears its own checkpoint. */
+    /** Export the completed checkpoint exactly once. A full bus leaves the checkpoint intact. */
     protected void finishRun() {
-        this.completedRuns++;
-        // 0.6.2: the module names the target family it was trained as, so the router can deploy
-        // exactly that model rather than guessing from the domain tag alone.
         ItemStack module = OpenWeightModuleItem.create(
-                new ItemStack(HyperClusterItems.OPEN_WEIGHT_MODULE.get()), getTargetModelId(),
-                domain, TrainingRating.PRECISION, TrainingRating.moduleVersion(100), completedRuns);
-        insertOrDrop(module);
+                new ItemStack(HyperClusterItems.OPEN_WEIGHT_MODULE.get()), domain,
+                TrainingRating.PRECISION, TrainingRating.moduleVersion(100), completedRuns + 1);
+        if (!MultiblockItemBuses.export(this, module, false)) {
+            this.state = RunState.OUTPUT_BLOCKED;
+            return;
+        }
+        this.completedRuns++;
+        this.outputPending = false;
         this.running = false;
         this.progressTicks = 0;
         this.checkpointPercent = 0;
@@ -501,83 +430,24 @@ public class TensorPretrainingClusterMachine extends WorkableElectricMultiblockM
         updateRenderState();
     }
 
-    protected void insertOrDrop(ItemStack stack) {
-        // The module leaves through the structure's item output bus when one is present;
-        // otherwise it drops above the controller rather than being silently voided.
-        BlockPos above = getPos().above();
-        getLevel().addFreshEntity(new ItemEntity(getLevel(), above.getX() + 0.5, above.getY() + 0.5,
-                above.getZ() + 0.5, stack));
+    private ItemStack dataset(boolean simulate) {
+        if (!datasetSlot.getStackInSlot(0).isEmpty()) {
+            return datasetSlot.extractItem(0, 1, simulate);
+        }
+        return MultiblockItemBuses.take(this,
+                stack -> stack.is(HyperClusterItems.HIGH_PURITY_MINING_DATASET.get()) ||
+                        stack.is(HyperClusterItems.HIGH_PURITY_CHEMICAL_DATASET.get()),
+                1, simulate);
     }
 
-    ///////////////////////////////////////////////////////////////////////////////////////////////
-    // Host resources //
-    ///////////////////////////////////////////////////////////////////////////////////////////////
-
-    /**
-     * Cluster VRAM pool (TB) the memory cabinets in range provide. Since 0.6.1 compute blades carry
-     * no memory at all: an optical switch in range publishes the whole room's pool, otherwise the
-     * router sums the {@code vram_storage_rack} cabinets directly.
-     */
     public int hostVramCapacity() {
-        dev.hypercluster.common.machine.datacenter.OpticalFabricSwitchMachine fabric = nearbySwitch();
-        if (fabric != null) {
-            return fabric.aggregateMemoryTb();
-        }
-        int vram = 0;
-        for (var rack : nearbyMemoryRacks()) {
-            vram += rack.getTerabytesOnline();
-        }
-        return vram;
+        return DatacenterOpticalNetwork.memoryRacks(this).stream()
+                .mapToInt(VramStorageRackMachine::getTerabytesOnline).sum();
     }
 
-    /** The optical switch aggregating this room, or null when the racks are counted directly. */
-    private dev.hypercluster.common.machine.datacenter.OpticalFabricSwitchMachine nearbySwitch() {
-        if (getLevel() == null) {
-            return null;
-        }
-        int r = TrainingRating.OFFLOAD_RANGE;
-        for (BlockPos pos : BlockPos.betweenClosed(getPos().offset(-r, -r, -r), getPos().offset(r, r, r))) {
-            BlockEntity be = getLevel().getBlockEntity(pos);
-            if (be instanceof com.gregtechceu.gtceu.api.machine.IMachineBlockEntity machineBE &&
-                    machineBE
-                            .getMetaMachine() instanceof dev.hypercluster.common.machine.datacenter.OpticalFabricSwitchMachine fabric &&
-                    fabric.isFormed()) {
-                return fabric;
-            }
-        }
-        return null;
-    }
-
-    /** Memory cabinets in range supplying this cluster's VRAM pool. */
-    public java.util.List<dev.hypercluster.common.machine.datacenter.VramStorageRackMachine> nearbyMemoryRacks() {
-        java.util.List<dev.hypercluster.common.machine.datacenter.VramStorageRackMachine> found = new java.util.ArrayList<>();
-        if (getLevel() == null) {
-            return found;
-        }
-        int r = TrainingRating.OFFLOAD_RANGE;
-        for (BlockPos pos : BlockPos.betweenClosed(getPos().offset(-r, -r, -r), getPos().offset(r, r, r))) {
-            BlockEntity be = getLevel().getBlockEntity(pos);
-            if (be instanceof com.gregtechceu.gtceu.api.machine.IMachineBlockEntity machineBE &&
-                    machineBE
-                            .getMetaMachine() instanceof dev.hypercluster.common.machine.datacenter.VramStorageRackMachine rack &&
-                    rack.isFormed()) {
-                found.add(rack);
-            }
-        }
-        return found;
-    }
-
-    /**
-     * The optical feed must be able to serve the selected target's CWU/t demand. 0.6.2 replaced
-     * the flat {@code TRAINING_CWUT} probe with the per-model demand, so a heavy target really
-     * fails to start on a thin feed.
-     */
     protected boolean hasComputation() {
-        if (computationProvider == null) {
-            return false;
-        }
-        int demand = requiredCwu();
-        return computationProvider.requestCWUt(demand, true) >= demand;
+        return DatacenterOpticalNetwork.request(this, TrainingRating.TRAINING_CWUT, true) >=
+                TrainingRating.TRAINING_CWUT;
     }
 
     protected boolean hasCoolant() {
@@ -629,23 +499,6 @@ public class TensorPretrainingClusterMachine extends WorkableElectricMultiblockM
         return energy != null && energy.getEnergyStored() >= eut;
     }
 
-    /** Liquid racks within the offload/UPS reach that can lend VRAM and CWU/t. */
-    public List<LiquidCooledComputeRackMachine> nearbyRacks() {
-        List<LiquidCooledComputeRackMachine> found = new java.util.ArrayList<>();
-        if (getLevel() == null) {
-            return found;
-        }
-        int r = TrainingRating.OFFLOAD_RANGE;
-        for (BlockPos pos : BlockPos.betweenClosed(getPos().offset(-r, -r, -r), getPos().offset(r, r, r))) {
-            BlockEntity be = getLevel().getBlockEntity(pos);
-            if (be instanceof com.gregtechceu.gtceu.api.machine.IMachineBlockEntity machineBE &&
-                    machineBE.getMetaMachine() instanceof LiquidCooledComputeRackMachine rack) {
-                found.add(rack);
-            }
-        }
-        return found;
-    }
-
     /** The nearest UPS array that can still cover a brownout, or null. */
     @Nullable
     public UpsPowerArrayMachine findCoveringUps() {
@@ -665,7 +518,7 @@ public class TensorPretrainingClusterMachine extends WorkableElectricMultiblockM
 
     /** Re-evaluates UPS cover (called by a UPS array on structure/state flips). */
     public void rescanUpsCover() {
-        if (!running) {
+        if (!running || outputPending) {
             return;
         }
         if (onBackupPower && findCoveringUps() == null) {
@@ -679,7 +532,8 @@ public class TensorPretrainingClusterMachine extends WorkableElectricMultiblockM
 
     protected void updateRenderState() {
         MachineRenderState renderState = getRenderState();
-        RecipeLogic.Status target = running ? RecipeLogic.Status.WORKING : RecipeLogic.Status.IDLE;
+        RecipeLogic.Status target = outputPending ? RecipeLogic.Status.WAITING :
+                running ? RecipeLogic.Status.WORKING : RecipeLogic.Status.IDLE;
         if (renderState.hasProperty(GTMachineModelProperties.RECIPE_LOGIC_STATUS) &&
                 renderState.getValue(GTMachineModelProperties.RECIPE_LOGIC_STATUS) != target) {
             setRenderState(renderState.setValue(GTMachineModelProperties.RECIPE_LOGIC_STATUS, target));
@@ -688,46 +542,14 @@ public class TensorPretrainingClusterMachine extends WorkableElectricMultiblockM
 
     @Override
     public Widget createUIWidget() {
-        String uiKey = "hypercluster.machine.tensor_pretraining_cluster.";
-        WidgetGroup controls = MachineUi.multiblockControls(31);
-        // Three fixed-width bands, each label directly above its own control: dataset (slot),
-        // target family (selector button) and the module output hint. Every pair keeps at least
-        // the MachineUiTests 3 px clearance.
-        controls.addWidgets(
-                MachineUi.label(4, 0, 56, uiKey + "label.dataset"),
-                MachineUi.label(64, 0, 64, uiKey + "label.target"),
-                MachineUi.label(132, 0, 48, uiKey + "label.module"));
-        SlotWidget dataset = new SlotWidget(datasetSlot, 0, 17, 13, true, false);
-        dataset.setBackground(GuiTextures.SLOT);
-        dataset.setHoverTooltips(Component.translatable(uiKey + "dataset_slot"));
-        controls.addWidget(dataset);
-        controls.addWidget(targetSelector(64, 13, 64, uiKey));
-        return MachineUi.multiblockPage(this, controls);
-    }
-
-    /** 0.6.2 · the target-family selector: cycles the five open-weight models. */
-    private ButtonWidget targetSelector(int x, int y, int width, String uiKey) {
-        TextTexture text = new TextTexture(() -> targetModel().displayKey())
-                .setWidth(width - 6)
-                .setType(TextTexture.TextType.ROLL_ALWAYS)
-                .setDropShadow(false)
-                .setColor(0xff1d252b);
-        ButtonWidget button = new ButtonWidget(x, y, width, 18,
-                new GuiTextureGroup(GuiTextures.BUTTON, text), click -> {
-                    if (click.isRemote) {
-                        return;
-                    }
-                    cycleTargetModel();
-                });
-        button.setHoverTooltips(Component.translatable(uiKey + "target.tooltip"));
-        return button;
+        return MachineUi.multiblockPage(this, MachineUi.multiblockControls(1));
     }
 
     @Override
     public void addDisplayText(List<Component> textList) {
         String uiKey = "hypercluster.machine.tensor_pretraining_cluster.";
         MultiblockDisplayText.builder(textList, isFormed())
-                .setWorkingStatus(recipeLogic.isWorkingEnabled(), running)
+                .setWorkingStatus(recipeLogic.isWorkingEnabled(), running && !outputPending)
                 .setWorkingStatusKeys("gtceu.multiblock.idling", "gtceu.multiblock.work_paused",
                         uiKey + "training")
                 .addCustom(lines -> {
@@ -740,15 +562,9 @@ public class TensorPretrainingClusterMachine extends WorkableElectricMultiblockM
                             Component.literal(String.valueOf(getCheckpointPercent()))
                                     .withStyle(ChatFormatting.YELLOW))
                             .withStyle(ChatFormatting.GRAY));
-                    lines.add(Component.translatable(uiKey + "target",
-                            Component.translatable(targetModel().displayKey()).withStyle(ChatFormatting.AQUA))
-                            .withStyle(ChatFormatting.GRAY));
                     lines.add(Component.translatable(uiKey + "vram",
                             Component.literal(String.valueOf(hostVramCapacity())).withStyle(ChatFormatting.AQUA),
-                            Component.literal(String.valueOf(getJobVram())).withStyle(ChatFormatting.AQUA))
-                            .withStyle(ChatFormatting.GRAY));
-                    lines.add(Component.translatable(uiKey + "compute",
-                            Component.literal(String.valueOf(requiredCwu())).withStyle(ChatFormatting.AQUA))
+                            Component.literal(String.valueOf(jobVram)).withStyle(ChatFormatting.AQUA))
                             .withStyle(ChatFormatting.GRAY));
                     lines.add(Component.translatable(uiKey + "ups",
                             Component.translatable(uiKey + (hasUpsCover() ? "ups.covered" : "ups.bare"))

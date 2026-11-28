@@ -21,7 +21,7 @@
     {
       "type": "patchouli:text",
       "title": "3×5×2 Structure & Blade Scaling",
-      "text": "$(li)$(#0E7490)Front Wall (3×5 Intake)$(): 14× $(item)42U Rack Casing (Intake Face)$() (ice-blue top stripe), controller at center `(1, 2, 0)`.$(li)$(#0E7490)Back Wall (3×5 Exhaust)$(): $(item)42U Rack Casing (Exhaust Face)$() (orange-red top stripe); row `y=1` hosts 1–2 Energy Hatches, Maintenance Hatch, and $(bold)1× GT Computation Data Transmission Hatch$().$(li)$(#0E7490)Compute Blades$(): up to 4× $(item)IV Compute Blades$(), +6 CWU/t each ($(bold)0 → 24 CWU/t$()), 256 EU/t IT draw per blade (64 EU/t standby at 0 blades)."
+      "text": "The 3×5 intake wall takes the controller in the centre and one $(item)Datacenter Hardware Hatch$() in an exposed intake casing. Load up to four IV blades through the hatch. Each adds 6 CWU/t. The second exhaust row takes energy, maintenance and an optional native computation transmitter for external optical links."
     },
     {
       "type": "patchouli:text",

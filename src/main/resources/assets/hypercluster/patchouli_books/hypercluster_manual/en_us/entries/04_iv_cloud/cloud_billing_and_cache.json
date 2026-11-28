@@ -6,7 +6,7 @@
   "pages": [
     {
       "type": "patchouli:text",
-      "text": "The closed-source demo service turns 1× $(item)Clean Dataset$() into 1× $(item)High-Purity Mining Dataset$() (100 ticks base, 25,000 Tokens base).$(br2)Every round uses a unique order ID with three-state settlement: pre-deducted (`HELD`) on start, finalized (`SETTLED`) on completion, and refunded once (`REFUNDED`) if cancelled by breaking the structure or pulling the card. Insufficient funds refuse to start."
+      "text": "The demo service takes 1× $(item)Clean Dataset$() from a standard Item Import Bus and puts 1× $(item)High-Purity Mining Dataset$() in an Item Export Bus. A Medium round costs 25,000 Tokens and 100 ticks before adjustments. Full export pauses settlement until a slot opens. Use the controller for credentials, the Token card and inference settings."
     },
     {
       "type": "patchouli:crafting",

@@ -16,14 +16,11 @@ import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
 import net.minecraft.ChatFormatting;
-import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.level.block.entity.BlockEntity;
 
 import dev.hypercluster.common.machine.MachineUi;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -32,9 +29,8 @@ import java.util.List;
  *
  * <p>
  * A 5×4×3 backplane cabinet that turns a room full of separate racks into <b>one cluster pool</b>.
- * Every tick it aggregates the offer of every compute rack within
- * {@value VramRating#SWITCH_RANGE} blocks — IV air-cooled racks (24 CWU/t each) and LuV
- * liquid-cooled racks (64 CWU/t each) — into a single {@link IOpticalComputationProvider} with a
+ * It aggregates racks on the same compliant raised floor and switched native optical inputs
+ * into a single {@link IOpticalComputationProvider} with a
  * measurable hard ceiling:
  *
  * <ul>
@@ -43,7 +39,7 @@ import java.util.List;
  * <li><b>Over the ceiling → 503.</b> The switch refuses the whole tick, records
  * {@code 503 Server Busy} and stays busy for {@value VramRating#BUSY_COOLDOWN_TICKS} ticks
  * (15 s). Nothing is billed and no member budget is consumed during the cooldown.</li>
- * <li>Memory aggregation rides along: the same range's {@link VramStorageRackMachine} cabinets
+ * <li>Memory aggregation rides along: the connected rooms' {@link VramStorageRackMachine} cabinets
  * sum into the cluster VRAM pool.</li>
  * </ul>
  */
@@ -60,7 +56,7 @@ public class OpticalFabricSwitchMachine extends WorkableElectricMultiblockMachin
     public enum Status {
         /** Aggregating and serving within bandwidth. */
         SERVING,
-        /** No member racks in range. */
+        /** No connected computation providers. */
         NO_MEMBERS,
         /** Aggregate demand exceeded the ceiling: 503, cooling down. */
         BUSY_503,
@@ -138,62 +134,27 @@ public class OpticalFabricSwitchMachine extends WorkableElectricMultiblockMachin
     // Aggregation //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    /** Compute racks the switch currently aggregates (both IV air-cooled and LuV liquid). */
-    public List<IOpticalComputationProvider> memberProviders() {
-        List<IOpticalComputationProvider> members = new ArrayList<>();
-        if (getLevel() == null || getLevel().isClientSide()) {
-            return members;
-        }
-        int r = VramRating.SWITCH_RANGE;
-        for (BlockPos pos : BlockPos.betweenClosed(getPos().offset(-r, -r, -r), getPos().offset(r, r, r))) {
-            BlockEntity be = getLevel().getBlockEntity(pos);
-            if (!(be instanceof com.gregtechceu.gtceu.api.machine.IMachineBlockEntity machineBE)) {
-                continue;
-            }
-            var machine = machineBE.getMetaMachine();
-            if (machine instanceof AirCooledComputeRackMachine rack && rack.isFormed()) {
-                members.add(rack);
-            } else if (machine instanceof LiquidCooledComputeRackMachine rack && rack.isFormed()) {
-                members.add(rack);
-            }
-        }
-        return members;
+    public List<DatacenterOpticalNetwork.Link> memberProviders() {
+        return DatacenterOpticalNetwork.providers(this, false);
     }
 
-    /** Aggregate CWU/t the member racks offer right now. */
     public int aggregateAvailableCwu() {
-        int total = 0;
-        for (IOpticalComputationProvider member : memberProviders()) {
-            total += member.getMaxCWUt(new ArrayList<>());
-        }
-        return total;
+        return getMaxCWUt();
     }
 
-    /** Aggregate cluster memory (TB) of the memory racks in range. */
     public int aggregateMemoryTb() {
-        int total = 0;
-        if (getLevel() == null || getLevel().isClientSide()) {
-            return 0;
-        }
-        int r = VramRating.SWITCH_RANGE;
-        for (BlockPos pos : BlockPos.betweenClosed(getPos().offset(-r, -r, -r), getPos().offset(r, r, r))) {
-            BlockEntity be = getLevel().getBlockEntity(pos);
-            if (be instanceof com.gregtechceu.gtceu.api.machine.IMachineBlockEntity machineBE &&
-                    machineBE.getMetaMachine() instanceof VramStorageRackMachine vram && vram.isFormed()) {
-                total += vram.getTerabytesOnline();
-            }
-        }
-        return total;
+        return DatacenterOpticalNetwork.memoryRacks(this).stream()
+                .mapToInt(VramStorageRackMachine::getTerabytesOnline).sum();
     }
 
-    ///////////////////////////////////////////////////////////////////////////////////////////////
-    // IOpticalComputationProvider: aggregate + bandwidth ceiling //
-    ///////////////////////////////////////////////////////////////////////////////////////////////
+    public boolean canForward() {
+        return isFormed() && !isBusy() && (status == Status.SERVING || status == Status.NO_MEMBERS);
+    }
 
     @Override
     public int requestCWUt(int cwut, boolean simulate, Collection<IOpticalComputationProvider> seen) {
         seen.add(this);
-        if (cwut <= 0 || !isFormed() || status == Status.BUSY_503 || isBusy()) {
+        if (cwut <= 0 || !canForward()) {
             return 0;
         }
         long now = getOffsetTimer();
@@ -202,46 +163,29 @@ public class OpticalFabricSwitchMachine extends WorkableElectricMultiblockMachin
             this.allocatedCWUt = 0;
             this.windowDemand = 0;
         }
-        // Bandwidth ceiling first: demand above it trips the 503 and serves nobody this tick.
-        if (!VramRating.withinSwitchBandwidth(this.windowDemand + cwut)) {
+        // Native GT recipe hatches use MAX_VALUE in simulation to query availability.
+        boolean availabilityProbe = simulate && cwut == Integer.MAX_VALUE;
+        if (!availabilityProbe && cwut > getBandwidthLimit() - this.windowDemand) {
             tripBusy();
             return 0;
         }
-        int memberBudget = 0;
-        for (IOpticalComputationProvider member : memberProviders()) {
-            memberBudget += member.getMaxCWUt(new ArrayList<>());
-        }
-        int room = Math.max(0, Math.min(VramRating.SWITCH_BANDWIDTH_LIMIT, memberBudget) - this.allocatedCWUt);
-        int granted = Math.min(cwut, room);
+        int room = getBandwidthLimit() - this.allocatedCWUt;
+        int granted = DatacenterOpticalNetwork.request(memberProviders(), Math.min(cwut, room), simulate, seen);
         if (!simulate && granted > 0) {
-            // Really pull from the members so their same-tick budgets are actually consumed.
-            int remaining = granted;
-            for (IOpticalComputationProvider member : memberProviders()) {
-                if (remaining <= 0) {
-                    break;
-                }
-                int took = member.requestCWUt(remaining, false, new ArrayList<>());
-                remaining -= took;
-            }
-            int actuallyGranted = granted - Math.max(0, remaining);
-            this.allocatedCWUt += actuallyGranted;
+            this.allocatedCWUt += granted;
             this.windowDemand += cwut;
-            this.lastServedCwu = actuallyGranted;
-            return actuallyGranted;
+            this.lastServedCwu = granted;
         }
-        if (simulate) {
-            return granted;
-        }
-        return 0;
+        return granted;
     }
 
     @Override
     public int getMaxCWUt(Collection<IOpticalComputationProvider> seen) {
         seen.add(this);
-        if (!isFormed() || isBusy()) {
+        if (!canForward()) {
             return 0;
         }
-        return Math.min(VramRating.SWITCH_BANDWIDTH_LIMIT, aggregateAvailableCwu());
+        return Math.min(getBandwidthLimit(), DatacenterOpticalNetwork.capacity(memberProviders(), seen));
     }
 
     @Override
@@ -264,6 +208,7 @@ public class OpticalFabricSwitchMachine extends WorkableElectricMultiblockMachin
     @Override
     public void onStructureFormed() {
         super.onStructureFormed();
+        DatacenterFloorNetwork.formed(this);
         this.maintenance = null;
         for (var part : getParts()) {
             if (part instanceof IMaintenanceMachine maintenanceMachine) {
@@ -276,6 +221,7 @@ public class OpticalFabricSwitchMachine extends WorkableElectricMultiblockMachin
 
     @Override
     public void onStructureInvalid() {
+        DatacenterFloorNetwork.detached(this);
         super.onStructureInvalid();
         this.maintenance = null;
         this.cooldownTicks = 0;
@@ -292,6 +238,7 @@ public class OpticalFabricSwitchMachine extends WorkableElectricMultiblockMachin
 
     @Override
     public void onUnload() {
+        DatacenterFloorNetwork.detached(this);
         super.onUnload();
         if (this.tickSubs != null) {
             this.tickSubs.unsubscribe();
@@ -327,8 +274,7 @@ public class OpticalFabricSwitchMachine extends WorkableElectricMultiblockMachin
             return;
         }
         energy.removeEnergy(SWITCH_EU_T);
-        if (this.cooldownTicks > 0) {
-            this.cooldownTicks--;
+        if (this.cooldownTicks > 0 && --this.cooldownTicks > 0) {
             setStatus(Status.BUSY_503);
             return;
         }

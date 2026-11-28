@@ -1,7 +1,6 @@
 package dev.hypercluster.common.machine.model;
 
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
-import com.gregtechceu.gtceu.api.gui.widget.SlotWidget;
 import com.gregtechceu.gtceu.api.gui.widget.ToggleButtonWidget;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.TickableSubscription;
@@ -21,25 +20,22 @@ import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
 import net.minecraft.ChatFormatting;
-import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraftforge.items.IItemHandlerModifiable;
+import net.minecraftforge.items.wrapper.CombinedInvWrapper;
 
 import dev.hypercluster.common.item.HyperClusterItems;
 import dev.hypercluster.common.machine.MachineUi;
-import dev.hypercluster.common.machine.datacenter.AirCooledComputeRackMachine;
-import dev.hypercluster.common.machine.datacenter.IvInferenceHatchMachine;
-import dev.hypercluster.common.machine.datacenter.LiquidCooledComputeRackMachine;
-import dev.hypercluster.common.machine.datacenter.OpticalFabricSwitchMachine;
+import dev.hypercluster.common.machine.datacenter.DatacenterFloorNetwork;
+import dev.hypercluster.common.machine.datacenter.DatacenterHardwareHatchMachine;
+import dev.hypercluster.common.machine.datacenter.DatacenterOpticalNetwork;
 import dev.hypercluster.common.machine.datacenter.VramRating;
 import dev.hypercluster.common.machine.datacenter.VramStorageRackMachine;
 import dev.hypercluster.common.model.AIModelDefinition;
 import dev.hypercluster.common.model.AIModels;
-import dev.hypercluster.common.model.ModelRuntime;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
@@ -73,7 +69,8 @@ import javax.annotation.Nullable;
  * <b>DeepThink.</b> Models carrying {@link AIModelDefinition.Trait#DEEP_THINK} get a charge
  * switch; while charged they reserve extra VRAM and force probability by-products to 100%.
  */
-public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine implements IMachineLife {
+public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine
+                                  implements IMachineLife, DatacenterHardwareHatchMachine.HardwareHost {
 
     protected static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(
             MoeRouterRackMachine.class, WorkableElectricMultiblockMachine.MANAGED_FIELD_HOLDER);
@@ -83,12 +80,6 @@ public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine impl
 
     /** Chebyshev reach (blocks) for the memory pool and compute providers. */
     public static final int POOL_RANGE = 16;
-
-    /** Ticks an agent-parked machine room stays down before probing its rails again. */
-    public static final int AGENT_PARK_TICKS = 40;
-
-    /** Ticks the rails get to prove they can work after a probe resumes them. */
-    public static final int AGENT_PROBE_TICKS = 20;
 
     /** Deployment state of the router. */
     public enum State {
@@ -105,18 +96,7 @@ public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine impl
         /** Paused with a soft mallet. */
         PAUSED,
         /** Maintenance problems unfixed. */
-        MAINTENANCE,
-        /**
-         * 0.6.2 · GLM-2333 Flash's room-inspection protective sleep: the room browned out below
-         * {@value dev.hypercluster.common.model.ModelRuntime#BROWNOUT_FRACTION} of its stored
-         * energy, so the router parks the model and draws nothing until power returns.
-         */
-        SLEEPING,
-        /**
-         * 0.6.2 · GLM-2333 Max's agent tool calling parked every associated multiblock on a jam or
-         * a starvation, so the room idles on standby instead of burning EU.
-         */
-        AGENT_IDLE
+        MAINTENANCE
     }
 
     @Persisted
@@ -145,41 +125,12 @@ public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine impl
     @Persisted
     @DescSynced
     protected int lastCwu = 0;
-    /**
-     * 0.6.2 · CWU/t the router really pulled from the room this tick. Zero unless the model is
-     * ONLINE: a sleeping, agent-idling or OOM pool bills nothing.
-     */
-    @Persisted
-    @DescSynced
-    protected int consumedCwu = 0;
-    /** True while GLM-2333 Max's agent has parked the associated multiblocks (jam/starvation). */
-    @Persisted
-    @DescSynced
-    protected boolean agentParked = false;
-    /** True while a DeepSeek-Pro DeepThink round was settled with by-products forced to 100%. */
-    @Persisted
-    @DescSynced
-    protected boolean byproductsForced = false;
-    /** Countdown until an agent-parked room probes its rails again. */
-    @Persisted
-    @DescSynced
-    protected int agentParkCountdown = 0;
-    /** Ticks remaining in the current probe window (do not re-park while it runs). */
-    @Persisted
-    @DescSynced
-    protected int agentProbeHoldoff = 0;
-    /** How many associated inference hatches the LoRA projection reached on the last tick. */
-    @DescSynced
-    protected int projectedLoras = 0;
-    /** How many associated inference hatches the DeepThink projection reached on the last tick. */
-    @DescSynced
-    protected int projectedForce = 0;
 
     public MoeRouterRackMachine(IMachineBlockEntity holder, Object... args) {
         super(holder, args);
-        this.modelSlot = new CustomItemStackHandler(1);
+        this.modelSlot = DatacenterHardwareHatchMachine.componentSlots(1);
         this.modelSlot.setFilter(stack -> stack.is(HyperClusterItems.OPEN_WEIGHT_MODULE.get()));
-        this.loraSlot = new CustomItemStackHandler(LORA_SLOTS);
+        this.loraSlot = DatacenterHardwareHatchMachine.componentSlots(LORA_SLOTS);
         this.loraSlot.setFilter(stack -> stack.is(HyperClusterItems.MINING_LORA_CARD.get()) ||
                 stack.is(HyperClusterItems.CHEMICAL_LORA_CARD.get()));
     }
@@ -199,21 +150,7 @@ public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine impl
 
     @Nullable
     public AIModelDefinition loadedModel() {
-        if (loadedModelId.isEmpty()) {
-            return null;
-        }
-        // loadedModelId is the FULL id string (hypercluster:x), so the namespaced lookup is right
-        // here — but a bare path from an older save must still resolve.
-        AIModelDefinition byFullId = AIModels.catalog().get(loadedModelId);
-        if (byFullId != null) {
-            return byFullId;
-        }
-        for (AIModelDefinition definition : AIModels.catalog().all()) {
-            if (definition.id().getPath().equals(loadedModelId)) {
-                return definition;
-            }
-        }
-        return null;
+        return loadedModelId.isEmpty() ? null : AIModels.catalog().get(loadedModelId);
     }
 
     public String getLoadedModelId() {
@@ -234,57 +171,6 @@ public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine impl
 
     public int getLastCwu() {
         return lastCwu;
-    }
-
-    public int getConsumedCwu() {
-        return consumedCwu;
-    }
-
-    public boolean isAgentParked() {
-        return agentParked;
-    }
-
-    public int getAgentParkCountdown() {
-        return agentParkCountdown;
-    }
-
-    public int getAgentProbeHoldoff() {
-        return agentProbeHoldoff;
-    }
-
-    public boolean isByproductsForced() {
-        return byproductsForced;
-    }
-
-    public int getProjectedLoras() {
-        return projectedLoras;
-    }
-
-    public int getProjectedForce() {
-        return projectedForce;
-    }
-
-    /** True while a room-inspection model has parked the rack in protective sleep. */
-    public boolean isSleeping() {
-        return state == State.SLEEPING;
-    }
-
-    /** The blackout fraction of this rack's own energy buffer (0..1; 0 when it has no buffer). */
-    public double brownoutFraction() {
-        var energy = getEnergyContainer();
-        if (energy == null || energy.getEnergyCapacity() <= 0) {
-            return 0;
-        }
-        return (double) energy.getEnergyStored() / (double) energy.getEnergyCapacity();
-    }
-
-    /** True when the rack is below the protective-sleep threshold right now. */
-    public boolean isBrownedOut() {
-        var energy = getEnergyContainer();
-        if (energy == null) {
-            return false;
-        }
-        return ModelRuntime.isBrownout(energy.getEnergyStored(), energy.getEnergyCapacity());
     }
 
     public CustomItemStackHandler getModelSlot() {
@@ -315,122 +201,27 @@ public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine impl
      * without a switch the router sums the memory cabinets directly.
      */
     public int poolTerabytes() {
-        OpticalFabricSwitchMachine fabric = nearbySwitch();
-        if (fabric != null) {
-            return fabric.aggregateMemoryTb();
-        }
-        int total = 0;
-        for (VramStorageRackMachine rack : nearbyMemoryRacks()) {
-            total += rack.getTerabytesOnline();
-        }
-        return total;
+        return DatacenterOpticalNetwork.memoryRacks(this).stream()
+                .mapToInt(VramStorageRackMachine::getTerabytesOnline).sum();
     }
 
-    /** Aggregate CWU/t the compute racks in range can offer. */
     public int poolCwu() {
-        OpticalFabricSwitchMachine fabric = nearbySwitch();
-        if (fabric != null) {
-            return Math.min(VramRating.SWITCH_BANDWIDTH_LIMIT, fabric.aggregateAvailableCwu());
-        }
-        int total = 0;
-        for (AirCooledComputeRackMachine rack : nearbyAirRacks()) {
-            total += rack.availableCWUt();
-        }
-        for (LiquidCooledComputeRackMachine rack : nearbyLiquidRacks()) {
-            total += rack.availableCWUt();
-        }
-        return total;
+        return DatacenterOpticalNetwork.available(this);
     }
 
-    @Nullable
-    private OpticalFabricSwitchMachine nearbySwitch() {
-        if (getLevel() == null) {
-            return null;
-        }
-        int r = POOL_RANGE;
-        for (BlockPos pos : BlockPos.betweenClosed(getPos().offset(-r, -r, -r), getPos().offset(r, r, r))) {
-            BlockEntity be = getLevel().getBlockEntity(pos);
-            if (be instanceof com.gregtechceu.gtceu.api.machine.IMachineBlockEntity machineBE &&
-                    machineBE.getMetaMachine() instanceof OpticalFabricSwitchMachine fabric && fabric.isFormed()) {
-                return fabric;
-            }
-        }
-        return null;
-    }
-
-    public List<VramStorageRackMachine> nearbyMemoryRacks() {
-        List<VramStorageRackMachine> found = new ArrayList<>();
-        if (getLevel() == null) {
-            return found;
-        }
-        int r = POOL_RANGE;
-        for (BlockPos pos : BlockPos.betweenClosed(getPos().offset(-r, -r, -r), getPos().offset(r, r, r))) {
-            BlockEntity be = getLevel().getBlockEntity(pos);
-            if (be instanceof com.gregtechceu.gtceu.api.machine.IMachineBlockEntity machineBE &&
-                    machineBE.getMetaMachine() instanceof VramStorageRackMachine rack && rack.isFormed()) {
-                found.add(rack);
-            }
-        }
-        return found;
-    }
-
-    private List<AirCooledComputeRackMachine> nearbyAirRacks() {
-        List<AirCooledComputeRackMachine> found = new ArrayList<>();
-        if (getLevel() == null) {
-            return found;
-        }
-        int r = POOL_RANGE;
-        for (BlockPos pos : BlockPos.betweenClosed(getPos().offset(-r, -r, -r), getPos().offset(r, r, r))) {
-            BlockEntity be = getLevel().getBlockEntity(pos);
-            if (be instanceof com.gregtechceu.gtceu.api.machine.IMachineBlockEntity machineBE &&
-                    machineBE.getMetaMachine() instanceof AirCooledComputeRackMachine rack && rack.isFormed()) {
-                found.add(rack);
-            }
-        }
-        return found;
-    }
-
-    private List<LiquidCooledComputeRackMachine> nearbyLiquidRacks() {
-        List<LiquidCooledComputeRackMachine> found = new ArrayList<>();
-        if (getLevel() == null) {
-            return found;
-        }
-        int r = POOL_RANGE;
-        for (BlockPos pos : BlockPos.betweenClosed(getPos().offset(-r, -r, -r), getPos().offset(r, r, r))) {
-            BlockEntity be = getLevel().getBlockEntity(pos);
-            if (be instanceof com.gregtechceu.gtceu.api.machine.IMachineBlockEntity machineBE &&
-                    machineBE.getMetaMachine() instanceof LiquidCooledComputeRackMachine rack && rack.isFormed()) {
-                found.add(rack);
-            }
-        }
-        return found;
-    }
-
-    ///////////////////////////////////////////////////////////////////////////////////////////////
-    // Deployment //
-    ///////////////////////////////////////////////////////////////////////////////////////////////
-
-    /**
-     * The model definition named by the weights in the deployment slot, or null.
-     *
-     * <p>
-     * 0.6.2 resolves the <b>exact</b> {@code hc_model_id} the module carries, so all five
-     * open-weight families deploy independently. A module minted before 0.6.2 has no such key and
-     * reads back as {@code qwen_9187_pro_max_ultra} (the only identity 0.6.1 could produce), which
-     * keeps old weights working. A module naming an id that is not a deployable open model is
-     * rejected outright rather than being silently coerced into another family.
-     */
-    @Nullable
     public AIModelDefinition modelInSlot() {
         ItemStack stack = modelSlot.getStackInSlot(0);
         if (stack.isEmpty()) {
             return null;
         }
-        AIModelDefinition definition = dev.hypercluster.common.item.OpenWeightModuleItem.definition(stack);
-        if (definition == null || !definition.isLocal()) {
-            return null;
+        String domain = dev.hypercluster.common.item.OpenWeightModuleItem.domain(stack);
+        // The module's domain decides which open-camp identity it carries.
+        for (AIModelDefinition definition : AIModels.localModels()) {
+            if (definition.servesDomain(domain)) {
+                return definition;
+            }
         }
-        return definition;
+        return null;
     }
 
     /** VRAM the current deployment would need, including LoRAs and DeepThink. */
@@ -449,6 +240,7 @@ public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine impl
     @Override
     public void onStructureFormed() {
         super.onStructureFormed();
+        DatacenterFloorNetwork.formed(this);
         this.maintenance = null;
         for (var part : getParts()) {
             if (part instanceof IMaintenanceMachine maintenanceMachine) {
@@ -461,6 +253,7 @@ public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine impl
 
     @Override
     public void onStructureInvalid() {
+        DatacenterFloorNetwork.detached(this);
         super.onStructureInvalid();
         this.maintenance = null;
         unload("unformed");
@@ -476,6 +269,7 @@ public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine impl
 
     @Override
     public void onUnload() {
+        DatacenterFloorNetwork.detached(this);
         super.onUnload();
         if (this.tickSubs != null) {
             this.tickSubs.unsubscribe();
@@ -532,211 +326,17 @@ public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine impl
             }
             return;
         }
-        // 0.6.2 · GLM-2333 Flash room inspection: a room below 20% stored energy parks the model
-        // in protective sleep. Nothing is billed while asleep and no CWU/t is pulled, which is
-        // exactly the "省待机电" promise; the rack wakes itself the tick the grid recovers.
-        if (ModelRuntime.sleepsOnBrownout(model) && isBrownedOut()) {
-            this.loadedModelId = model.id().toString();
-            this.lastVramTb = required;
-            this.lastCwu = 0;
-            this.consumedCwu = 0;
-            this.projectedLoras = 0;
-            this.projectedForce = 0;
-            setState(State.SLEEPING);
-            return;
-        }
-
-        // 0.6.2 · GLM-2333 Max agent tool calling: stop the associated multiblocks on a jam or a
-        // starvation (省待机电) and start them again once the room can work. This is a real
-        // structural pause on the host controllers (setWorkingEnabled), not a label on this rack.
-        //
-        // A parked room cannot report a reason — its logic is suspended — so the agent runs a
-        // duty cycle: park, then periodically probe by resuming the rails for
-        // {@value #AGENT_PROBE_TICKS} ticks and watching whether they really pick up work. That
-        // keeps a jammed room from flapping one tick at a time and lets it recover by itself.
-        if (ModelRuntime.drivesAgentToolCalls(model)) {
-            if (this.agentParked) {
-                if (--this.agentParkCountdown > 0) {
-                    this.loadedModelId = model.id().toString();
-                    this.lastVramTb = required;
-                    this.lastCwu = 0;
-                    this.consumedCwu = 0;
-                    setState(State.AGENT_IDLE);
-                    return;
-                }
-                applyAgentToolCalls(true);      // probe window: let the rails try again
-                this.agentParked = false;
-                this.agentProbeHoldoff = AGENT_PROBE_TICKS;
-            } else if (this.agentProbeHoldoff > 0) {
-                this.agentProbeHoldoff--;
-            } else if (associatedMultiblocksStalled()) {
-                applyAgentToolCalls(false);     // jam or starvation: park the room
-                this.agentParked = true;
-                this.agentParkCountdown = AGENT_PARK_TICKS;
-                this.loadedModelId = model.id().toString();
-                this.lastVramTb = required;
-                this.lastCwu = 0;
-                this.consumedCwu = 0;
-                setState(State.AGENT_IDLE);
-                return;
-            }
-        } else if (this.agentParked) {
-            // The operator swapped in a non-agent family: hand the room back to a running state.
-            applyAgentToolCalls(true);
-            this.agentParked = false;
-            this.agentParkCountdown = 0;
-            this.agentProbeHoldoff = 0;
-        }
-
-        // Everything checks out: the model is resident and really pulls its CWU/t from the room.
+        // Everything checks out: the model is resident.
         this.loadedModelId = model.id().toString();
         this.lastVramTb = required;
         this.lastCwu = cwu;
-        this.consumedCwu = drawComputation(cwu);
-        this.byproductsForced = ModelRuntime.forcesByproducts(model, deepThink);
-        projectOntoAssociatedHatches(model);
         setState(State.ONLINE);
-    }
-
-    /**
-     * Really pull the model's billed CWU/t out of the cluster this tick, so the demand is booked
-     * against the same-tick budget of the racks and the optical switch. Returns what was actually
-     * drawn: a model whose feed vanished reports 0 and the next tick evicts it.
-     */
-    protected int drawComputation(int demand) {
-        if (demand <= 0) {
-            return 0;
-        }
-        OpticalFabricSwitchMachine fabric = nearbySwitch();
-        if (fabric != null) {
-            return fabric.requestCWUt(demand, false, new ArrayList<>());
-        }
-        int remaining = demand;
-        for (LiquidCooledComputeRackMachine rack : nearbyLiquidRacks()) {
-            if (remaining <= 0) {
-                break;
-            }
-            remaining -= rack.requestCWUt(remaining, false, new ArrayList<>());
-        }
-        for (AirCooledComputeRackMachine rack : nearbyAirRacks()) {
-            if (remaining <= 0) {
-                break;
-            }
-            remaining -= rack.requestCWUt(remaining, false, new ArrayList<>());
-        }
-        return demand - remaining;
-    }
-
-    /**
-     * 0.6.2 · the projections a loaded model casts onto the inference hatches it is linked to.
-     *
-     * <ul>
-     * <li><b>Qwen LoRA specialisation</b> — a LoRA-capable model with mining/chemical cards in its
-     * extension slots boosts the matching domain on every associated hatch.</li>
-     * <li><b>DeepSeek-Pro DeepThink</b> — while charged, by-products are forced to 100% on every
-     * associated hatch, so the tower's chanced golden samples stop being a gamble.</li>
-     * </ul>
-     */
-    protected void projectOntoAssociatedHatches(AIModelDefinition model) {
-        this.projectedLoras = 0;
-        this.projectedForce = 0;
-        boolean force = ModelRuntime.forcesByproducts(model, deepThink);
-        int loras = Math.min(getLoraCount(), model.loraSlots());
-        for (IvInferenceHatchMachine hatch : linkedHatches()) {
-            if (!hatch.isFormed()) {
-                continue;
-            }
-            if (loras > 0 && hatch.acceptLoraProjection(model, loras)) {
-                this.projectedLoras++;
-            }
-            if (force && hatch.acceptByproductForce(true)) {
-                this.projectedForce++;
-            }
-        }
-    }
-
-    /**
-     * Drops every projection the model cast onto its linked hatches. Called the moment the router
-     * stops being ONLINE, so a model that went OOM, was evicted or was pulled can never keep
-     * forcing by-products on a tower it no longer serves.
-     */
-    public void clearProjections() {
-        for (IvInferenceHatchMachine hatch : linkedHatches()) {
-            hatch.acceptByproductForce(false);
-            hatch.acceptLoraProjection(null, 0);
-        }
-        this.projectedLoras = 0;
-        this.projectedForce = 0;
-        this.byproductsForced = false;
-    }
-
-    /**
-     * 0.6.2 · the agent's hands: suspend / resume the recipe logic of every linked host.
-     * {@code run = false} parks the rails (nothing is crafted, standby draw only), {@code true}
-     * pulls them back up so the room resumes by itself once materials or output space return.
-     */
-    protected void applyAgentToolCalls(boolean run) {
-        for (IvInferenceHatchMachine hatch : linkedHatches()) {
-            var logic = hatch.hostLogic();
-            if (logic != null && logic.isWorkingEnabled() != run) {
-                logic.setWorkingEnabled(run);
-            }
-        }
-    }
-
-    /**
-     * 0.6.2 · GLM-2333 Max's agent reads the associated multiblocks' work state. A rail that is
-     * jammed (its output bus cannot take the products) or starved (no input at all) counts as
-     * stalled, and the agent parks the room instead of idling at full standby draw.
-     */
-    protected boolean associatedMultiblocksStalled() {
-        for (IvInferenceHatchMachine hatch : linkedHatches()) {
-            var logic = hatch.hostLogic();
-            if (logic == null) {
-                continue;
-            }
-            if (logic.isWaiting()) {
-                return true;
-            }
-            // A host that is neither working nor suspended has nothing to do: for the agent that
-            // is starvation, and parking the room is exactly what it promises.
-            if (!logic.isWorking() && !logic.isSuspend()) {
-                return true;
-            }
-        }
-        // No linked rail at all: nothing to park, the room stays online.
-        return false;
-    }
-
-    /**
-     * The inference hatches this router serves. The hatches are parts of a <b>different</b>
-     * multiblock (the data scrubbing tower), so the association is real proximity inside the same
-     * machine room — the same {@value #POOL_RANGE}-block reach the memory and compute pools use.
-     */
-    public List<IvInferenceHatchMachine> linkedHatches() {
-        List<IvInferenceHatchMachine> found = new ArrayList<>();
-        if (getLevel() == null) {
-            return found;
-        }
-        int r = POOL_RANGE;
-        for (BlockPos pos : BlockPos.betweenClosed(getPos().offset(-r, -r, -r), getPos().offset(r, r, r))) {
-            BlockEntity be = getLevel().getBlockEntity(pos);
-            if (be instanceof com.gregtechceu.gtceu.api.machine.IMachineBlockEntity machineBE &&
-                    machineBE.getMetaMachine() instanceof IvInferenceHatchMachine hatch) {
-                found.add(hatch);
-            }
-        }
-        return found;
     }
 
     /** Takes the model out of memory (kept on disk: the weights item stays in its slot). */
     public void unload(String reason) {
         this.loadedModelId = "";
         this.lastCwu = 0;
-        this.consumedCwu = 0;
-        this.byproductsForced = false;
-        this.projectedLoras = 0;
-        this.projectedForce = 0;
         setState(switch (reason) {
             case "oom" -> State.OOM;
             case "no_compute" -> State.EVICTED;
@@ -748,10 +348,6 @@ public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine impl
     protected void setState(State next) {
         if (this.state != next) {
             this.state = next;
-            if (next != State.ONLINE) {
-                // 0.6.2 · a model that is no longer resident casts no projections.
-                clearProjections();
-            }
             updateRenderState();
         }
     }
@@ -777,23 +373,20 @@ public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine impl
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     @Override
+    public IItemHandlerModifiable hardwareInventory() {
+        return new CombinedInvWrapper(modelSlot, loraSlot);
+    }
+
+    @Override
+    public String hardwareSlotKey(int slot) {
+        return "hypercluster.machine.moe_router_rack." + (slot == 0 ? "model_slot" : "lora_slot");
+    }
+
+    @Override
     public Widget createUIWidget() {
         String uiKey = "hypercluster.machine.moe_router_rack.";
-        WidgetGroup controls = MachineUi.multiblockControls(53);
-        controls.addWidgets(
-                MachineUi.label(8, 0, 78, uiKey + "label.model"),
-                MachineUi.label(90, 0, 90, uiKey + "label.lora"));
-        SlotWidget model = new SlotWidget(modelSlot, 0, 14, 13, true, false);
-        model.setBackground(GuiTextures.SLOT);
-        model.setHoverTooltips(Component.translatable(uiKey + "model_slot"));
-        controls.addWidget(model);
-        for (int i = 0; i < LORA_SLOTS; i++) {
-            SlotWidget lora = new SlotWidget(loraSlot, i, 92 + i * 22, 13, true, false);
-            lora.setBackground(GuiTextures.SLOT);
-            lora.setHoverTooltips(Component.translatable(uiKey + "lora_slot"));
-            controls.addWidget(lora);
-        }
-        ToggleButtonWidget deepThinkToggle = new ToggleButtonWidget(14, 35, 18, 18,
+        WidgetGroup controls = MachineUi.multiblockControls(18);
+        ToggleButtonWidget deepThinkToggle = new ToggleButtonWidget(14, 0, 18, 18,
                 GuiTextures.BUTTON_BATCH, this::isDeepThink, this::setDeepThink);
         deepThinkToggle.setHoverTooltips(Component.translatable(uiKey + "deepthink.tooltip"));
         controls.addWidget(deepThinkToggle);
@@ -828,28 +421,6 @@ public class MoeRouterRackMachine extends WorkableElectricMultiblockMachine impl
                     if (deepThink) {
                         lines.add(Component.translatable(uiKey + "deepthink.on")
                                 .withStyle(ChatFormatting.GOLD));
-                    }
-                    // 0.6.2 · the real runtime readings: what the room drew, and what the model's
-                    // projections reached on the linked inference hatches.
-                    if (consumedCwu > 0) {
-                        lines.add(Component.translatable(uiKey + "consumed",
-                                Component.literal(String.valueOf(consumedCwu)).withStyle(ChatFormatting.AQUA))
-                                .withStyle(ChatFormatting.GRAY));
-                    }
-                    if (projectedLoras > 0) {
-                        lines.add(Component.translatable(uiKey + "projection.lora",
-                                Component.literal(String.valueOf(projectedLoras))
-                                        .withStyle(ChatFormatting.AQUA))
-                                .withStyle(ChatFormatting.GREEN));
-                    }
-                    if (projectedForce > 0) {
-                        lines.add(Component.translatable(uiKey + "projection.force",
-                                Component.literal(String.valueOf(projectedForce))
-                                        .withStyle(ChatFormatting.AQUA))
-                                .withStyle(ChatFormatting.GOLD));
-                    }
-                    if (agentParked) {
-                        lines.add(Component.translatable(uiKey + "agent.on").withStyle(ChatFormatting.RED));
                     }
                     if (state != State.ONLINE) {
                         lines.add(Component

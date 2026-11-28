@@ -6,6 +6,7 @@ import net.minecraft.world.level.material.MapColor;
 
 import com.tterrag.registrate.util.entry.BlockEntry;
 import dev.hypercluster.HyperCluster;
+import dev.hypercluster.common.machine.datacenter.RaisedFloorBlock;
 
 /**
  * GregTech HyperCluster structure blocks (0.3 · IV datacenter, 0.4 · satellite ground station).
@@ -29,8 +30,8 @@ import dev.hypercluster.HyperCluster;
  */
 public final class HyperClusterBlocks {
 
-    public static final BlockEntry<Block> RAISED_FLOOR = HyperCluster.REGISTRATE
-            .block("raised_floor", Block::new)
+    public static final BlockEntry<RaisedFloorBlock> RAISED_FLOOR = HyperCluster.REGISTRATE
+            .block("raised_floor", RaisedFloorBlock::new)
             .properties(properties -> properties.mapColor(MapColor.METAL)
                     .strength(3.0F, 10.0F)
                     .requiresCorrectToolForDrops()

@@ -15,8 +15,8 @@
     },
     {
       "type": "patchouli:text",
-      "title": "Models & Leaving Soon Lifecycle",
-      "text": "Two models are in the catalog:$(li)$(#0E7490)OmniFlash-72B$(): flagship model; never retires.$(li)$(#0E7490)LegacyLlama-8B$(): lifecycle demo evaluated by save game day (`dayTime / 24000`). By default it shows $(bold)Leaving Soon$() starting day 2 (still usable, countdown shown) and goes $(bold)RETIRED$() at day 3, blocking cloud calls at no charge.$(br)Flags: `-Dhypercluster.legacyRetireDay=3`, `leavingSoonDays=1`."
+      "title": "Model Lifecycle",
+      "text": "A catalog entry with lifecycle enabled announces $(bold)Leaving Soon$() before its retirement day. A retired entry refuses cloud rounds. Chapter 6 tracks the model families and which features are delivered by each release."
     },
     {
       "type": "patchouli:text",

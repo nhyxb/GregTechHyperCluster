@@ -38,9 +38,6 @@ public final class VramRating {
     /** VRAM a single tensor pretraining run needs (TB). */
     public static final int TRAINING_JOB_TB = 96;
 
-    /** Chebyshev reach (blocks) inside which an optical switch aggregates racks. */
-    public static final int SWITCH_RANGE = 16;
-
     /** Total CWU/t one optical fabric switch may hand out per tick before 503. */
     public static final int SWITCH_BANDWIDTH_LIMIT = 128;
 
